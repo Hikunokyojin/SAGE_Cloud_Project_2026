@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/Hikunokyojin/sage/issues"
   },
-  "homepage": "https://github.com/Hikunokyojin/sage#readme"
+  "homepage": "https://github.com/Hikunokyojin/sage#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.2"
+  }
 }
