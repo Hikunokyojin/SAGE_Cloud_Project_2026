@@ -1,13 +1,11 @@
 {
-  "name": "shared-types",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@sage/shared-types",
+  "version": "0.0.1",
+  "description": "Shared TypeScript types for SAGE (Intent, Blueprint, AuditRecord, GraphEdge)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "license": "ISC"
 }
