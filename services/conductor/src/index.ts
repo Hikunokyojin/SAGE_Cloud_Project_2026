@@ -1,5 +1,5 @@
 import express from "express";
-import type { Intent, PipelineState } from "@sage/shared-types";
+import type { PipelineState } from "@sage/shared-types";
 
 const app = express();
 app.use(express.json());
@@ -20,10 +20,7 @@ app.post("/request", (req, res) => {
     retryCount: 0,
   };
 
-  res.json({
-    received: rawInput,
-    pipeline: placeholderState,
-  });
+  res.json({ received: rawInput, pipeline: placeholderState });
 });
 
 app.listen(PORT, () => {

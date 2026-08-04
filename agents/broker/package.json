@@ -10,6 +10,7 @@
   "dependencies": {
     "mongodb": "^6.8.0",
     "@qdrant/js-client-rest": "^1.11.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
     "@sage/shared-types": "*"
   },
   "devDependencies": {
