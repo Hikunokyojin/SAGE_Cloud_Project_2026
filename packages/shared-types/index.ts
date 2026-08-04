@@ -1,56 +1,51 @@
-﻿// Core Request/Intent Types
+// ── Core Request/Intent Types ──────────────────────────────
 
-/* Constraints the user attaches to their request */
 export interface IntentConstraints {
-  maxBudget?: number;        
-  minUptime?: number;      
-  maxLatencyMs?: number;   
+  maxBudget?: number;
+  minUptime?: number;
+  maxLatencyMs?: number;
 }
 
-/* Structured output of the Intent Agent */
 export interface Intent {
-  requestId: string;        
-  capability: string;        
+  requestId: string;
+  capability: string;
   constraints: IntentConstraints;
-  rawInput: string;       
+  rawInput: string;
 }
 
-// Marketplace Data Types 
+// ── Marketplace Data Types ─────────────────────────────────
 
-/* A single microservice entry in the catalog */
 export interface ServiceCandidate {
   serviceId: string;
   name: string;
   description: string;
-  price: number;            
-  uptime: number;          
+  price: number;
+  uptime: number;
   endpoint: string;
-  similarityScore?: number;  
+  similarityScore?: number;
 }
 
-// Negotiator/Optimizer Output 
+// ── Negotiator/Optimizer Output ────────────────────────────
 
 export interface CompositionChoice {
   service: ServiceCandidate;
-  score: number;            
-  reason: string;            
+  score: number;
+  reason: string;
 }
 
-/* Final composition blueprint before explanation is attached */
 export interface CompositionBlueprint {
   requestId: string;
   chosen: CompositionChoice;
-  alternatives: CompositionChoice[]; 
+  alternatives: CompositionChoice[];
 }
 
-// Explainer Output 
+// ── Explainer Output ────────────────────────────────────────
 
 export interface ExplainedBlueprint extends CompositionBlueprint {
-  explanation: string;       
+  explanation: string;
 }
 
-// Scoped Payloads
-// Each agent receives only the fields it needs.
+// ── Scoped Payloads (inter-agent communication) ─────────────
 
 export interface IntentAgentInput {
   requestId: string;
@@ -72,7 +67,7 @@ export interface NegotiatorAgentInput {
 export interface ReviewerAgentInput {
   requestId: string;
   blueprint: CompositionBlueprint;
-  attempt: number;         
+  attempt: number;
 }
 
 export interface ExplainerAgentInput {
@@ -80,7 +75,7 @@ export interface ExplainerAgentInput {
   blueprint: CompositionBlueprint;
 }
 
-// Audit Trail
+// ── Audit Trail ──────────────────────────────────────────────
 
 export type AgentName =
   | "IntentAgent"
@@ -93,24 +88,24 @@ export type AgentName =
 export interface AuditRecord {
   requestId: string;
   agent: AgentName;
-  timestamp: string;         
-  input: unknown;            
-  output: unknown;           
-  reasoning?: string;        
+  timestamp: string;
+  input: unknown;
+  output: unknown;
+  reasoning?: string;
 }
 
-// Graph Orchestration
+// ── Graph Orchestration ──────────────────────────────────────
 
 export interface GraphEdge {
   from: AgentName;
   to: AgentName;
-  maxRetries: number;       
+  maxRetries: number;
 }
 
 export type PipelineStatus =
   | "in_progress"
   | "completed"
-  | "paused_for_review"    
+  | "paused_for_review"
   | "failed";
 
 export interface PipelineState {
