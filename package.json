@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1096.0",
-    "@sage/shared-types": "^0.0.1"
+    "@sage/shared-types": "^0.0.1",
+    "mongodb": "^7.5.0"
   }
 }
