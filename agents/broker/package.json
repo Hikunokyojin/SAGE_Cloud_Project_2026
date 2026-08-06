@@ -8,16 +8,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "mongodb": "^6.8.0",
-    "@qdrant/js-client-rest": "^1.11.0",
     "@aws-sdk/client-bedrock-runtime": "^3.600.0",
-    "@sage/shared-types": "*"
+    "@qdrant/js-client-rest": "^1.11.0",
+    "@sage/shared-types": "*",
+    "dotenv": "^16.6.1",
+    "mongodb": "^6.8.0"
   },
   "devDependencies": {
-    "typescript": "^5.5.0",
-    "@types/node": "^20.14.0",
     "@types/aws-lambda": "^8.10.140",
+    "@types/node": "^20.14.0",
+    "esbuild": "^0.28.1",
     "tsx": "^4.16.0",
-    "esbuild": "^0.28.1"
+    "typescript": "^5.5.0"
   }
 }
