@@ -67,7 +67,16 @@ export interface NegotiatorAgentInput {
 export interface ReviewerAgentInput {
   requestId: string;
   blueprint: CompositionBlueprint;
+  constraints: IntentConstraints;
   attempt: number;
+}
+
+export interface ReviewerAgentOutput {
+  requestId: string;
+  approved: boolean;
+  blueprint: CompositionBlueprint;
+  attempt: number;
+  escalated: boolean;
 }
 
 export interface ExplainerAgentInput {

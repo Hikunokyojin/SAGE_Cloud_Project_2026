@@ -1,0 +1,21 @@
+{
+  "name": "reviewer-agent",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:local": "tsx src/local-test.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sns": "^3.600.0",
+    "@sage/shared-types": "*"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@types/node": "^20.14.0",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}
