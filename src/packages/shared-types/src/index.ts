@@ -47,6 +47,19 @@ export interface ExplainedBlueprint extends CompositionBlueprint {
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
 
+export interface InputGuardAgentInput {
+  requestId: string;
+  rawInput: string;
+}
+
+export interface InputGuardAgentOutput {
+  requestId: string;
+  rawInput: string;
+  sanitizedInput: string;
+  flagged: boolean;
+  detectedPatterns: string[];
+}
+
 export interface IntentAgentInput {
   requestId: string;
   rawInput: string;
