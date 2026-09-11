@@ -33,7 +33,7 @@ Primary interaction mode: a user (demoed live) types a natural-language capabili
 5. **Reviewer Agent** (not yet built) — validates the selected composition against constraints; enforces a hard max-retries circuit breaker, escalating to a Human-in-the-Loop node + Amazon SNS alert once the limit is hit, instead of retrying indefinitely. Deployed as an AWS Lambda function.
 6. **Explainer Agent** (not yet built) — produces a human-readable rationale for the final composition via Amazon Bedrock, surfaced to the end user and the dashboard. Deployed as an AWS Lambda function.
 7. **Conductor** — orchestrates the pipeline across all agents (Input Guard → Intent → Broker → Negotiator → Reviewer → Explainer), invoking Lambdas via the AWS SDK; runs as an always-on EC2-hosted service (t2/t3.micro) fronted by API Gateway (already running as an Express server on port 3001; needs invocation logic added for the new agents and deployment to EC2).
-8. **Shared, strictly-typed payload contracts** (`packages/shared-types`) used between every agent instead of passing full conversation history — extend the existing Intent/Blueprint/AuditRecord/GraphEdge types to cover Negotiator/Reviewer/Explainer payloads.
+8. **Shared, strictly-typed payload contracts** (`src/packages/shared-types`) used between every agent instead of passing full conversation history — extend the existing Intent/Blueprint/AuditRecord/GraphEdge types to cover Negotiator/Reviewer/Explainer payloads.
 9. **Immutable audit trail + observability dashboard** — every agent decision written to a DynamoDB table (e.g. `agent_decisions`) plus CloudTrail, queryable per request; surfaced in a graph-based, TypeScript-first dashboard UI showing step-by-step decision tracing (which agent acted, what it decided, why) for "time-travel debugging" of any past request.
 11. **End-to-end live demo path** — a real natural-language request must flow through the full pipeline on deployed AWS infrastructure and produce a working, explained, audited composition, demoable live.
 12. **Cost-conscious AWS architecture** — the EC2 (Conductor) + Lambda (agents) hybrid split is intentional and should be preserved; no other always-on compute should be added, and Bedrock/Qdrant Cloud/MongoDB Atlas usage should stay within the student credit allowance for the full build+demo period.
@@ -49,19 +49,19 @@ Primary interaction mode: a user (demoed live) types a natural-language capabili
 - **No standing production credentials for any agent** — each Lambda invocation must be authenticated/scoped independently via IAM; this is a stated security objective, not optional hardening.
 - **Explicitly out of scope for this phase** (per the project's own "Future Work" section): the compliance-constraint gateway-and-masking extension to the Broker Agent (deterministic constraint extraction + encrypted masking ahead of semantic search) is a documented Phase-II *stretch goal only*, not required for this build. Hardware-isolated execution (TEE) for that extension is assessed as infeasible and fully excluded.
 - Also out of scope: multi-tenant support, billing/payment integration, a public marketplace for third parties to list their own services, and horizontal scaling beyond demo-scale workload.
-- `apps/` and `infra/` workspace folders currently exist but are empty — the dashboard app and any infra-as-code are net-new work, not migrations of existing code.
-- **Naming/structure drift to reconcile**: the Phase-I docs specify repo name `SAGE_Cloud_Project_2026` and a structure with top-level `docs/`, `architecture/`, `dataset/`, `src/`, `results/` folders plus a `main → develop → feature/sage-solo` branch model with PRs. The actual local repo is named `sage` (remote: `github.com/Hikunokyojin/sage`), lives flat at the workspace root (no `docs/`/`architecture/`/`dataset/`/`results/` folders, code directly in `agents/`, `services/`, `packages/`), and only has a `main` branch. Decide explicitly whether to realign the repo to the Phase-I plan (rename, restructure, add branches) or update the docs to match reality — don't let this stay silently inconsistent going into Phase-II.
+- `apps/` and `src/infra/` workspace folders currently exist but are empty — the dashboard app and any infra-as-code are net-new work, not migrations of existing code.
+- **Naming/structure drift to reconcile**: the Phase-I docs specify repo name `SAGE_Cloud_Project_2026` and a structure with top-level `docs/`, `architecture/`, `dataset/`, `src/`, `results/` folders plus a `main → develop → feature/sage-solo` branch model with PRs. The actual local repo is named `sage` (remote: `github.com/Hikunokyojin/sage`), lives flat at the workspace root (no `docs/`/`architecture/`/`dataset/`/`results/` folders, code directly in `src/agents/`, `services/`, `packages/`), and only has a `main` branch. Decide explicitly whether to realign the repo to the Phase-I plan (rename, restructure, add branches) or update the docs to match reality — don't let this stay silently inconsistent going into Phase-II.
 
 ## 5. DELIVERABLES
 
 1. Working monorepo at `C:\Projects\sage` (migrated off WSL to this path — already in progress) containing:
-   - `agents/intent`, `agents/broker`, `agents/negotiator` (new), `agents/reviewer` (new), `agents/explainer` (new), and an Input Guard component — each an AWS Lambda function
-   - `services/conductor` — orchestration API (Express), deployed to EC2 behind API Gateway
-   - `packages/shared-types` — shared TypeScript contract types
-   - `apps/dashboard` (new) — the observability web dashboard
-   - `infra/` — infrastructure-as-code / deployment config for the AWS resources in use
+   - `src/agents/intent`, `src/agents/broker`, `src/agents/negotiator` (new), `src/agents/reviewer` (new), `src/agents/explainer` (new), and an Input Guard component — each an AWS Lambda function
+   - `src/services/conductor` — orchestration API (Express), deployed to EC2 behind API Gateway
+   - `src/packages/shared-types` — shared TypeScript contract types
+   - `src/apps/dashboard` (new) — the observability web dashboard
+   - `src/infra/` — infrastructure-as-code / deployment config for the AWS resources in use
 2. Deployed AWS environment (EC2 Conductor, Lambda agents, API Gateway, DynamoDB, CloudTrail, SNS, Bedrock access, IAM/SSM config, MongoDB Atlas + Qdrant Cloud connections) reachable for a live demo.
-3. A committed, clean git history on `main` (current working tree has uncommitted changes across `agents/broker`, `agents/intent`, `packages/shared-types`, `services/conductor`, `README.md`, plus an untracked `input.json` — these need to be reviewed and committed or reverted before new work stacks on top).
+3. A committed, clean git history on `main` (current working tree has uncommitted changes across `src/agents/broker`, `src/agents/intent`, `src/packages/shared-types`, `src/services/conductor`, `README.md`, plus an untracked `input.json` — these need to be reviewed and committed or reverted before new work stacks on top).
 4. A real `README.md` (currently just the title) documenting setup, architecture, and how to run/demo the system.
 5. Updated/Phase-II project report(s) in `C:\Projects\SAGE documentation` (kept local, not pushed to GitHub) building on the existing Novelty Summary, Objectives, Research Gap, Literature Survey, and Project Report documents, plus the two existing architecture diagrams (`AWS_Architecture.png`, `System_Architecture.png`).
 
@@ -72,7 +72,7 @@ Primary interaction mode: a user (demoed live) types a natural-language capabili
 3. Conductor, running on EC2, successfully invokes the full agent chain via the AWS SDK in the correct pipeline order for a single request.
 4. A natural-language request submitted through the dashboard produces a final service composition with a human-readable explanation, end-to-end, on deployed AWS infrastructure (not just localhost), deliverable within 4 weeks of 2026-09-10.
 5. Reviewer Agent enforces a specific, documented retry limit (e.g., "3 attempts") and sends an SNS notification to a Human-in-the-Loop node on escalation when that limit is exceeded — verified by deliberately forcing a Reviewer Agent failure.
-6. Every inter-agent payload uses a type defined in `packages/shared-types` — no raw conversation history is passed between agents.
+6. Every inter-agent payload uses a type defined in `src/packages/shared-types` — no raw conversation history is passed between agents.
 7. Querying the DynamoDB audit table after a test run shows a decision record for each agent step in that request.
 8. The observability dashboard displays, for at least one completed request, the full step-by-step trace of which agent acted, what it decided, and why, sourced from the DynamoDB audit trail.
 9. No agent holds standing production credentials — confirmed by an IAM policy review.
