@@ -1,25 +1,25 @@
 {
-  "name": "sage",
+  "name": "sage-cloud-project-2026",
   "version": "1.0.0",
   "private": true,
   "description": "",
   "workspaces": [
-    "apps/*",
-    "services/*",
-    "agents/*",
-    "packages/*"
+    "src/apps/*",
+    "src/services/*",
+    "src/agents/*",
+    "src/packages/*"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Hikunokyojin/sage.git"
+    "url": "git+https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Hikunokyojin/sage/issues"
+    "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/issues"
   },
-  "homepage": "https://github.com/Hikunokyojin/sage#readme",
+  "homepage": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026#readme",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.162",
     "@types/node": "^26.1.2",
