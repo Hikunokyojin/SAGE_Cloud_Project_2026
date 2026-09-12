@@ -4,3 +4,5 @@ dist/
 *.log
 CLAUDE.md
 coverage/
+cdk.out/
+cdk.context.json
