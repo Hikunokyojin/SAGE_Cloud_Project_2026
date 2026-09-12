@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ExplainerAgentInput, CompositionBlueprint } from "@sage/shared-types";
+import type { ExplainerAgentInput, CompositionBlueprint, EscalationExplainerInput } from "@sage/shared-types";
 
 const sendMock = vi.fn();
 
@@ -103,5 +103,90 @@ describe("Explainer Agent handler", () => {
     const userMessage: string = requestBody.messages[0].content;
 
     expect(userMessage).toContain("Alternatives considered: none");
+  });
+});
+
+describe("Explainer Agent explainEscalation", () => {
+  beforeEach(() => {
+    sendMock.mockReset();
+  });
+
+  it("returns a layman explanation plus the list of attempted options", async () => {
+    sendMock.mockResolvedValue(
+      bedrockResponse(
+        "We tried 2 options but none fit your budget of $0.05. FastResize costs $0.08 (too expensive) and " +
+          "SlowResize has 92% uptime (below your 95% minimum). Consider raising your budget to $0.08 or " +
+          "lowering your minimum uptime to 92%."
+      )
+    );
+
+    const input: EscalationExplainerInput = {
+      requestId: "req-esc-1",
+      constraints: { maxBudget: 0.05, minUptime: 95 },
+      attempts: [
+        {
+          candidate: {
+            serviceId: "svc-1",
+            name: "FastResize",
+            description: "Quick image resizer",
+            price: 0.08,
+            uptime: 99.9,
+            endpoint: "https://api.example.com/resize",
+          },
+          violatedConstraints: ["maxBudget"],
+        },
+        {
+          candidate: {
+            serviceId: "svc-2",
+            name: "SlowResize",
+            description: "Cheaper but less reliable",
+            price: 0.03,
+            uptime: 92,
+            endpoint: "https://api.example.com/resize2",
+          },
+          violatedConstraints: ["minUptime"],
+        },
+      ],
+    };
+
+    const { explainEscalation } = await import("./index");
+    const result = await explainEscalation(input);
+
+    expect(result.requestId).toBe("req-esc-1");
+    expect(result.explanation).toContain("Consider raising your budget");
+    expect(result.attemptedOptions.map((o) => o.serviceId)).toEqual(["svc-1", "svc-2"]);
+  });
+
+  it("tells Bedrock exactly which constraint each attempted option violated", async () => {
+    sendMock.mockResolvedValue(bedrockResponse("Explanation."));
+
+    const input: EscalationExplainerInput = {
+      requestId: "req-esc-2",
+      constraints: { maxBudget: 0.05, minUptime: 95 },
+      attempts: [
+        {
+          candidate: {
+            serviceId: "svc-1",
+            name: "FastResize",
+            description: "Quick image resizer",
+            price: 0.08,
+            uptime: 99.9,
+            endpoint: "https://api.example.com/resize",
+          },
+          violatedConstraints: ["maxBudget"],
+        },
+      ],
+    };
+
+    const { explainEscalation } = await import("./index");
+    await explainEscalation(input);
+
+    const invokeCommand = sendMock.mock.calls[0][0];
+    const requestBody = JSON.parse(invokeCommand.input.body);
+    const userMessage: string = requestBody.messages[0].content;
+
+    expect(userMessage).toContain("FastResize");
+    expect(userMessage).toContain("maxBudget");
+    expect(userMessage).toContain("0.08");
   });
 });
