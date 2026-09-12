@@ -97,6 +97,25 @@ export interface ExplainerAgentInput {
   blueprint: CompositionBlueprint;
 }
 
+// ── Escalation Explanation (Human-in-the-Loop context) ─────
+
+export interface EscalationAttempt {
+  candidate: ServiceCandidate;
+  violatedConstraints: string[];
+}
+
+export interface EscalationExplainerInput {
+  requestId: string;
+  constraints: IntentConstraints;
+  attempts: EscalationAttempt[];
+}
+
+export interface EscalationExplanation {
+  requestId: string;
+  explanation: string;
+  attemptedOptions: ServiceCandidate[];
+}
+
 // ── Audit Trail ──────────────────────────────────────────────
 
 export type AgentName =
