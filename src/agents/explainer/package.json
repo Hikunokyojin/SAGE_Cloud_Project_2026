@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "@sage/secrets": "*",
     "@sage/shared-types": "*"
   },
   "devDependencies": {

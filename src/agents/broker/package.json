@@ -6,13 +6,14 @@
   "types": "src/index.ts",
   "scripts": {
     "test:local": "tsx src/local-test.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js",
+    "download-model": "node scripts/download-model.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --external:@huggingface/transformers --external:onnxruntime-node --outfile=dist/index.js && node scripts/copy-native-deps.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
-    "@aws-sdk/client-ssm": "^3.600.0",
+    "@huggingface/transformers": "^3.0.0",
     "@qdrant/js-client-rest": "^1.11.0",
+    "@sage/secrets": "*",
     "@sage/shared-types": "*",
     "dotenv": "^16.6.1",
     "mongodb": "^6.8.0"

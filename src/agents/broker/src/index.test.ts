@@ -1,24 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { BrokerAgentInput } from "@sage/shared-types";
 
-const bedrockSendMock = vi.fn();
 const qdrantSearchMock = vi.fn();
 const mongoConnectMock = vi.fn();
 const mongoFindToArrayMock = vi.fn();
-const ssmSendMock = vi.fn();
-
-vi.mock("@aws-sdk/client-bedrock-runtime", () => {
-  class BedrockRuntimeClient {
-    send = bedrockSendMock;
-  }
-  class InvokeModelCommand {
-    input: unknown;
-    constructor(input: unknown) {
-      this.input = input;
-    }
-  }
-  return { BedrockRuntimeClient, InvokeModelCommand };
-});
+const resolveSecretMock = vi.fn();
+const embedderMock = vi.fn();
+const pipelineFactoryMock = vi.fn();
 
 vi.mock("@qdrant/js-client-rest", () => {
   class QdrantClient {
@@ -41,26 +29,17 @@ vi.mock("mongodb", () => {
   return { MongoClient };
 });
 
-vi.mock("@aws-sdk/client-ssm", () => {
-  class SSMClient {
-    send = ssmSendMock;
-  }
-  class GetParameterCommand {
-    input: unknown;
-    constructor(input: unknown) {
-      this.input = input;
-    }
-  }
-  return { SSMClient, GetParameterCommand };
-});
+vi.mock("@sage/secrets", () => ({
+  resolveSecret: resolveSecretMock,
+}));
 
-function embeddingResponse(vector: number[]) {
-  const body = JSON.stringify({ embedding: vector });
-  return { body: new TextEncoder().encode(body) };
-}
+vi.mock("@huggingface/transformers", () => ({
+  pipeline: pipelineFactoryMock,
+  env: { allowRemoteModels: true },
+}));
 
-function ssmParameterResponse(value: string) {
-  return { Parameter: { Value: value } };
+function embeddingOutput(vector: number[]) {
+  return { data: Float32Array.from(vector) };
 }
 
 const MONGO_DOC = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -76,17 +55,24 @@ const MONGO_DOC = (overrides: Partial<Record<string, unknown>> = {}) => ({
 describe("Broker Agent handler", () => {
   beforeEach(() => {
     vi.resetModules();
-    bedrockSendMock.mockReset();
     qdrantSearchMock.mockReset();
     mongoConnectMock.mockReset();
     mongoFindToArrayMock.mockReset();
-    ssmSendMock.mockReset();
+    resolveSecretMock.mockReset();
+    embedderMock.mockReset();
+    pipelineFactoryMock.mockReset();
 
-    process.env.MONGO_URI = "mongodb://localhost:27017/test";
-    process.env.QDRANT_URL = "http://localhost:6333";
-    process.env.QDRANT_API_KEY = "test-key";
+    resolveSecretMock.mockImplementation(async (envVar: string) => {
+      const values: Record<string, string> = {
+        MONGO_URI: "mongodb://localhost:27017/test",
+        QDRANT_URL: "http://localhost:6333",
+        QDRANT_API_KEY: "test-key",
+      };
+      return values[envVar];
+    });
 
-    bedrockSendMock.mockResolvedValue(embeddingResponse([0.1, 0.2, 0.3]));
+    embedderMock.mockResolvedValue(embeddingOutput([0.1, 0.2, 0.3]));
+    pipelineFactoryMock.mockResolvedValue(embedderMock);
     mongoConnectMock.mockResolvedValue(undefined);
   });
 
@@ -114,7 +100,36 @@ describe("Broker Agent handler", () => {
         similarityScore: 0.92,
       },
     ]);
-    expect(ssmSendMock).not.toHaveBeenCalled();
+  });
+
+  it("embeds the capability text locally, via the loaded feature-extraction pipeline", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    mongoFindToArrayMock.mockResolvedValue([]);
+
+    const input: BrokerAgentInput = { requestId: "req-embed", capability: "fast image resizing", constraints: {} };
+
+    const { handler } = await import("./index");
+    await handler(input);
+
+    expect(pipelineFactoryMock).toHaveBeenCalledWith("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+    expect(embedderMock).toHaveBeenCalledWith("fast image resizing", { pooling: "mean", normalize: true });
+    const searchCall = qdrantSearchMock.mock.calls[0][1];
+    // Float32Array -> number[] introduces float32 rounding (e.g. 0.1 -> 0.10000000149...),
+    // so compare with tolerance rather than exact equality.
+    searchCall.vector.forEach((value: number, i: number) => {
+      expect(value).toBeCloseTo([0.1, 0.2, 0.3][i], 5);
+    });
+  });
+
+  it("only loads the embedding pipeline once across multiple invocations (cached after cold start)", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    mongoFindToArrayMock.mockResolvedValue([]);
+
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-a", capability: "a", constraints: {} });
+    await handler({ requestId: "req-b", capability: "b", constraints: {} });
+
+    expect(pipelineFactoryMock).toHaveBeenCalledTimes(1);
   });
 
   it("filters out candidates that violate maxBudget or minUptime hard constraints", async () => {
@@ -168,67 +183,15 @@ describe("Broker Agent handler", () => {
     expect(result).toHaveLength(5);
   });
 
-  describe("when the environment variables are not set (deployed Lambda scenario)", () => {
-    beforeEach(() => {
-      delete process.env.MONGO_URI;
-      delete process.env.QDRANT_URL;
-      delete process.env.QDRANT_API_KEY;
-    });
+  it("resolves Mongo/Qdrant secrets via @sage/secrets (env locally, SSM once deployed)", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    mongoFindToArrayMock.mockResolvedValue([]);
 
-    it("fetches Mongo/Qdrant secrets from SSM Parameter Store instead", async () => {
-      ssmSendMock.mockImplementation((command: { input: { Name: string } }) => {
-        const values: Record<string, string> = {
-          "/sage/broker/MONGO_URI": "mongodb+srv://real-cluster/test",
-          "/sage/broker/QDRANT_URL": "https://real-cluster.qdrant.io",
-          "/sage/broker/QDRANT_API_KEY": "real-secret-key",
-        };
-        return Promise.resolve(ssmParameterResponse(values[command.input.Name]));
-      });
-      qdrantSearchMock.mockResolvedValue([{ id: "svc-1", score: 0.92 }]);
-      mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-5", capability: "anything", constraints: {} });
 
-      const input: BrokerAgentInput = { requestId: "req-5", capability: "anything", constraints: {} };
-
-      const { handler } = await import("./index");
-      const result = await handler(input);
-
-      expect(result).toHaveLength(1);
-      expect(ssmSendMock).toHaveBeenCalledTimes(3);
-      const requestedNames = ssmSendMock.mock.calls.map((call) => call[0].input.Name).sort();
-      expect(requestedNames).toEqual([
-        "/sage/broker/MONGO_URI",
-        "/sage/broker/QDRANT_API_KEY",
-        "/sage/broker/QDRANT_URL",
-      ]);
-      expect(ssmSendMock.mock.calls.every((call) => call[0].input.WithDecryption === true)).toBe(true);
-    });
-
-    it("only fetches each SSM secret once across multiple invocations (cached after cold start)", async () => {
-      ssmSendMock.mockImplementation((command: { input: { Name: string } }) => {
-        const values: Record<string, string> = {
-          "/sage/broker/MONGO_URI": "mongodb+srv://real-cluster/test",
-          "/sage/broker/QDRANT_URL": "https://real-cluster.qdrant.io",
-          "/sage/broker/QDRANT_API_KEY": "real-secret-key",
-        };
-        return Promise.resolve(ssmParameterResponse(values[command.input.Name]));
-      });
-      qdrantSearchMock.mockResolvedValue([]);
-      mongoFindToArrayMock.mockResolvedValue([]);
-
-      const { handler } = await import("./index");
-      await handler({ requestId: "req-6", capability: "a", constraints: {} });
-      await handler({ requestId: "req-7", capability: "b", constraints: {} });
-
-      expect(ssmSendMock).toHaveBeenCalledTimes(3);
-    });
-
-    it("throws a descriptive error when an SSM parameter is missing", async () => {
-      ssmSendMock.mockResolvedValue({ Parameter: undefined });
-
-      const { handler } = await import("./index");
-      await expect(handler({ requestId: "req-8", capability: "anything", constraints: {} })).rejects.toThrow(
-        /SSM parameter .* not found/
-      );
-    });
+    expect(resolveSecretMock).toHaveBeenCalledWith("MONGO_URI", "/sage/broker/MONGO_URI");
+    expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_URL", "/sage/broker/QDRANT_URL");
+    expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_API_KEY", "/sage/broker/QDRANT_API_KEY");
   });
 });
