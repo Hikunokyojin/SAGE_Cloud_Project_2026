@@ -77,11 +77,37 @@ export class AgentsConstruct extends Construct {
       code: lambda.Code.fromAsset(agentDir("broker")),
       timeout: Duration.seconds(20),
       memorySize: 256,
-      // MONGO_URI / QDRANT_URL / QDRANT_API_KEY are secrets, not committed here --
-      // set via SSM Parameter Store (SecureString) and read at deploy time; see
-      // docs/spec.md Milestone 2 task 14 (zero standing plaintext secrets).
+      // MONGO_URI / QDRANT_URL / QDRANT_API_KEY are SSM SecureString parameters, fetched
+      // at runtime by the agent's own code (see src/agents/broker/src/index.ts) --
+      // Lambda's Environment.Variables cannot hold an ssm-secure dynamic reference
+      // directly (confirmed by cdk synth's own template validation), so this grants
+      // read+decrypt on just these three parameter ARNs instead of baking values in.
     });
     this.brokerFn.addToRolePolicy(bedrockInvokePolicy);
+    this.brokerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [
+          `arn:aws:ssm:${region}:${Stack.of(this).account}:parameter/sage/broker/MONGO_URI`,
+          `arn:aws:ssm:${region}:${Stack.of(this).account}:parameter/sage/broker/QDRANT_URL`,
+          `arn:aws:ssm:${region}:${Stack.of(this).account}:parameter/sage/broker/QDRANT_API_KEY`,
+        ],
+      })
+    );
+    // AWS's documented pattern for granting decrypt on the account's AWS-managed
+    // alias/aws/ssm key without hardcoding its physical key ID (which is account-
+    // specific and not something CDK can resolve without a live lookup): scope by
+    // kms:ViaService so this only ever applies to KMS calls made through SSM, not a
+    // general kms:Decrypt grant. kms.Alias.fromAliasName(...).grantDecrypt() was tried
+    // first but synthesizes no policy statement at all for an unresolved alias target
+    // (confirmed by grepping the synthesized template) -- this is the reliable version.
+    this.brokerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["kms:Decrypt"],
+        resources: ["*"],
+        conditions: { StringEquals: { "kms:ViaService": `ssm.${region}.amazonaws.com` } },
+      })
+    );
 
     this.negotiatorFn = new lambda.Function(this, "NegotiatorFunction", {
       functionName: "sage-negotiator",
