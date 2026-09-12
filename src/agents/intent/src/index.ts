@@ -17,7 +17,13 @@ Return ONLY the JSON object, no explanation, no markdown formatting.`;
 
 export async function handler(input: IntentAgentInput): Promise<Intent> {
   const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    // claude-3-5-haiku-20241022-v1:0 (the model this project's spec/docs originally
+    // named) is not offered in ap-south-1 at all -- confirmed via
+    // `aws bedrock list-foundation-models`, not assumed. Claude Haiku 4.5 is available
+    // here but only via a cross-region inference profile, not the raw model ARN
+    // (inferenceTypesSupported: ["INFERENCE_PROFILE"], confirmed via
+    // `aws bedrock list-foundation-models`/`get-inference-profile`).
+    modelId: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
     contentType: "application/json",
     accept: "application/json",
     body: JSON.stringify({
