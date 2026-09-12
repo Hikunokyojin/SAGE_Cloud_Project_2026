@@ -5,12 +5,20 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "express": "^4.19.2",
     "dotenv": "^16.4.5",
-    "@sage/shared-types": "*"
+    "@aws-sdk/client-lambda": "^3.600.0",
+    "@sage/shared-types": "*",
+    "input-guard-agent": "*",
+    "intent-agent": "*",
+    "broker-agent": "*",
+    "negotiator-agent": "*",
+    "reviewer-agent": "*",
+    "explainer-agent": "*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
