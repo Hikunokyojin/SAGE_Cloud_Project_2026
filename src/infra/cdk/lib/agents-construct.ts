@@ -37,10 +37,18 @@ export class AgentsConstruct extends Construct {
     super(scope, id);
 
     const region = Stack.of(this).region;
+    const account = Stack.of(this).account;
+    // Claude Haiku 4.5 only supports INFERENCE_PROFILE invocation in this region (not a
+    // direct foundation-model ARN) -- confirmed via `aws bedrock list-foundation-models`.
+    // The profile's underlying model ARNs (per `aws bedrock get-inference-profile`) need
+    // their own grant too, one of them unscoped by region since the profile can route
+    // globally.
     const bedrockInvokePolicy = new iam.PolicyStatement({
       actions: ["bedrock:InvokeModel"],
       resources: [
-        `arn:aws:bedrock:${region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0`,
+        `arn:aws:bedrock:${region}:${account}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0`,
+        `arn:aws:bedrock:${region}::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0`,
+        `arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0`,
         `arn:aws:bedrock:${region}::foundation-model/amazon.titan-embed-text-v2:0`,
       ],
     });

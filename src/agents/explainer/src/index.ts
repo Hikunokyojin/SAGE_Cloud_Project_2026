@@ -8,6 +8,13 @@ import type {
 
 const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
 
+// claude-3-5-haiku-20241022-v1:0 (the model this project's spec/docs originally named)
+// is not offered in ap-south-1 at all -- confirmed via `aws bedrock list-foundation-models`,
+// not assumed. Claude Haiku 4.5 is available here but only via a cross-region inference
+// profile, not the raw model ARN (inferenceTypesSupported: ["INFERENCE_PROFILE"],
+// confirmed via `aws bedrock list-foundation-models`/`get-inference-profile`).
+const MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0";
+
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
 Given a chosen service composition and the alternatives it was selected over, write a short,
 plain-language explanation (2-4 sentences) of why the chosen service was picked.
@@ -27,7 +34,7 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
 Alternatives considered: ${alternativesText}`;
 
   const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    modelId: MODEL_ID,
     contentType: "application/json",
     accept: "application/json",
     body: JSON.stringify({
@@ -73,7 +80,7 @@ Attempted options and why each failed:
 ${attemptsText}`;
 
   const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-5-haiku-20241022-v1:0",
+    modelId: MODEL_ID,
     contentType: "application/json",
     accept: "application/json",
     body: JSON.stringify({
