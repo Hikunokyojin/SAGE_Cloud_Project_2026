@@ -1,24 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ExplainerAgentInput, CompositionBlueprint, EscalationExplainerInput } from "@sage/shared-types";
 
-const sendMock = vi.fn();
+const resolveSecretMock = vi.fn();
+const fetchMock = vi.fn();
 
-vi.mock("@aws-sdk/client-bedrock-runtime", () => {
-  class BedrockRuntimeClient {
-    send = sendMock;
-  }
-  class InvokeModelCommand {
-    input: unknown;
-    constructor(input: unknown) {
-      this.input = input;
-    }
-  }
-  return { BedrockRuntimeClient, InvokeModelCommand };
-});
+vi.mock("@sage/secrets", () => ({
+  resolveSecret: resolveSecretMock,
+}));
 
-function bedrockResponse(text: string) {
-  const body = JSON.stringify({ content: [{ text }] });
-  return { body: new TextEncoder().encode(body) };
+vi.stubGlobal("fetch", fetchMock);
+
+function groqResponse(content: string) {
+  return {
+    ok: true,
+    json: async () => ({ choices: [{ message: { content } }] }),
+  };
 }
 
 function blueprint(): CompositionBlueprint {
@@ -55,12 +51,15 @@ function blueprint(): CompositionBlueprint {
 
 describe("Explainer Agent handler", () => {
   beforeEach(() => {
-    sendMock.mockReset();
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
   });
 
   it("returns the original blueprint plus a plain-language explanation", async () => {
-    sendMock.mockResolvedValue(
-      bedrockResponse("FastResize was chosen for its high uptime and reasonable price versus the alternative.")
+    fetchMock.mockResolvedValue(
+      groqResponse("FastResize was chosen for its high uptime and reasonable price versus the alternative.")
     );
 
     const input: ExplainerAgentInput = { requestId: "req-1", blueprint: blueprint() };
@@ -76,44 +75,66 @@ describe("Explainer Agent handler", () => {
     );
   });
 
-  it("includes the chosen and alternative service names in the prompt sent to Bedrock", async () => {
-    sendMock.mockResolvedValue(bedrockResponse("Explanation text."));
+  it("calls Groq's chat completions endpoint with the resolved API key", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Explanation text."));
 
     const { handler } = await import("./index");
     await handler({ requestId: "req-1", blueprint: blueprint() });
 
-    const invokeCommand = sendMock.mock.calls[0][0];
-    const requestBody = JSON.parse(invokeCommand.input.body);
-    const userMessage: string = requestBody.messages[0].content;
+    expect(resolveSecretMock).toHaveBeenCalledWith("GROQ_API_KEY", "/sage/shared/GROQ_API_KEY");
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(options.headers.Authorization).toBe("Bearer test-groq-key");
+  });
+
+  it("includes the chosen and alternative service names in the prompt", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Explanation text."));
+
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-1", blueprint: blueprint() });
+
+    const [, options] = fetchMock.mock.calls[0];
+    const requestBody = JSON.parse(options.body);
+    const userMessage: string = requestBody.messages[1].content;
 
     expect(userMessage).toContain("FastResize");
     expect(userMessage).toContain("SlowResize");
   });
 
   it("handles a blueprint with no alternatives", async () => {
-    sendMock.mockResolvedValue(bedrockResponse("Only one option was available."));
+    fetchMock.mockResolvedValue(groqResponse("Only one option was available."));
 
     const noAlternatives: CompositionBlueprint = { ...blueprint(), alternatives: [] };
 
     const { handler } = await import("./index");
     await handler({ requestId: "req-1", blueprint: noAlternatives });
 
-    const invokeCommand = sendMock.mock.calls[0][0];
-    const requestBody = JSON.parse(invokeCommand.input.body);
-    const userMessage: string = requestBody.messages[0].content;
+    const [, options] = fetchMock.mock.calls[0];
+    const requestBody = JSON.parse(options.body);
+    const userMessage: string = requestBody.messages[1].content;
 
     expect(userMessage).toContain("Alternatives considered: none");
+  });
+
+  it("throws when Groq's API returns a non-OK response", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 500, text: async () => "server error" });
+
+    const { handler } = await import("./index");
+    await expect(handler({ requestId: "req-1", blueprint: blueprint() })).rejects.toThrow(/Groq API error/);
   });
 });
 
 describe("Explainer Agent explainEscalation", () => {
   beforeEach(() => {
-    sendMock.mockReset();
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
   });
 
   it("returns a layman explanation plus the list of attempted options", async () => {
-    sendMock.mockResolvedValue(
-      bedrockResponse(
+    fetchMock.mockResolvedValue(
+      groqResponse(
         "We tried 2 options but none fit your budget of $0.05. FastResize costs $0.08 (too expensive) and " +
           "SlowResize has 92% uptime (below your 95% minimum). Consider raising your budget to $0.08 or " +
           "lowering your minimum uptime to 92%."
@@ -157,8 +178,8 @@ describe("Explainer Agent explainEscalation", () => {
     expect(result.attemptedOptions.map((o) => o.serviceId)).toEqual(["svc-1", "svc-2"]);
   });
 
-  it("tells Bedrock exactly which constraint each attempted option violated", async () => {
-    sendMock.mockResolvedValue(bedrockResponse("Explanation."));
+  it("tells Groq exactly which constraint each attempted option violated", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Explanation."));
 
     const input: EscalationExplainerInput = {
       requestId: "req-esc-2",
@@ -181,9 +202,9 @@ describe("Explainer Agent explainEscalation", () => {
     const { explainEscalation } = await import("./index");
     await explainEscalation(input);
 
-    const invokeCommand = sendMock.mock.calls[0][0];
-    const requestBody = JSON.parse(invokeCommand.input.body);
-    const userMessage: string = requestBody.messages[0].content;
+    const [, options] = fetchMock.mock.calls[0];
+    const requestBody = JSON.parse(options.body);
+    const userMessage: string = requestBody.messages[1].content;
 
     expect(userMessage).toContain("FastResize");
     expect(userMessage).toContain("maxBudget");

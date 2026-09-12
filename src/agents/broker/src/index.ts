@@ -1,20 +1,22 @@
 import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
+import { resolveSecret } from "@sage/secrets";
 import type { BrokerAgentInput, ServiceCandidate, IntentConstraints } from "@sage/shared-types";
+
+// Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
+// (pre-downloaded at build time -- see scripts/download-model.js) and must never attempt a
+// live fetch to huggingface.co, since the demo shouldn't depend on that being reachable.
+// Local dev leaves remote models allowed so the very first `npm run test:local` run can
+// populate that cache in the first place.
+if (process.env.TRANSFORMERS_OFFLINE === "1") {
+  env.allowRemoteModels = false;
+}
 
 let mongoClient: MongoClient | null = null;
 let qdrantClient: QdrantClient | null = null;
-const bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
-const ssmClient = new SSMClient({ region: process.env.AWS_REGION || "ap-south-1" });
+let embedder: FeatureExtractionPipeline | null = null;
 
-// Lambda's Environment.Variables can't hold an SSM SecureString directly (CloudFormation
-// only resolves {{resolve:ssm-secure:...}} for certain resource properties, not Lambda
-// env vars -- confirmed via `cdk synth`'s own template validation, not assumed). So the
-// deployed Lambda fetches these at runtime instead; local dev still just uses .env via
-// process.env, no SSM call needed there. Cached module-level after first resolution
-// (once per cold start), matching how mongoClient/qdrantClient are already cached.
 interface BrokerSecrets {
   mongoUri: string;
   qdrantUrl: string;
@@ -22,23 +24,6 @@ interface BrokerSecrets {
 }
 
 let cachedSecrets: BrokerSecrets | null = null;
-
-async function fetchFromSsm(parameterName: string): Promise<string> {
-  const response = await ssmClient.send(new GetParameterCommand({ Name: parameterName, WithDecryption: true }));
-  const value = response.Parameter?.Value;
-  if (!value) {
-    throw new Error(`Broker Agent: SSM parameter ${parameterName} not found or empty`);
-  }
-  return value;
-}
-
-async function resolveSecret(envVarName: string, ssmParameterName: string): Promise<string> {
-  const fromEnv = process.env[envVarName];
-  if (fromEnv) {
-    return fromEnv;
-  }
-  return fetchFromSsm(ssmParameterName);
-}
 
 async function getSecrets(): Promise<BrokerSecrets> {
   if (!cachedSecrets) {
@@ -67,6 +52,38 @@ async function getQdrantClient(): Promise<QdrantClient> {
   return qdrantClient;
 }
 
+// Bedrock Titan Embed v2 is unreachable for this AWS account (Bedrock model access is
+// blocked at the account-standing level -- confirmed with AWS support, not an IAM/region
+// issue). Runs a small open-source embedding model locally inside the Lambda instead, via
+// onnxruntime-node (its npm package ships every platform's native binary in one install,
+// including linux/x64, regardless of the machine it was installed on -- confirmed by
+// inspecting node_modules/onnxruntime-node/bin after a Windows install). Model weights are
+// bundled into the deployment package at build time (see package.json's build script) so
+// a cold start never depends on live internet access to Hugging Face during a demo.
+//
+// This is a 384-dimension embedding space (all-MiniLM-L6-v2), incompatible with the
+// previous 1024-dimension Titan space -- the Qdrant "services" collection was re-seeded
+// with this model via scripts/reembed-services.ts, not just pointed at the old vectors.
+const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
+
+async function getEmbedder(): Promise<FeatureExtractionPipeline> {
+  if (!embedder) {
+    // TS2590 (union type too complex) on pipeline()'s heavily overloaded signature is a
+    // known limitation of this library's types, not a real type error -- routing the call
+    // through `any` avoids TS trying to resolve every overload against the return type
+    // annotation at once. The actual runtime call is unaffected.
+    const untypedPipeline = pipeline as (task: string, model: string) => Promise<FeatureExtractionPipeline>;
+    embedder = await untypedPipeline("feature-extraction", EMBEDDING_MODEL);
+  }
+  return embedder;
+}
+
+async function embedText(text: string): Promise<number[]> {
+  const extractor = await getEmbedder();
+  const output = await extractor(text, { pooling: "mean", normalize: true });
+  return Array.from(output.data as Float32Array);
+}
+
 const TOP_N = 5;
 const MIN_SIMILARITY = 0.6;
 
@@ -74,18 +91,6 @@ function passesHardConstraints(candidate: ServiceCandidate, constraints: IntentC
   if (constraints.maxBudget !== undefined && candidate.price > constraints.maxBudget) return false;
   if (constraints.minUptime !== undefined && candidate.uptime < constraints.minUptime) return false;
   return true;
-}
-
-async function embedText(text: string): Promise<number[]> {
-  const command = new InvokeModelCommand({
-    modelId: "amazon.titan-embed-text-v2:0",
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify({ inputText: text }),
-  });
-  const response = await bedrockClient.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  return responseBody.embedding;
 }
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate[]> {

@@ -1,34 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { IntentAgentInput } from "@sage/shared-types";
 
-const sendMock = vi.fn();
+const resolveSecretMock = vi.fn();
+const fetchMock = vi.fn();
 
-vi.mock("@aws-sdk/client-bedrock-runtime", () => {
-  class BedrockRuntimeClient {
-    send = sendMock;
-  }
-  class InvokeModelCommand {
-    input: unknown;
-    constructor(input: unknown) {
-      this.input = input;
-    }
-  }
-  return { BedrockRuntimeClient, InvokeModelCommand };
-});
+vi.mock("@sage/secrets", () => ({
+  resolveSecret: resolveSecretMock,
+}));
 
-function bedrockResponse(modelText: string) {
-  const body = JSON.stringify({ content: [{ text: modelText }] });
-  return { body: new TextEncoder().encode(body) };
+vi.stubGlobal("fetch", fetchMock);
+
+function groqResponse(content: string) {
+  return {
+    ok: true,
+    json: async () => ({ choices: [{ message: { content } }] }),
+  };
 }
 
 describe("Intent Agent handler", () => {
   beforeEach(() => {
-    sendMock.mockReset();
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
   });
 
   it("converts a natural-language request into a structured Intent", async () => {
-    sendMock.mockResolvedValue(
-      bedrockResponse(
+    fetchMock.mockResolvedValue(
+      groqResponse(
         JSON.stringify({
           capability: "fast image resizing service",
           constraints: { maxBudget: 0.05, minUptime: 99 },
@@ -49,8 +48,23 @@ describe("Intent Agent handler", () => {
     });
   });
 
+  it("calls Groq's chat completions endpoint with the resolved API key", async () => {
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "video transcoding" })));
+
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-2", rawInput: "transcode my videos" });
+
+    expect(resolveSecretMock).toHaveBeenCalledWith("GROQ_API_KEY", "/sage/shared/GROQ_API_KEY");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(options.headers.Authorization).toBe("Bearer test-groq-key");
+    const body = JSON.parse(options.body);
+    expect(body.messages[1].content).toBe("transcode my videos");
+  });
+
   it("defaults constraints to an empty object when the model omits them", async () => {
-    sendMock.mockResolvedValue(bedrockResponse(JSON.stringify({ capability: "video transcoding" })));
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "video transcoding" })));
 
     const { handler } = await import("./index");
     const result = await handler({ requestId: "req-2", rawInput: "transcode my videos" });
@@ -59,11 +73,18 @@ describe("Intent Agent handler", () => {
   });
 
   it("throws a descriptive error when the model returns non-JSON output", async () => {
-    sendMock.mockResolvedValue(bedrockResponse("Sure! Here's what you need: a resizer."));
+    fetchMock.mockResolvedValue(groqResponse("Sure! Here's what you need: a resizer."));
 
     const { handler } = await import("./index");
     await expect(handler({ requestId: "req-3", rawInput: "anything" })).rejects.toThrow(
       "Intent Agent: model returned non-JSON output"
     );
+  });
+
+  it("throws when Groq's API returns a non-OK response", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401, text: async () => "invalid api key" });
+
+    const { handler } = await import("./index");
+    await expect(handler({ requestId: "req-4", rawInput: "anything" })).rejects.toThrow(/Groq API error/);
   });
 });

@@ -15,21 +15,38 @@ describe("SageStack", () => {
     template.resourceCountIs("AWS::Lambda::Function", 7);
   });
 
-  it("gives Intent, Broker, and both Explainer functions bedrock:InvokeModel, and nothing else does", () => {
+  it("grants no function bedrock:InvokeModel (Bedrock is unreachable for this account)", () => {
     const template = synth();
 
     const bedrockPolicies = template.findResources("AWS::IAM::Policy", {
       Properties: {
         PolicyDocument: {
+          Statement: Match.arrayWith([Match.objectLike({ Action: "bedrock:InvokeModel" })]),
+        },
+      },
+    });
+
+    expect(Object.keys(bedrockPolicies)).toHaveLength(0);
+  });
+
+  it("gives Intent and both Explainer functions read access to the shared Groq API key parameter", () => {
+    const template = synth();
+
+    const groqPolicies = template.findResources("AWS::IAM::Policy", {
+      Properties: {
+        PolicyDocument: {
           Statement: Match.arrayWith([
-            Match.objectLike({ Action: "bedrock:InvokeModel" }),
+            Match.objectLike({
+              Action: "ssm:GetParameter",
+              Resource: Match.stringLikeRegexp(".*GROQ_API_KEY.*"),
+            }),
           ]),
         },
       },
     });
 
-    // Intent, Broker, Explainer, EscalationExplainer -- exactly 4 policies grant Bedrock.
-    expect(Object.keys(bedrockPolicies)).toHaveLength(4);
+    // Intent, Explainer, EscalationExplainer -- exactly 3 policies grant the Groq secret.
+    expect(Object.keys(groqPolicies)).toHaveLength(3);
   });
 
   it("gives only the Reviewer function sns:Publish on the escalation topic", () => {
