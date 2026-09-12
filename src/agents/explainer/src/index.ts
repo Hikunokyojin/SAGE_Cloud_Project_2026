@@ -1,4 +1,4 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { resolveSecret } from "@sage/secrets";
 import type {
   ExplainerAgentInput,
   ExplainedBlueprint,
@@ -6,14 +6,47 @@ import type {
   EscalationExplanation,
 } from "@sage/shared-types";
 
-const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+// Bedrock is unreachable for this AWS account (account-standing restriction on model
+// access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
+// API directly instead, same deviation as Intent Agent -- see its index.ts for the full
+// rationale.
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+let cachedApiKey: string | null = null;
 
-// claude-3-5-haiku-20241022-v1:0 (the model this project's spec/docs originally named)
-// is not offered in ap-south-1 at all -- confirmed via `aws bedrock list-foundation-models`,
-// not assumed. Claude Haiku 4.5 is available here but only via a cross-region inference
-// profile, not the raw model ARN (inferenceTypesSupported: ["INFERENCE_PROFILE"],
-// confirmed via `aws bedrock list-foundation-models`/`get-inference-profile`).
-const MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0";
+async function getApiKey(): Promise<string> {
+  if (!cachedApiKey) {
+    cachedApiKey = await resolveSecret("GROQ_API_KEY", "/sage/shared/GROQ_API_KEY");
+  }
+  return cachedApiKey;
+}
+
+async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<string> {
+  const apiKey = await getApiKey();
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Explainer Agent: Groq API error (${response.status}): ${errorText}`);
+  }
+
+  const responseBody = await response.json();
+  return responseBody.choices[0].message.content;
+}
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
 Given a chosen service composition and the alternatives it was selected over, write a short,
@@ -33,21 +66,7 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
   const userPrompt = `Chosen: ${chosen.service.name} (price: ${chosen.service.price}, uptime: ${chosen.service.uptime}%, score: ${chosen.score.toFixed(3)})
 Alternatives considered: ${alternativesText}`;
 
-  const command = new InvokeModelCommand({
-    modelId: MODEL_ID,
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31",
-      max_tokens: 300,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
-    }),
-  });
-
-  const response = await client.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  const explanation: string = responseBody.content[0].text;
+  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 300);
 
   return {
     ...blueprint,
@@ -79,21 +98,7 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  const command = new InvokeModelCommand({
-    modelId: MODEL_ID,
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31",
-      max_tokens: 400,
-      system: ESCALATION_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
-    }),
-  });
-
-  const response = await client.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  const explanation: string = responseBody.content[0].text;
+  const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 400);
 
   return {
     requestId: input.requestId,
