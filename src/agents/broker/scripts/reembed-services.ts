@@ -16,10 +16,12 @@
 // Run this from a machine with normal DNS access -- mongodb+srv:// connection strings
 // need SRV record lookups, which some sandboxed/firewalled environments block even when
 // plain HTTPS works fine.
-import dotenv from "dotenv";
-import path from "path";
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
+//
+// Deliberately does NOT load broker/.env (unlike local-test.ts): that file holds local
+// dev overrides (e.g. a localhost Mongo for testing Broker's code in isolation), and this
+// script's whole job is to populate the real production Qdrant collection Broker reads
+// from once deployed -- it must always resolve the real secrets from SSM, never silently
+// fall back to a local dummy value.
 import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
