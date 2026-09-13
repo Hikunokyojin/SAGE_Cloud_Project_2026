@@ -8,7 +8,12 @@ import type { IntentAgentInput, Intent } from "@sage/shared-types";
 // endpoint needed no new SDK dependency (plain fetch). Documented as a deliberate
 // deviation from the spec's Bedrock-only constraint, forced by the account restriction,
 // not a design preference.
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// llama-3.3-70b-versatile was removed from Groq's lineup since this was first written --
+// confirmed via Groq's own Playground model list, which no longer has any plain Llama
+// chat model (only llama-prompt-guard-2-* classifiers remain under Meta). gpt-oss-20b is
+// the closer match to Claude Haiku's original small/fast/cheap profile, vs. the 120b
+// variant.
+const GROQ_MODEL = "openai/gpt-oss-20b";
 let cachedApiKey: string | null = null;
 
 async function getApiKey(): Promise<string> {
