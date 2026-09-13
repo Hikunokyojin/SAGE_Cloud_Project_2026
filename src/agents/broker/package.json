@@ -7,6 +7,7 @@
   "scripts": {
     "test:local": "tsx src/local-test.ts",
     "download-model": "node scripts/download-model.js",
+    "reembed-services": "tsx scripts/reembed-services.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --external:@huggingface/transformers --external:onnxruntime-node --outfile=dist/index.js && node scripts/copy-native-deps.js",
     "typecheck": "tsc --noEmit"
   },
