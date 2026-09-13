@@ -22,6 +22,7 @@
 // script's whole job is to populate the real production Qdrant collection Broker reads
 // from once deployed -- it must always resolve the real secrets from SSM, never silently
 // fall back to a local dummy value.
+import { randomUUID } from "crypto";
 import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
@@ -79,9 +80,14 @@ async function main() {
   for (const service of services) {
     const text = `${service.name}: ${service.description}`;
     const vector = await embedText(extractor, text);
+    // Qdrant point IDs must be an unsigned integer or a UUID (confirmed via the real
+    // ApiError 400 "not a valid point ID" this script hit when it tried to use
+    // service.serviceId, a human-readable string, directly) -- so a fresh UUID is the
+    // point ID, and serviceId travels in the payload instead. Broker's search reads it
+    // back from there (see src/index.ts, with_payload: true).
     await qdrant.upsert(COLLECTION_NAME, {
       wait: true,
-      points: [{ id: service.serviceId, vector }],
+      points: [{ id: randomUUID(), vector, payload: { serviceId: service.serviceId } }],
     });
     console.log(`  upserted ${service.serviceId} (${service.name})`);
   }
