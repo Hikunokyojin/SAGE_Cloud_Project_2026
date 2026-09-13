@@ -85,7 +85,12 @@ async function embedText(text: string): Promise<number[]> {
 }
 
 const TOP_N = 5;
-const MIN_SIMILARITY = 0.6;
+// 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
+// out genuinely relevant results once Broker switched to all-MiniLM-L6-v2 (confirmed via
+// a real deployed-Lambda test returning [] for an obviously matching query, then measured
+// directly: relevant service/query pairs score 0.53-0.67 with this model, irrelevant
+// pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
+const MIN_SIMILARITY = 0.35;
 
 function passesHardConstraints(candidate: ServiceCandidate, constraints: IntentConstraints): boolean {
   if (constraints.maxBudget !== undefined && candidate.price > constraints.maxBudget) return false;
