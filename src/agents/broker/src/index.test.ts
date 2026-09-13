@@ -42,6 +42,14 @@ function embeddingOutput(vector: number[]) {
   return { data: Float32Array.from(vector) };
 }
 
+// Qdrant point IDs must be an unsigned integer or a UUID -- a human-readable serviceId
+// like "svc-1" is rejected (ApiError 400 "not a valid point ID"), confirmed against the
+// real Qdrant Cloud instance while re-seeding actual data. The point ID here is just a
+// standin UUID; the serviceId that actually joins against Mongo lives in the payload.
+function qdrantHit(pointId: string, serviceId: string, score: number) {
+  return { id: pointId, score, payload: { serviceId } };
+}
+
 const MONGO_DOC = (overrides: Partial<Record<string, unknown>> = {}) => ({
   serviceId: "svc-1",
   name: "FastResize",
@@ -77,7 +85,7 @@ describe("Broker Agent handler", () => {
   });
 
   it("returns candidates that pass hard constraints, enriched with metadata from Mongo", async () => {
-    qdrantSearchMock.mockResolvedValue([{ id: "svc-1", score: 0.92 }]);
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
     mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
 
     const input: BrokerAgentInput = {
@@ -100,6 +108,17 @@ describe("Broker Agent handler", () => {
         similarityScore: 0.92,
       },
     ]);
+  });
+
+  it("requests payloads from Qdrant, since serviceId lives there, not in the point ID", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    mongoFindToArrayMock.mockResolvedValue([]);
+
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-payload", capability: "anything", constraints: {} });
+
+    const searchCall = qdrantSearchMock.mock.calls[0][1];
+    expect(searchCall.with_payload).toBe(true);
   });
 
   it("embeds the capability text locally, via the loaded feature-extraction pipeline", async () => {
@@ -134,9 +153,9 @@ describe("Broker Agent handler", () => {
 
   it("filters out candidates that violate maxBudget or minUptime hard constraints", async () => {
     qdrantSearchMock.mockResolvedValue([
-      { id: "cheap-reliable", score: 0.9 },
-      { id: "over-budget", score: 0.95 },
-      { id: "low-uptime", score: 0.85 },
+      qdrantHit("11111111-1111-1111-1111-111111111111", "cheap-reliable", 0.9),
+      qdrantHit("22222222-2222-2222-2222-222222222222", "over-budget", 0.95),
+      qdrantHit("33333333-3333-3333-3333-333333333333", "low-uptime", 0.85),
     ]);
     mongoFindToArrayMock.mockResolvedValue([
       MONGO_DOC({ serviceId: "cheap-reliable", price: 0.02, uptime: 99.9 }),
@@ -157,7 +176,7 @@ describe("Broker Agent handler", () => {
   });
 
   it("skips Qdrant hits that have no matching Mongo metadata document", async () => {
-    qdrantSearchMock.mockResolvedValue([{ id: "svc-missing", score: 0.9 }]);
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-missing", 0.9)]);
     mongoFindToArrayMock.mockResolvedValue([]); // no metadata found
 
     const input: BrokerAgentInput = { requestId: "req-3", capability: "anything", constraints: {} };
@@ -169,8 +188,10 @@ describe("Broker Agent handler", () => {
   });
 
   it("limits results to the top 5 candidates", async () => {
-    const hits = Array.from({ length: 8 }, (_, i) => ({ id: `svc-${i}`, score: 0.9 - i * 0.01 }));
-    const docs = hits.map((h) => MONGO_DOC({ serviceId: h.id }));
+    const hits = Array.from({ length: 8 }, (_, i) =>
+      qdrantHit(`00000000-0000-0000-0000-00000000000${i}`, `svc-${i}`, 0.9 - i * 0.01)
+    );
+    const docs = hits.map((h) => MONGO_DOC({ serviceId: h.payload.serviceId }));
 
     qdrantSearchMock.mockResolvedValue(hits);
     mongoFindToArrayMock.mockResolvedValue(docs);

@@ -100,13 +100,19 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
 
   const queryVector = await embedText(input.capability);
 
+  // Qdrant point IDs must be an unsigned integer or a UUID -- confirmed against the real
+  // Qdrant Cloud instance while re-seeding actual data (ApiError 400 "not a valid point
+  // ID" when a human-readable serviceId was used directly as the point ID). The point ID
+  // is therefore an opaque UUID (see scripts/reembed-services.ts); serviceId travels in
+  // the payload instead, so with_payload must be requested.
   const searchResult = await qdrant.search("services", {
     vector: queryVector,
     limit: TOP_N * 3,
     score_threshold: MIN_SIMILARITY,
+    with_payload: true,
   });
 
-  const serviceIds = searchResult.map((r) => String(r.id));
+  const serviceIds = searchResult.map((r) => String((r.payload as { serviceId?: string } | null)?.serviceId));
 
   const db = mongo.db("sage");
   const metadataDocs = await db
@@ -118,7 +124,8 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
 
   const candidates: ServiceCandidate[] = searchResult
     .map((r) => {
-      const meta = metadataById.get(String(r.id));
+      const serviceId = (r.payload as { serviceId?: string } | null)?.serviceId;
+      const meta = serviceId ? metadataById.get(serviceId) : undefined;
       if (!meta) return null;
       const candidate: ServiceCandidate = {
         serviceId: meta.serviceId,
