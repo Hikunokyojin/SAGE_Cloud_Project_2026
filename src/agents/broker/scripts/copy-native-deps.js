@@ -10,12 +10,17 @@
 // (~34MB) instead of shipping darwin+win32+arm64 too (~211MB total), since Lambda's
 // deployment package has a real size ceiling and only ever runs on linux/x64.
 //
-// sharp and onnxruntime-web are onnxruntime-node's/transformers' peers for image models
-// and browser/WASM execution respectively -- traced through the library's own bundled
-// code (dist/transformers.node.cjs) and confirmed both are lazy, webpack-external
-// requires only reached by image-processing code paths, not the text-only
-// feature-extraction pipeline this agent uses. Deliberately not copied; verify this
-// assumption against the real deployed Lambda after the next `cdk deploy`, not just here.
+// sharp: turned out NOT to be lazy after all -- confirmed via a real deployed-Lambda
+// error (Runtime.ImportModuleError: Cannot find module 'sharp') that
+// @huggingface/transformers' dist/transformers.node.cjs requires it unconditionally at
+// module load time, not only on image-processing code paths as first assumed. It needs
+// its own platform-specific native binary too (@img/sharp-linux-x64 +
+// @img/sharp-libvips-linux-x64), which npm's optionalDependencies resolution only
+// installs for the machine's own platform -- so these were force-installed for linux/x64
+// explicitly via `npm install @img/sharp-linux-x64@<version> @img/sharp-libvips-linux-x64@<version> --force`
+// even though this is built on Windows (see broker/package.json's explicit dependency on
+// both). onnxruntime-web remains genuinely unused (transformers' Node entrypoint has no
+// reference to it at all, unlike sharp).
 const fs = require("fs");
 const path = require("path");
 
@@ -29,7 +34,27 @@ function packageDir(pkgName) {
   // though the file exists on disk. Resolve the package's real entry file instead, then
   // walk up to the nearest ancestor directory containing a package.json whose "name"
   // matches -- that's the actual package root regardless of what "exports" exposes.
-  let dir = path.dirname(require.resolve(pkgName));
+  //
+  // Some other packages (the @img/sharp-* native-binary-asset packages) block resolving
+  // both the bare specifier AND "<pkg>/package.json" via their "exports" field entirely
+  // (confirmed: both throw ERR_PACKAGE_PATH_NOT_EXPORTED). There is no importable entry
+  // point to resolve from at all -- fall back to locating the hoisted node_modules root
+  // via a package that DOES resolve normally (onnxruntime-common, always copied first)
+  // and looking for a sibling directory there, since npm workspaces hoists everything to
+  // one shared root.
+  let entryPoint;
+  try {
+    entryPoint = require.resolve(pkgName);
+  } catch (err) {
+    if (err.code !== "MODULE_NOT_FOUND" && err.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw err;
+    const hoistedRoot = path.dirname(packageDir("onnxruntime-common"));
+    const candidate = path.join(hoistedRoot, ...pkgName.split("/"));
+    if (!fs.existsSync(candidate)) {
+      throw new Error(`Could not locate package root for ${pkgName} (looked in ${candidate})`);
+    }
+    return candidate;
+  }
+  let dir = path.dirname(entryPoint);
   while (true) {
     const candidate = path.join(dir, "package.json");
     if (fs.existsSync(candidate) && JSON.parse(fs.readFileSync(candidate, "utf8")).name === pkgName) {
@@ -87,6 +112,17 @@ function main() {
   copyDir(packageDir("@huggingface/transformers"), path.join(DIST_NODE_MODULES, "@huggingface", "transformers"), {
     exclude: ["test"],
   });
+
+  // sharp itself, its pure-JS dependencies, and the linux/x64-only native binary packages.
+  copyDir(packageDir("sharp"), path.join(DIST_NODE_MODULES, "sharp"), { exclude: ["test"] });
+  copyDir(packageDir("@img/colour"), path.join(DIST_NODE_MODULES, "@img", "colour"));
+  copyDir(packageDir("detect-libc"), path.join(DIST_NODE_MODULES, "detect-libc"));
+  copyDir(packageDir("semver"), path.join(DIST_NODE_MODULES, "semver"));
+  copyDir(packageDir("@img/sharp-linux-x64"), path.join(DIST_NODE_MODULES, "@img", "sharp-linux-x64"));
+  copyDir(
+    packageDir("@img/sharp-libvips-linux-x64"),
+    path.join(DIST_NODE_MODULES, "@img", "sharp-libvips-linux-x64")
+  );
 
   const cacheDir = path.join(DIST_NODE_MODULES, "@huggingface", "transformers", ".cache");
   if (!fs.existsSync(cacheDir) || fs.readdirSync(cacheDir).length === 0) {
