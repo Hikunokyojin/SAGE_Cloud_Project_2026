@@ -84,7 +84,7 @@ describe("Broker Agent handler", () => {
     mongoConnectMock.mockResolvedValue(undefined);
   });
 
-  it("returns candidates that pass hard constraints, enriched with metadata from Mongo", async () => {
+  it("returns candidates enriched with metadata from Mongo", async () => {
     qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
     mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
 
@@ -151,7 +151,13 @@ describe("Broker Agent handler", () => {
     expect(pipelineFactoryMock).toHaveBeenCalledTimes(1);
   });
 
-  it("filters out candidates that violate maxBudget or minUptime hard constraints", async () => {
+  it("returns semantically-matched candidates regardless of budget/uptime -- Reviewer enforces constraints, not Broker", async () => {
+    // Broker used to hard-filter by maxBudget/minUptime using the exact same check
+    // Reviewer applies later -- since Broker already discarded anything Reviewer would
+    // reject, Reviewer could never actually reject anything, and the escalation/retry
+    // path was unreachable through the real pipeline (confirmed empirically against the
+    // live deployed system). Broker's job is semantic discovery only now; constraints
+    // are Reviewer's job.
     qdrantSearchMock.mockResolvedValue([
       qdrantHit("11111111-1111-1111-1111-111111111111", "cheap-reliable", 0.9),
       qdrantHit("22222222-2222-2222-2222-222222222222", "over-budget", 0.95),
@@ -172,7 +178,7 @@ describe("Broker Agent handler", () => {
     const { handler } = await import("./index");
     const result = await handler(input);
 
-    expect(result.map((c) => c.serviceId)).toEqual(["cheap-reliable"]);
+    expect(result.map((c) => c.serviceId).sort()).toEqual(["cheap-reliable", "low-uptime", "over-budget"]);
   });
 
   it("skips Qdrant hits that have no matching Mongo metadata document", async () => {

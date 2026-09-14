@@ -7,3 +7,5 @@ CLAUDE.md
 coverage/
 cdk.out/
 cdk.context.json
+deploy-bundle.js
+*_Technical_Documentation.pdf

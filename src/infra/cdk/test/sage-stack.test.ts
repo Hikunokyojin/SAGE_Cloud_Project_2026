@@ -12,7 +12,14 @@ function synth(): Template {
 describe("SageStack", () => {
   it("provisions exactly 7 agent Lambda functions (5 agents + Input Guard + escalation-explainer)", () => {
     const template = synth();
-    template.resourceCountIs("AWS::Lambda::Function", 7);
+    // resourceCountIs would also count CDK's own auto-generated "S3 auto-delete objects"
+    // custom-resource Lambda (added once the Conductor deploy bucket set
+    // autoDeleteObjects: true) -- filter to functions with an explicit sage-* name
+    // instead of a raw total, since only those are our 7 agent functions.
+    const sageFunctions = template.findResources("AWS::Lambda::Function", {
+      Properties: { FunctionName: Match.stringLikeRegexp("^sage-") },
+    });
+    expect(Object.keys(sageFunctions)).toHaveLength(7);
   });
 
   it("grants no function bedrock:InvokeModel (Bedrock is unreachable for this account)", () => {
