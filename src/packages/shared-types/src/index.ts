@@ -47,6 +47,19 @@ export interface ExplainedBlueprint extends CompositionBlueprint {
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
 
+export interface InputGuardAgentInput {
+  requestId: string;
+  rawInput: string;
+}
+
+export interface InputGuardAgentOutput {
+  requestId: string;
+  rawInput: string;
+  sanitizedInput: string;
+  flagged: boolean;
+  detectedPatterns: string[];
+}
+
 export interface IntentAgentInput {
   requestId: string;
   rawInput: string;
@@ -82,6 +95,25 @@ export interface ReviewerAgentOutput {
 export interface ExplainerAgentInput {
   requestId: string;
   blueprint: CompositionBlueprint;
+}
+
+// ── Escalation Explanation (Human-in-the-Loop context) ─────
+
+export interface EscalationAttempt {
+  candidate: ServiceCandidate;
+  violatedConstraints: string[];
+}
+
+export interface EscalationExplainerInput {
+  requestId: string;
+  constraints: IntentConstraints;
+  attempts: EscalationAttempt[];
+}
+
+export interface EscalationExplanation {
+  requestId: string;
+  explanation: string;
+  attemptedOptions: ServiceCandidate[];
 }
 
 // ── Audit Trail ──────────────────────────────────────────────
