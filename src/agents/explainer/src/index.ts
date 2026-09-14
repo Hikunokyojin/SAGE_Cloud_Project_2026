@@ -5,6 +5,7 @@ import type {
   EscalationExplainerInput,
   EscalationExplanation,
 } from "@sage/shared-types";
+import { recordDecision } from "@sage/audit";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
 // access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
@@ -73,10 +74,25 @@ Alternatives considered: ${alternativesText}`;
 
   const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 300);
 
-  return {
+  const output: ExplainedBlueprint = {
     ...blueprint,
     explanation,
   };
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "ExplainerAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: explanation,
+    });
+  } catch (err) {
+    console.error("Explainer Agent: failed to write audit record", err);
+  }
+
+  return output;
 }
 
 const ESCALATION_SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
@@ -105,9 +121,24 @@ ${attemptsText}`;
 
   const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 400);
 
-  return {
+  const output: EscalationExplanation = {
     requestId: input.requestId,
     explanation,
     attemptedOptions: attempts.map((a) => a.candidate),
   };
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "ExplainerAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}`,
+    });
+  } catch (err) {
+    console.error("Explainer Agent (escalation): failed to write audit record", err);
+  }
+
+  return output;
 }
