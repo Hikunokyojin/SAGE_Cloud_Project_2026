@@ -1,5 +1,6 @@
 import { resolveSecret } from "@sage/secrets";
 import type { IntentAgentInput, Intent } from "@sage/shared-types";
+import { recordDecision } from "@sage/audit";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
 // access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
@@ -69,10 +70,25 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
     throw new Error(`Intent Agent: model returned non-JSON output: ${modelText}`);
   }
 
-  return {
+  const output: Intent = {
     requestId: input.requestId,
     capability: parsed.capability,
     constraints: parsed.constraints ?? {},
     rawInput: input.rawInput,
   };
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "IntentAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: `Parsed capability "${output.capability}" with constraints ${JSON.stringify(output.constraints)}.`,
+    });
+  } catch (err) {
+    console.error("Intent Agent: failed to write audit record", err);
+  }
+
+  return output;
 }

@@ -3,6 +3,7 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
 import type { BrokerAgentInput, ServiceCandidate } from "@sage/shared-types";
+import { recordDecision } from "@sage/audit";
 
 // Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
 // (pre-downloaded at build time -- see scripts/download-model.js) and must never attempt a
@@ -146,5 +147,20 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
     // to Reviewer, matching the spec's stated division of labor between the two agents.
     .filter((c): c is ServiceCandidate => c !== null);
 
-  return candidates.slice(0, TOP_N);
+  const output = candidates.slice(0, TOP_N);
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "BrokerAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}.`,
+    });
+  } catch (err) {
+    console.error("Broker Agent: failed to write audit record", err);
+  }
+
+  return output;
 }
