@@ -3,6 +3,7 @@ import { Stack, StackProps, CfnOutput } from "aws-cdk-lib";
 import { DataConstruct } from "./data-construct";
 import { AgentsConstruct } from "./agents-construct";
 import { ConductorConstruct } from "./conductor-construct";
+import { CloudTrailConstruct } from "./cloudtrail-construct";
 
 export class SageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -25,6 +26,7 @@ export class SageStack extends Stack {
         agents.explainerFn,
         agents.escalationExplainerFn,
       ],
+      auditTable: data.auditTable,
     });
 
     new CfnOutput(this, "ConductorApiUrl", { value: conductor.api.url });
@@ -32,5 +34,8 @@ export class SageStack extends Stack {
     new CfnOutput(this, "AuditTableName", { value: data.auditTable.tableName });
     new CfnOutput(this, "EscalationTopicArn", { value: data.escalationTopic.topicArn });
     new CfnOutput(this, "ConductorDeployBucketName", { value: conductor.deployBucket.bucketName });
+
+    const audit = new CloudTrailConstruct(this, "Audit");
+    new CfnOutput(this, "CloudTrailName", { value: audit.trail.trailArn });
   }
 }
