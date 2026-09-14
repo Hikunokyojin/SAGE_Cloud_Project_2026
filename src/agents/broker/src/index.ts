@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
-import type { BrokerAgentInput, ServiceCandidate, IntentConstraints } from "@sage/shared-types";
+import type { BrokerAgentInput, ServiceCandidate } from "@sage/shared-types";
 
 // Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
 // (pre-downloaded at build time -- see scripts/download-model.js) and must never attempt a
@@ -92,12 +92,6 @@ const TOP_N = 5;
 // pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
 const MIN_SIMILARITY = 0.35;
 
-function passesHardConstraints(candidate: ServiceCandidate, constraints: IntentConstraints): boolean {
-  if (constraints.maxBudget !== undefined && candidate.price > constraints.maxBudget) return false;
-  if (constraints.minUptime !== undefined && candidate.uptime < constraints.minUptime) return false;
-  return true;
-}
-
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate[]> {
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();
@@ -143,8 +137,14 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       };
       return candidate;
     })
-    .filter((c): c is ServiceCandidate => c !== null)
-    .filter((c) => passesHardConstraints(c, input.constraints));
+    // Broker returns candidates ranked by semantic similarity only. It used to also
+    // hard-filter by input.constraints (maxBudget/minUptime) here, using the exact same
+    // check Reviewer applies later -- which meant Reviewer could never actually reject
+    // anything Broker had already returned, making the retry/escalation path
+    // unreachable through the real pipeline (confirmed empirically against the live
+    // deployed system, not just in theory). Constraint enforcement now belongs solely
+    // to Reviewer, matching the spec's stated division of labor between the two agents.
+    .filter((c): c is ServiceCandidate => c !== null);
 
   return candidates.slice(0, TOP_N);
 }
