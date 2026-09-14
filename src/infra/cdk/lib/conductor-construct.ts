@@ -1,6 +1,8 @@
 import { Construct } from "constructs";
+import { RemovalPolicy } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 
@@ -28,6 +30,7 @@ export class ConductorConstruct extends Construct {
   public readonly instance: ec2.Instance;
   public readonly eip: ec2.CfnEIP;
   public readonly api: apigateway.RestApi;
+  public readonly deployBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ConductorConstructProps) {
     super(scope, id);
@@ -59,6 +62,20 @@ export class ConductorConstruct extends Construct {
         resources: props.invokableFunctions.map((fn) => fn.functionArn),
       })
     );
+
+    // The EC2 instance has no way to receive Conductor's built application code other
+    // than pulling it from somewhere -- SSM Session Manager has no built-in file
+    // transfer, and embedding a multi-MB bundle directly in an SSM Run Command document
+    // exceeds that API's payload size limits. A small private bucket, read-only to this
+    // one instance role, is the standard AWS pattern for this instead of widening the
+    // instance's permissions to the CDK bootstrap assets bucket (which is not meant to be
+    // read by arbitrary EC2 roles).
+    this.deployBucket = new s3.Bucket(this, "ConductorDeployBucket", {
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    });
+    this.deployBucket.grantRead(role);
 
     this.instance = new ec2.Instance(this, "ConductorInstance", {
       vpc: this.vpc,

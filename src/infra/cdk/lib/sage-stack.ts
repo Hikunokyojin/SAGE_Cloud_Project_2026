@@ -30,5 +30,6 @@ export class SageStack extends Stack {
     new CfnOutput(this, "ConductorPublicIp", { value: conductor.eip.ref });
     new CfnOutput(this, "AuditTableName", { value: data.auditTable.tableName });
     new CfnOutput(this, "EscalationTopicArn", { value: data.escalationTopic.topicArn });
+    new CfnOutput(this, "ConductorDeployBucketName", { value: conductor.deployBucket.bucketName });
   }
 }
