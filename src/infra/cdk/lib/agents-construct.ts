@@ -3,11 +3,14 @@ import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as sns from "aws-cdk-lib/aws-sns";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Duration, Stack } from "aws-cdk-lib";
 
 export interface AgentsConstructProps {
   /** SNS topic Reviewer publishes to when it escalates to Human-in-the-Loop. */
   escalationTopic: sns.ITopic;
+  /** agent_decisions audit-trail table -- every agent writes its own AuditRecord here (Milestone 3, task 15). */
+  auditTable: dynamodb.ITable;
 }
 
 /**
@@ -73,9 +76,13 @@ export class AgentsConstruct extends Construct {
       code: lambda.Code.fromAsset(agentDir("input-guard")),
       timeout: Duration.seconds(10),
       memorySize: 128,
-      // Rule-based, no external calls -- no extra permissions beyond the default
-      // CloudWatch Logs grant every lambda.Function gets automatically.
+      // Rule-based, no external calls -- the only extra permission needed beyond the
+      // default CloudWatch Logs grant is dynamodb:PutItem for its own audit record.
+      environment: {
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
     });
+    props.auditTable.grantWriteData(this.inputGuardFn);
 
     this.intentFn = new lambda.Function(this, "IntentFunction", {
       functionName: "sage-intent",
@@ -87,9 +94,13 @@ export class AgentsConstruct extends Construct {
       // AWS_REGION is injected automatically by the Lambda runtime -- setting it here
       // is rejected by CDK ("reserved environment variable"). GROQ_API_KEY is fetched
       // at runtime from SSM by the agent's own code (see src/index.ts).
+      environment: {
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
     });
     this.intentFn.addToRolePolicy(groqSsmPolicy);
     this.intentFn.addToRolePolicy(ssmKmsDecryptPolicy);
+    props.auditTable.grantWriteData(this.intentFn);
 
     this.brokerFn = new lambda.Function(this, "BrokerFunction", {
       functionName: "sage-broker",
@@ -108,6 +119,7 @@ export class AgentsConstruct extends Construct {
       // read+decrypt on just these three parameter ARNs instead of baking values in.
       environment: {
         TRANSFORMERS_OFFLINE: "1",
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
     this.brokerFn.addToRolePolicy(
@@ -121,6 +133,7 @@ export class AgentsConstruct extends Construct {
       })
     );
     this.brokerFn.addToRolePolicy(ssmKmsDecryptPolicy);
+    props.auditTable.grantWriteData(this.brokerFn);
 
     this.negotiatorFn = new lambda.Function(this, "NegotiatorFunction", {
       functionName: "sage-negotiator",
@@ -129,8 +142,12 @@ export class AgentsConstruct extends Construct {
       code: lambda.Code.fromAsset(agentDir("negotiator")),
       timeout: Duration.seconds(10),
       memorySize: 128,
-      // Pure deterministic computation -- no external calls, no extra permissions.
+      // Pure deterministic computation -- no external calls beyond its own audit write.
+      environment: {
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
     });
+    props.auditTable.grantWriteData(this.negotiatorFn);
 
     this.reviewerFn = new lambda.Function(this, "ReviewerFunction", {
       functionName: "sage-reviewer",
@@ -141,9 +158,11 @@ export class AgentsConstruct extends Construct {
       memorySize: 128,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
     props.escalationTopic.grantPublish(this.reviewerFn);
+    props.auditTable.grantWriteData(this.reviewerFn);
 
     const explainerAsset = lambda.Code.fromAsset(agentDir("explainer"));
 
@@ -154,9 +173,13 @@ export class AgentsConstruct extends Construct {
       code: explainerAsset,
       timeout: Duration.seconds(20),
       memorySize: 256,
+      environment: {
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
     });
     this.explainerFn.addToRolePolicy(groqSsmPolicy);
     this.explainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
+    props.auditTable.grantWriteData(this.explainerFn);
 
     this.escalationExplainerFn = new lambda.Function(this, "EscalationExplainerFunction", {
       functionName: "sage-escalation-explainer",
@@ -165,8 +188,12 @@ export class AgentsConstruct extends Construct {
       code: explainerAsset,
       timeout: Duration.seconds(20),
       memorySize: 256,
+      environment: {
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
     });
     this.escalationExplainerFn.addToRolePolicy(groqSsmPolicy);
     this.escalationExplainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
+    props.auditTable.grantWriteData(this.escalationExplainerFn);
   }
 }

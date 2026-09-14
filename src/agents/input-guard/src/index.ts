@@ -1,4 +1,5 @@
 import type { InputGuardAgentInput, InputGuardAgentOutput } from "@sage/shared-types";
+import { recordDecision } from "@sage/audit";
 
 // Rule-based (not Bedrock-backed) prompt-injection screen: fast, free, deterministic,
 // and runs before any LLM-facing agent sees the request. On a match, the offending
@@ -63,11 +64,30 @@ export async function handler(input: InputGuardAgentInput): Promise<InputGuardAg
     }
   }
 
-  return {
+  const output: InputGuardAgentOutput = {
     requestId: input.requestId,
     rawInput: input.rawInput,
     sanitizedInput: sanitized,
     flagged: detected.length > 0,
     detectedPatterns: detected,
   };
+
+  // Audit-trail write is best-effort: a DynamoDB hiccup shouldn't block the pipeline,
+  // it should just leave a gap in the trail for that step (Milestone 3, task 15).
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "InputGuardAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: output.flagged
+        ? `Flagged and sanitized categories: ${output.detectedPatterns.join(", ")}`
+        : "No prompt-injection patterns detected.",
+    });
+  } catch (err) {
+    console.error("Input Guard Agent: failed to write audit record", err);
+  }
+
+  return output;
 }
