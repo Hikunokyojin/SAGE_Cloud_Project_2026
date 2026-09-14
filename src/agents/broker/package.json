@@ -17,6 +17,7 @@
     "@img/sharp-libvips-linux-x64": "1.2.4",
     "@img/sharp-linux-x64": "0.34.5",
     "@qdrant/js-client-rest": "^1.11.0",
+    "@sage/audit": "*",
     "@sage/secrets": "*",
     "@sage/shared-types": "*",
     "dotenv": "^16.6.1",

@@ -4,6 +4,7 @@ import type {
   CompositionChoice,
   ServiceCandidate,
 } from "@sage/shared-types";
+import { recordDecision } from "@sage/audit";
 
 // Deterministic cost/uptime score, normalized against the candidate set for this
 // request. Not an LLM call — the same candidates always produce the same score,
@@ -39,9 +40,24 @@ export async function handler(input: NegotiatorAgentInput): Promise<CompositionB
 
   const [chosen, ...alternatives] = choices;
 
-  return {
+  const output: CompositionBlueprint = {
     requestId: input.requestId,
     chosen,
     alternatives,
   };
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "NegotiatorAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: `Chose ${chosen.service.name} (score ${chosen.score.toFixed(3)}) over ${alternatives.length} alternative(s), deterministically -- no LLM call.`,
+    });
+  } catch (err) {
+    console.error("Negotiator Agent: failed to write audit record", err);
+  }
+
+  return output;
 }

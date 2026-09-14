@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sage/audit": "*",
     "@sage/shared-types": "*"
   },
   "devDependencies": {
