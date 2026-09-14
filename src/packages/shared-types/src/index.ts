@@ -119,6 +119,7 @@ export interface EscalationExplanation {
 // ── Audit Trail ──────────────────────────────────────────────
 
 export type AgentName =
+  | "InputGuardAgent"
   | "IntentAgent"
   | "BrokerAgent"
   | "NegotiatorAgent"
