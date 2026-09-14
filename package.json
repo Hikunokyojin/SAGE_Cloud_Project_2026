@@ -3,11 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
   "workspaces": [
     "src/apps/*",
     "src/services/*",
     "src/agents/*",
-    "src/packages/*"
+    "src/packages/*",
+    "src/infra/*"
   ],
   "repository": {
     "type": "git",
@@ -23,9 +29,11 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.162",
     "@types/node": "^26.1.2",
+    "@vitest/coverage-v8": "^5.0.0",
     "esbuild": "^0.28.1",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1096.0",
