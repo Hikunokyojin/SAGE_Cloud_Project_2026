@@ -1,0 +1,168 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f1117;
+  color: #e6e6e6;
+}
+
+.dashboard {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: #9aa0ac;
+  margin-top: 0;
+}
+
+.api-base {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #9aa0ac;
+  margin: 1rem 0 2rem;
+}
+
+.api-base input {
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #2a2e39;
+  background: #1a1d27;
+  color: #e6e6e6;
+  font-family: monospace;
+}
+
+.panel {
+  background: #161923;
+  border: 1px solid #232735;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+
+textarea,
+.panel input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #2a2e39;
+  background: #1a1d27;
+  color: #e6e6e6;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  border: none;
+  background: #5b8def;
+  color: #0f1117;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #33384a;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #f87171;
+}
+
+.escalated {
+  color: #fbbf24;
+}
+
+.empty {
+  color: #6b7280;
+}
+
+.result {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #232735;
+}
+
+.request-id {
+  color: #6b7280;
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+
+.trace {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.trace-step {
+  border-left: 3px solid #5b8def;
+  padding: 0.5rem 0 0.5rem 1rem;
+}
+
+.trace-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.agent-badge {
+  font-weight: 700;
+  color: #5b8def;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.reasoning {
+  margin: 0.35rem 0;
+  color: #d1d5db;
+}
+
+.json-blocks {
+  display: flex;
+  gap: 1rem;
+}
+
+.json-block {
+  font-size: 0.8rem;
+}
+
+.json-block summary {
+  cursor: pointer;
+  color: #9aa0ac;
+}
+
+.json-block pre {
+  background: #0f1117;
+  border: 1px solid #232735;
+  border-radius: 6px;
+  padding: 0.5rem;
+  max-width: 400px;
+  overflow: auto;
+}
