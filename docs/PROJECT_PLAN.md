@@ -1,6 +1,6 @@
 # SAGE — Project Plan & Status
 
-Last updated: 2026-09-15. This file tracks real, verified status against the plan — not aspirational status. If a task isn't checked off, it isn't done, even if related work exists nearby. See `CLAUDE.md` for architecture/commands and `spec.md` for the original requirements this plan was built from.
+Last updated: 2026-09-15 (Milestone 3 completion). This file tracks real, verified status against the plan — not aspirational status. If a task isn't checked off, it isn't done, even if related work exists nearby. See `CLAUDE.md` for architecture/commands and `spec.md` for the original requirements this plan was built from.
 
 ## How to pick this project up cold
 
@@ -37,16 +37,16 @@ Last updated: 2026-09-15. This file tracks real, verified status against the pla
 - Zero standing production credentials confirmed (Lambda execution roles, EC2 instance role via `AmazonSSMManagedInstanceCore`, secrets via SSM `SecureString`).
 - **Gap: task 14a (AWS Budgets alert) was never set up.** Nothing tracks spend against the student credit allowance automatically.
 
-### ❌ Milestone 3 — Audit trail & observability dashboard — NOT STARTED
-- DynamoDB `agent_decisions` table exists (CDK-provisioned) but **no code anywhere writes to it**. No agent or Conductor code references the table.
-- CloudTrail not enabled.
-- `src/apps/dashboard` does not exist as a directory. The root `package.json`'s `src/apps/*` workspace glob currently matches nothing.
-- Nothing here has been started at all — this is the largest remaining gap, and one of the six novelty claims (`Novelty.docx`'s "automation with accountability") has no evidence behind it yet.
+### ✅ Milestone 3 — Audit trail & observability dashboard — DONE
+- **Task 15 (DynamoDB audit writes):** new shared `@sage/audit` package (`recordDecision`), called from all 6 agent handlers (Input Guard, Intent, Broker, Negotiator, Reviewer, both Explainer entry points) after each decision. Best-effort (logged, non-fatal on failure) so a DynamoDB hiccup never blocks the pipeline. `AgentName` gained `"InputGuardAgent"`. All 7 Lambdas granted scoped `dynamodb:PutItem` + `AUDIT_TABLE_NAME` env var via CDK. **Live-verified**: a real request through the public API produced 7 correctly-ordered `agent_decisions` records for that `requestId`, including both Reviewer attempts on a reject-then-approve retry.
+- **Task 16 (CloudTrail):** new `CloudTrailConstruct` — single-region trail `sage-trail`, management events only (no data events), S3-only delivery (no CloudWatch Logs ingestion) to keep cost down for a demo-scale project. Deployed; confirmed actively logging via `aws cloudtrail get-trail-status`.
+- **Tasks 17-18 (dashboard):** new `@sage/dashboard` workspace (`src/apps/dashboard`, Vite + React + TS) — submit a natural-language request and watch it flow through the live pipeline, or look up any past `requestId` and see its full step-by-step agent-decision trace (the "time-travel debugging" view). Backed by a new `GET /audit/:requestId` route on Conductor (DynamoDB `Query` on `agent_decisions`, CORS-enabled), with the EC2 instance role granted read-only (`Query`/`GetItem`/`Scan`, not write) access to the table. **Live-verified end-to-end in a real browser**: both the "submit new request → auto-loaded trace" and "look up existing requestId → trace" paths render correctly against the deployed API Gateway URL.
+- Conductor's EC2 app code was redeployed via the existing S3+SSM path (no SSH) to pick up the new `/audit` route; the CDK IAM change (read grant) was deployed via `cdk deploy` (clean, additive-only diff both times).
 
 ### ⚠️ Milestone 4 — Security verification & final Definition-of-Done — MOSTLY NOT DONE
 - ❌ Task 19 (dedicated prompt-injection test suite): partially covered — Input Guard's own `index.test.ts` tests several injection patterns as ordinary unit tests, but there's no separate, formal security-verification artifact.
 - ❌ Task 20 (written IAM policy review): not done as a document. The design is least-privilege and this is enforced by CDK assertion tests, but no standalone review artifact exists.
-- ⚠️ Task 21 (full live demo + DynamoDB check + dashboard trace): **partially done.** Confirmed live: a full successful request end-to-end, a zero-match failure, and a genuine forced-failure escalation (real SNS publish, real AI-written remediation explanation) — all against the deployed public API, not mocks. **Cannot** confirm the DynamoDB-per-step or dashboard-trace parts of this task, since neither exists yet (Milestone 3).
+- ✅ Task 21 (full live demo + DynamoDB check + dashboard trace): **DONE.** Confirmed live: a full successful request end-to-end, a zero-match failure, a genuine forced-failure escalation (real SNS publish, real AI-written remediation explanation), a DynamoDB audit record per pipeline step (verified via direct query), and the dashboard rendering the full trace in a real browser against deployed infra — all against the deployed public API, not mocks.
 - ❌ Task 22 (Phase-II academic report): **not done.** A technical documentation PDF (`SAGE_Technical_Documentation.pdf`, in the repo root, gitignored) was generated — it's a code-analysis/architecture document for engineering purposes, not the academic report this task calls for (covering the six stated objectives, for submission alongside the existing Novelty/Objectives/Research-Gap docs).
 - ✅ Task 23 (final cleanup): working tree clean on `develop`, no leftover placeholder code in Conductor, README accurate.
 
@@ -58,7 +58,6 @@ Found via live testing, not code review: Broker used to hard-filter candidates b
 
 - Root `package.json` still declares `@aws-sdk/client-bedrock-runtime` as a dependency; nothing imports it anymore (Bedrock was fully replaced). Dead weight, safe to remove.
 - Root `package.json` declares `mongodb ^7.5.0`; Broker's own manifest separately pins `^6.8.0`. Two major versions of the same package in one workspace tree.
-- `AgentName` (in `shared-types`) has no `"InputGuardAgent"` member — will need one once the audit trail (Milestone 3) needs to represent Input Guard's decisions.
 - No AWS Budgets alert configured against the student credit allowance (plan task 14a).
 - `MIN_SIMILARITY = 0.35` in Broker was calibrated on a handful of manually-checked query/service pairs, not a systematic evaluation — may need revisiting as more services are added to `dataset/services.json`.
 
@@ -68,14 +67,16 @@ Found via live testing, not code review: Broker used to hard-filter candidates b
 - **Conductor EC2**: instance `i-03071853de7fb5e77`, Elastic IP `65.2.162.247`, port 3001, `systemd` service `conductor.service` with `Restart=always`. Access via SSM Session Manager only, no SSH.
 - **Lambda functions**: `sage-input-guard`, `sage-intent`, `sage-broker`, `sage-negotiator`, `sage-reviewer`, `sage-explainer`, `sage-escalation-explainer`.
 - **SSM parameters** (SecureString): `/sage/broker/MONGO_URI`, `/sage/broker/QDRANT_URL`, `/sage/broker/QDRANT_API_KEY`, `/sage/shared/GROQ_API_KEY`.
-- **DynamoDB**: `agent_decisions` (provisioned, unused).
+- **DynamoDB**: `agent_decisions` (live, written by every agent per request, queried by Conductor's `/audit` route).
 - **SNS**: `sage-hitl-escalation` (live, verified).
 - **S3**: a private `ConductorDeployBucket` (name is stack-generated, see CDK outputs) — used only to deliver Conductor's deployment bundle to its EC2 instance.
+- **CloudTrail**: `sage-trail` (single-region, management events only, live and logging), with a private S3 log bucket.
+- **Dashboard**: `src/apps/dashboard` (Vite + React + TS), run locally via `npm run dev --workspace=src/apps/dashboard` — not deployed to a public host (e.g. S3 static site) yet, points at the live API Gateway URL by default (editable in the UI).
 - **External services**: MongoDB Atlas (`sage.services` collection, seeded with `dataset/services.json`'s 20 entries), Qdrant Cloud (`services` collection, 384-dim vectors, re-embedded to match the local model), Groq (model `openai/gpt-oss-20b`).
 
 ## Suggested next steps, in priority order
 
-1. **Milestone 3** (DynamoDB audit writes + dashboard) — the biggest remaining functional gap and a stated must-have/novelty claim.
-2. **Task 22** (Phase-II academic report) — likely time-sensitive given the original 4-week deadline from 2026-09-10.
-3. Tasks 19–20 (formal prompt-injection suite + IAM review document) — lower effort, mostly a matter of writing down verification that already substantively exists in code/tests.
-4. Task 14a (AWS Budgets alert) — quick, low-risk, protects against runaway spend.
+1. **Task 22** (Phase-II academic report) — likely time-sensitive given the original 4-week deadline from 2026-09-10, and now has real evidence to cite (DynamoDB queries, dashboard screenshots, escalation test) for every novelty claim.
+2. Tasks 19–20 (formal prompt-injection suite + IAM review document) — lower effort, mostly a matter of writing down verification that already substantively exists in code/tests.
+3. Task 14a (AWS Budgets alert) — quick, low-risk, protects against runaway spend.
+4. Optional stretch: deploy the dashboard to a public host (e.g. S3 + CloudFront static site) instead of running it locally for the demo — not required by the plan's stated scope, but would make the "primary UI" easier to hand off/share.
