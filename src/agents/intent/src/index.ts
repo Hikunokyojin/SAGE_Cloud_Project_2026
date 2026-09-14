@@ -1,7 +1,27 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { resolveSecret } from "@sage/secrets";
 import type { IntentAgentInput, Intent } from "@sage/shared-types";
 
-const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+// Bedrock is unreachable for this AWS account (account-standing restriction on model
+// access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
+// API directly instead: the spec's "no third-party LLM subscription" wording isn't
+// preserved literally, but there's no cost, and Groq's OpenAI-compatible chat completions
+// endpoint needed no new SDK dependency (plain fetch). Documented as a deliberate
+// deviation from the spec's Bedrock-only constraint, forced by the account restriction,
+// not a design preference.
+// llama-3.3-70b-versatile was removed from Groq's lineup since this was first written --
+// confirmed via Groq's own Playground model list, which no longer has any plain Llama
+// chat model (only llama-prompt-guard-2-* classifiers remain under Meta). gpt-oss-20b is
+// the closer match to Claude Haiku's original small/fast/cheap profile, vs. the 120b
+// variant.
+const GROQ_MODEL = "openai/gpt-oss-20b";
+let cachedApiKey: string | null = null;
+
+async function getApiKey(): Promise<string> {
+  if (!cachedApiKey) {
+    cachedApiKey = await resolveSecret("GROQ_API_KEY", "/sage/shared/GROQ_API_KEY");
+  }
+  return cachedApiKey;
+}
 
 const SYSTEM_PROMPT = `You are the Intent Agent for SAGE, a cloud service marketplace.
 Convert the user's request into a JSON object with exactly these fields:
@@ -16,21 +36,31 @@ Convert the user's request into a JSON object with exactly these fields:
 Return ONLY the JSON object, no explanation, no markdown formatting.`;
 
 export async function handler(input: IntentAgentInput): Promise<Intent> {
-  const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-5-haiku-20241022-v1:0",
-    contentType: "application/json",
-    accept: "application/json",
+  const apiKey = await getApiKey();
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31",
+      model: GROQ_MODEL,
       max_tokens: 300,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: input.rawInput }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: input.rawInput },
+      ],
     }),
   });
 
-  const response = await client.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  const modelText: string = responseBody.content[0].text;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Intent Agent: Groq API error (${response.status}): ${errorText}`);
+  }
+
+  const responseBody = await response.json();
+  const modelText: string = responseBody.choices[0].message.content;
 
   let parsed: { capability: string; constraints: Intent["constraints"] };
   try {

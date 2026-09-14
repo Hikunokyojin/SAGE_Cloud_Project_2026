@@ -1,5 +1,5 @@
 {
-  "name": "reviewer-agent",
+  "name": "input-guard-agent",
   "version": "1.0.0",
   "private": true,
   "main": "dist/index.js",
@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.600.0",
     "@sage/shared-types": "*"
   },
   "devDependencies": {
