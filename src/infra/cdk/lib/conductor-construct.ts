@@ -5,10 +5,13 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
 export interface ConductorConstructProps {
   /** Every agent Lambda Conductor's IAM role is allowed to invoke -- least privilege: named ARNs, not lambda:*. */
   invokableFunctions: lambda.IFunction[];
+  /** agent_decisions table -- Conductor's GET /audit/:requestId route reads (never writes) from here. */
+  auditTable: dynamodb.ITable;
 }
 
 /**
@@ -62,6 +65,7 @@ export class ConductorConstruct extends Construct {
         resources: props.invokableFunctions.map((fn) => fn.functionArn),
       })
     );
+    props.auditTable.grantReadData(role);
 
     // The EC2 instance has no way to receive Conductor's built application code other
     // than pulling it from somewhere -- SSM Session Manager has no built-in file
