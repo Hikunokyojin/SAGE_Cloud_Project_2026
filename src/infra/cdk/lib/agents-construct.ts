@@ -82,7 +82,7 @@ export class AgentsConstruct extends Construct {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
-    props.auditTable.grantWriteData(this.inputGuardFn);
+    props.auditTable.grant(this.inputGuardFn, "dynamodb:PutItem");
 
     this.intentFn = new lambda.Function(this, "IntentFunction", {
       functionName: "sage-intent",
@@ -100,7 +100,7 @@ export class AgentsConstruct extends Construct {
     });
     this.intentFn.addToRolePolicy(groqSsmPolicy);
     this.intentFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grantWriteData(this.intentFn);
+    props.auditTable.grant(this.intentFn, "dynamodb:PutItem");
 
     this.brokerFn = new lambda.Function(this, "BrokerFunction", {
       functionName: "sage-broker",
@@ -133,7 +133,7 @@ export class AgentsConstruct extends Construct {
       })
     );
     this.brokerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grantWriteData(this.brokerFn);
+    props.auditTable.grant(this.brokerFn, "dynamodb:PutItem");
 
     this.negotiatorFn = new lambda.Function(this, "NegotiatorFunction", {
       functionName: "sage-negotiator",
@@ -147,7 +147,7 @@ export class AgentsConstruct extends Construct {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
-    props.auditTable.grantWriteData(this.negotiatorFn);
+    props.auditTable.grant(this.negotiatorFn, "dynamodb:PutItem");
 
     this.reviewerFn = new lambda.Function(this, "ReviewerFunction", {
       functionName: "sage-reviewer",
@@ -162,7 +162,7 @@ export class AgentsConstruct extends Construct {
       },
     });
     props.escalationTopic.grantPublish(this.reviewerFn);
-    props.auditTable.grantWriteData(this.reviewerFn);
+    props.auditTable.grant(this.reviewerFn, "dynamodb:PutItem");
 
     const explainerAsset = lambda.Code.fromAsset(agentDir("explainer"));
 
@@ -179,7 +179,7 @@ export class AgentsConstruct extends Construct {
     });
     this.explainerFn.addToRolePolicy(groqSsmPolicy);
     this.explainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grantWriteData(this.explainerFn);
+    props.auditTable.grant(this.explainerFn, "dynamodb:PutItem");
 
     this.escalationExplainerFn = new lambda.Function(this, "EscalationExplainerFunction", {
       functionName: "sage-escalation-explainer",
@@ -194,6 +194,6 @@ export class AgentsConstruct extends Construct {
     });
     this.escalationExplainerFn.addToRolePolicy(groqSsmPolicy);
     this.escalationExplainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grantWriteData(this.escalationExplainerFn);
+    props.auditTable.grant(this.escalationExplainerFn, "dynamodb:PutItem");
   }
 }
