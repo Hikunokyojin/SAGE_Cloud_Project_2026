@@ -6,6 +6,7 @@
   "types": "src/index.ts",
   "scripts": {
     "test:local": "tsx src/local-test.ts",
+    "security-report": "tsx scripts/generate-security-report.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js",
     "typecheck": "tsc --noEmit"
   },

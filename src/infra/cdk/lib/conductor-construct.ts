@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { RemovalPolicy } from "aws-cdk-lib";
+import { RemovalPolicy, Stack } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
@@ -85,7 +85,17 @@ export class ConductorConstruct extends Construct {
       vpc: this.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
-      machineImage: ec2.MachineImage.latestAmazonLinux2023(),
+      // Pinned rather than ec2.MachineImage.latestAmazonLinux2023(): that helper
+      // re-resolves to whatever AMI AWS most recently published every time this stack
+      // is synthesized, which silently triggers a full instance replacement (new
+      // instance ID, Conductor's manually-deployed app code gone) on the next
+      // unrelated `cdk deploy` -- confirmed via `cdk diff` while working on an
+      // unrelated change (task 14a). Pinned to the AMI this instance is actually
+      // running today (verified via `aws ec2 describe-instances`); bump deliberately,
+      // not as a drift side effect, if this ever needs to move.
+      machineImage: ec2.MachineImage.genericLinux({
+        [Stack.of(this).region]: "ami-07f35208dba26f009",
+      }),
       securityGroup,
       role,
     });
