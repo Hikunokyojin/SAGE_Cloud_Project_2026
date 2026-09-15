@@ -4,6 +4,7 @@ import { DataConstruct } from "./data-construct";
 import { AgentsConstruct } from "./agents-construct";
 import { ConductorConstruct } from "./conductor-construct";
 import { CloudTrailConstruct } from "./cloudtrail-construct";
+import { BudgetConstruct } from "./budget-construct";
 
 export class SageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -37,5 +38,10 @@ export class SageStack extends Stack {
 
     const audit = new CloudTrailConstruct(this, "Audit");
     new CfnOutput(this, "CloudTrailName", { value: audit.trail.trailArn });
+
+    new BudgetConstruct(this, "Budget", {
+      limitUsd: Number(this.node.tryGetContext("budgetLimitUsd") ?? 50),
+      alertEmail: this.node.tryGetContext("budgetAlertEmail") ?? "divikbhaskar@gmail.com",
+    });
   }
 }
