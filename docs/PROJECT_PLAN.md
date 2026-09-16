@@ -1,15 +1,26 @@
 # SAGE — Project Plan & Status
 
-Last updated: 2026-09-16 (task 22 completion — the plan is now fully done). This file tracks real, verified status against the plan — not aspirational status. If a task isn't checked off, it isn't done, even if related work exists nearby. See `CLAUDE.md` for architecture/commands and `spec.md` for the original requirements this plan was built from.
+Last updated: 2026-09-16. This file tracks real, verified status against the plan — not aspirational status. If a task isn't checked off, it isn't done, even if related work exists nearby. See `CLAUDE.md` for architecture/commands and `spec.md` for the original requirements this plan was built from.
+
+## Superseding plan: the Reconciled Definition of Done
+
+The original build plan below (Milestones 0-4) is **fully complete** as of 2026-09-16 — every task done and live-verified, including the Phase-II report (task 22). However, a new, more rigorous plan has since superseded it: `SAGE documentation/SAGE-Reconciled-Definition-of-Done.md`, merging the original spec with Dr. Priya V's suggestions (WP1-WP9, D1-D9). It asks for real rework beyond what's built — a formal mathematical Negotiator scoring model, a structurally independent Reviewer emitting `Violation` objects, a bounded re-negotiation loop that feeds violations back into Negotiator (not just "promote the next alternative"), full `DecisionProvenance` with `parentDecisionId` chains replacing the current flatter `AuditRecord`, an edge-case dataset, and (later, once confirmed) baseline/ablation experiments.
+
+**Current status against the Reconciled DoD:**
+- **Phase 1 (D1 — architecture freeze): DONE (2026-09-16).** `SAGE documentation/SAGE_D1_Architecture_Research_Specification.docx` — agent responsibility statements, the full D2 shared-types design (`Constraint`, `Evidence`, `ScoreBreakdown`, `Composition`, `Violation`, `ReviewerResult`, `NegotiationAttempt`, `DecisionProvenance`), a formal Conductor state-transition table, a complete worked request lifecycle (including a forced-FAIL → re-negotiation → PASS cycle), the LLM/deterministic/verification/human-escalation taxonomy, and a reconciliation table mapping every design decision to current build status. No pipeline code was touched while writing it, per the DoD's own gate.
+- **Phase 2 (repo hygiene): already satisfied** by the existing deployed system — clean working tree on `develop`, repo restructured to the Phase-I layout, `README.md` written, no stray credentials. Not re-actioned separately.
+- **Phase 3 (D2-D7 — full pipeline implementation): not started.** This is real implementation work reworking Negotiator, Reviewer, the audit-trail schema, and the re-negotiation loop — begins only once D1 is confirmed.
+- **Phase 4 (D8-D9 — baselines & ablation): explicitly deferred**, per the DoD's own stated open question and the user's confirmation — not started until D1-D7 are complete and separately confirmed.
 
 ## How to pick this project up cold
 
 1. Read `CLAUDE.md` (architecture, current deviations from spec, commands).
-2. Read this file (exact status, what's left).
-3. Read `spec.md` (original requirements — still the source of truth for *scope*, even though the "Current status" section below documents where the build has since deviated).
-4. Live system: API Gateway URL, EC2 IP, Lambda function names, and the exact deployment method are all in this file's "Deployed AWS resources" section below — don't rediscover them from scratch.
+2. Read `SAGE documentation/SAGE-Reconciled-Definition-of-Done.md` — the current, active plan (supersedes the milestone plan below).
+3. Read this file (exact status, what's left, against both the old and new plans).
+4. Read `spec.md` (original requirements — still the source of truth for *scope* not covered by the Reconciled DoD).
+5. Live system: API Gateway URL, EC2 IP, Lambda function names, and the exact deployment method are all in this file's "Deployed AWS resources" section below — don't rediscover them from scratch.
 
-## Milestone status
+## Milestone status (original plan — fully complete, kept as historical record)
 
 ### ✅ Milestone 0 — Hygiene & repo realignment — DONE
 - Leaked AWS credential CSVs rotated and moved out of the documentation folder by the user.
