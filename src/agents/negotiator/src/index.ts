@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   NegotiatorAgentInput,
   Composition,
@@ -174,6 +175,13 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
       input,
       output,
       reasoning: `Chose ${chosen.service.name} (score ${chosen.score.toFixed(3)}) over ${alternatives.length} alternative(s) on iteration ${input.iteration}, deterministically -- no LLM call.`,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: input.iteration,
+      status: "success",
+      score: output.scoreBreakdown,
+      constraintStatus: output.scoreBreakdown.constraintStatus,
+      evidence: chosen.service.evidence,
     });
   } catch (err) {
     console.error("Negotiator Agent: failed to write audit record", err);

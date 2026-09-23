@@ -122,6 +122,39 @@ describe("runPipeline", () => {
     }
   });
 
+  it("assigns a decisionId per stage and threads parentDecisionId into a reconstructable chain (D6.1)", async () => {
+    const invoker = makeInvoker();
+
+    await runPipeline("req-1", "I need a cheap image resizer", invoker);
+
+    const guardCall = invoker.inputGuard.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const intentCall = invoker.intent.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const brokerCall = invoker.broker.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const negotiatorCall = invoker.negotiator.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const reviewerCall = invoker.reviewer.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const explainerCall = invoker.explainer.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+
+    // Every stage gets its own decisionId, and no two stages collide.
+    const decisionIds = [
+      guardCall.decisionId,
+      intentCall.decisionId,
+      brokerCall.decisionId,
+      negotiatorCall.decisionId,
+      reviewerCall.decisionId,
+      explainerCall.decisionId,
+    ];
+    expect(decisionIds.every((id) => typeof id === "string" && id.length > 0)).toBe(true);
+    expect(new Set(decisionIds).size).toBe(decisionIds.length);
+
+    // Each stage's parentDecisionId links back to the immediately preceding stage.
+    expect(guardCall.parentDecisionId).toBeUndefined();
+    expect(intentCall.parentDecisionId).toBe(guardCall.decisionId);
+    expect(brokerCall.parentDecisionId).toBe(intentCall.decisionId);
+    expect(negotiatorCall.parentDecisionId).toBe(brokerCall.decisionId);
+    expect(reviewerCall.parentDecisionId).toBe(negotiatorCall.decisionId);
+    expect(explainerCall.parentDecisionId).toBe(reviewerCall.decisionId);
+  });
+
   it("threads the Input Guard's sanitized input into Intent Agent, not the raw input", async () => {
     const invoker = makeInvoker({
       inputGuard: vi.fn(async (input) => ({

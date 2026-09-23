@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   Intent,
   Constraint,
@@ -14,13 +15,31 @@ import type {
 
 // One typed method per agent -- both the local (in-process) and Lambda-backed
 // invokers implement this same shape, so runPipeline doesn't care which is used.
+//
+// D6.1: every call also carries decisionId/parentDecisionId (optional on each
+// agent's own input type, see shared-types) -- runPipeline is the sole assigner
+// of decisionId (via randomUUID()) and the sole threader of parentDecisionId
+// across stages, so each agent's own audit record can be linked into a full
+// per-request causal chain without any agent needing to know about its peers.
 export interface AgentInvoker {
-  inputGuard(input: { requestId: string; rawInput: string }): Promise<InputGuardAgentOutput>;
-  intent(input: { requestId: string; rawInput: string }): Promise<Intent>;
+  inputGuard(input: {
+    requestId: string;
+    rawInput: string;
+    decisionId?: string;
+    parentDecisionId?: string;
+  }): Promise<InputGuardAgentOutput>;
+  intent(input: {
+    requestId: string;
+    rawInput: string;
+    decisionId?: string;
+    parentDecisionId?: string;
+  }): Promise<Intent>;
   broker(input: {
     requestId: string;
     capability: string;
     constraints: Constraint[];
+    decisionId?: string;
+    parentDecisionId?: string;
   }): Promise<ServiceCandidateWithEvidence[]>;
   negotiator(input: {
     requestId: string;
@@ -28,21 +47,29 @@ export interface AgentInvoker {
     constraints: Constraint[];
     iteration: number;
     priorViolations?: Violation[];
+    decisionId?: string;
+    parentDecisionId?: string;
   }): Promise<Composition>;
   reviewer(input: {
     requestId: string;
     composition: Composition;
     constraints: Constraint[];
+    decisionId?: string;
+    parentDecisionId?: string;
   }): Promise<ReviewerResult>;
   explainer(input: {
     requestId: string;
     composition: Composition;
     negotiationHistory?: NegotiationAttempt[];
+    decisionId?: string;
+    parentDecisionId?: string;
   }): Promise<ExplainedBlueprint>;
   explainEscalation(input: {
     requestId: string;
     constraints: Constraint[];
     attempts: NegotiationAttempt[];
+    decisionId?: string;
+    parentDecisionId?: string;
   }): Promise<EscalationExplanation>;
   // Live testing found this path was needed: Negotiator finding zero eligible
   // candidates never reaches Reviewer, so it needs its own escalation route to the
@@ -72,14 +99,27 @@ export async function runPipeline(
   rawInput: string,
   invoker: AgentInvoker
 ): Promise<PipelineResult> {
-  const guardResult = await invoker.inputGuard({ requestId, rawInput });
+  // D6.1: decisionId is assigned here, once per stage invocation, and the previous
+  // stage's decisionId is threaded in as parentDecisionId -- the only place in the
+  // system that needs to know the pipeline's actual call order.
+  const inputGuardDecisionId = randomUUID();
+  const guardResult = await invoker.inputGuard({ requestId, rawInput, decisionId: inputGuardDecisionId });
 
-  const intent = await invoker.intent({ requestId, rawInput: guardResult.sanitizedInput });
+  const intentDecisionId = randomUUID();
+  const intent = await invoker.intent({
+    requestId,
+    rawInput: guardResult.sanitizedInput,
+    decisionId: intentDecisionId,
+    parentDecisionId: inputGuardDecisionId,
+  });
 
+  const brokerDecisionId = randomUUID();
   const candidates = await invoker.broker({
     requestId,
     capability: intent.capability,
     constraints: intent.constraints,
+    decisionId: brokerDecisionId,
+    parentDecisionId: intentDecisionId,
   });
 
   if (candidates.length === 0) {
@@ -89,8 +129,12 @@ export async function runPipeline(
   const history: NegotiationAttempt[] = [];
   let priorViolations: Violation[] | undefined;
   let iteration = 1;
+  // The decisionId of whatever just fed into the next Negotiator call -- Broker's
+  // on iteration 1, the prior iteration's Reviewer decision from iteration 2 on.
+  let lastDecisionId = brokerDecisionId;
 
   while (iteration <= SAFETY_MAX_ATTEMPTS) {
+    const negotiatorDecisionId = randomUUID();
     let composition: Composition;
     try {
       composition = await invoker.negotiator({
@@ -99,6 +143,8 @@ export async function runPipeline(
         constraints: intent.constraints,
         iteration,
         priorViolations,
+        decisionId: negotiatorDecisionId,
+        parentDecisionId: lastDecisionId,
       });
     } catch (err) {
       // Negotiator throws when no candidate satisfies the mandatory constraints
@@ -110,11 +156,25 @@ export async function runPipeline(
       // notified about. Routed through the same escalation channel as a
       // Reviewer-driven circuit-breaker trip.
       const reason = err instanceof Error ? err.message : "Negotiator Agent failed to produce a composition.";
-      const escalation = await invoker.escalateUnsatisfiable({ requestId, constraints: intent.constraints, reason });
+      const escalation = await invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        reason,
+        decisionId: randomUUID(),
+        parentDecisionId: lastDecisionId,
+      });
       return { status: "paused_for_review", requestId, escalation };
     }
 
-    const reviewResult = await invoker.reviewer({ requestId, composition, constraints: intent.constraints });
+    const reviewerDecisionId = randomUUID();
+    const reviewResult = await invoker.reviewer({
+      requestId,
+      composition,
+      constraints: intent.constraints,
+      decisionId: reviewerDecisionId,
+      parentDecisionId: negotiatorDecisionId,
+    });
+    lastDecisionId = reviewerDecisionId;
 
     history.push({
       iteration,
@@ -128,6 +188,8 @@ export async function runPipeline(
         requestId,
         composition: reviewResult.composition,
         negotiationHistory: history,
+        decisionId: randomUUID(),
+        parentDecisionId: reviewerDecisionId,
       });
       return { status: "completed", requestId, result: explained };
     }
@@ -137,6 +199,8 @@ export async function runPipeline(
         requestId,
         constraints: intent.constraints,
         attempts: history,
+        decisionId: randomUUID(),
+        parentDecisionId: reviewerDecisionId,
       });
       return { status: "paused_for_review", requestId, escalation };
     }

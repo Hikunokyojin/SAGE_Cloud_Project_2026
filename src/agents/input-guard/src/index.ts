@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { InputGuardAgentInput, InputGuardAgentOutput } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
@@ -84,6 +85,10 @@ export async function handler(input: InputGuardAgentInput): Promise<InputGuardAg
       reasoning: output.flagged
         ? `Flagged and sanitized categories: ${output.detectedPatterns.join(", ")}`
         : "No prompt-injection patterns detected.",
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: 0,
+      status: "success",
     });
   } catch (err) {
     console.error("Input Guard Agent: failed to write audit record", err);

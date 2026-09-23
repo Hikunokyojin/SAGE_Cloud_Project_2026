@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
@@ -172,6 +173,11 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       input,
       output,
       reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}.`,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: 0,
+      status: "success",
+      evidence: output.flatMap((candidate) => candidate.evidence),
     });
   } catch (err) {
     console.error("Broker Agent: failed to write audit record", err);
