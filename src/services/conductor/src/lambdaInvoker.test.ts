@@ -57,7 +57,7 @@ describe("lambdaInvoker", () => {
 
     const { lambdaInvoker } = await import("./lambdaInvoker");
     await lambdaInvoker.intent({ requestId: "req-1", rawInput: "hello" });
-    await lambdaInvoker.broker({ requestId: "req-1", capability: "x", constraints: {} });
+    await lambdaInvoker.broker({ requestId: "req-1", capability: "x", constraints: [] });
 
     expect(sendMock.mock.calls[0][0].input.FunctionName).toBe("sage-intent");
     expect(sendMock.mock.calls[1][0].input.FunctionName).toBe("sage-broker");
