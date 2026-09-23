@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
 import type {
   ExplainerAgentInput,
@@ -104,6 +105,10 @@ Prior rejected attempts: ${historyText}`;
       input,
       output,
       reasoning: explanation,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: composition.iteration,
+      status: "success",
     });
   } catch (err) {
     console.error("Explainer Agent: failed to write audit record", err);
@@ -155,6 +160,10 @@ ${attemptsText}`;
       input,
       output,
       reasoning: `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}`,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: attempts.length > 0 ? attempts[attempts.length - 1].iteration : 0,
+      status: "escalated",
     });
   } catch (err) {
     console.error("Explainer Agent (escalation): failed to write audit record", err);

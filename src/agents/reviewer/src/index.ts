@@ -110,6 +110,12 @@ async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoni
       input,
       output,
       reasoning,
+      decisionId: output.decisionId,
+      parentDecisionId: input.parentDecisionId,
+      iteration: output.iteration,
+      status: output.approved ? "success" : output.escalated ? "escalated" : "failure",
+      constraintStatus: output.approved ? "pass" : "fail",
+      score: input.composition.scoreBreakdown,
     });
   } catch (err) {
     console.error("Reviewer Agent: failed to write audit record", err);
@@ -120,7 +126,7 @@ async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoni
 export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult> {
   const iteration = input.composition.iteration;
   const violations = findViolations(input);
-  const decisionId = randomUUID();
+  const decisionId = input.decisionId ?? randomUUID();
 
   if (violations.length === 0) {
     return finish(
@@ -219,6 +225,11 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
       input,
       output,
       reasoning: `No candidate satisfied the mandatory constraints; escalated to Human-in-the-Loop via SNS without a Negotiator/Reviewer cycle. Reason: ${input.reason}.`,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: 0,
+      status: "escalated",
+      constraintStatus: "fail",
     });
   } catch (err) {
     console.error("Reviewer Agent (unsatisfiable escalation): failed to write audit record", err);

@@ -59,9 +59,16 @@ export interface ExplainedBlueprint extends Composition {
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
 
+// D6.1: every agent input optionally carries the decisionId Conductor assigned
+// to *this* invocation and the parentDecisionId of whichever prior decision fed
+// into it -- letting each agent's own DecisionProvenance record link back into
+// a reconstructable per-request causal chain, without changing any agent's
+// actual output contract.
 export interface InputGuardAgentInput {
   requestId: string;
   rawInput: string;
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface InputGuardAgentOutput {
@@ -75,6 +82,8 @@ export interface InputGuardAgentOutput {
 export interface IntentAgentInput {
   requestId: string;
   rawInput: string;
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface BrokerAgentInput {
@@ -85,6 +94,8 @@ export interface BrokerAgentInput {
   // spec (S5.3) it must never filter or rank by constraints. Enforcement is
   // exclusively Negotiator's (S5.4) and Reviewer's (S5.5) responsibility.
   constraints: Constraint[];
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface NegotiatorAgentInput {
@@ -96,12 +107,16 @@ export interface NegotiatorAgentInput {
   // prior iteration's violations are fed back in so re-negotiation is
   // informed rather than blind.
   priorViolations?: Violation[];
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface ReviewerAgentInput {
   requestId: string;
   composition: Composition;
   constraints: Constraint[];
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface ExplainerAgentInput {
@@ -112,6 +127,8 @@ export interface ExplainerAgentInput {
   // rationale can reference what was tried and rejected, not just the
   // final choice.
   negotiationHistory?: NegotiationAttempt[];
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 // ── Escalation Explanation (Human-in-the-Loop context) ─────
@@ -120,6 +137,8 @@ export interface EscalationExplainerInput {
   requestId: string;
   constraints: Constraint[];
   attempts: NegotiationAttempt[];
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 // Live testing surfaced a real gap after D4/D5: when Negotiator finds zero candidates
@@ -132,6 +151,8 @@ export interface UnsatisfiableEscalationInput {
   requestId: string;
   constraints: Constraint[];
   reason: string;
+  decisionId?: string;
+  parentDecisionId?: string;
 }
 
 export interface EscalationExplanation {
