@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
@@ -118,6 +119,10 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       input,
       output,
       reasoning: `Parsed capability "${output.capability}" with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
+      decisionId: input.decisionId ?? randomUUID(),
+      parentDecisionId: input.parentDecisionId,
+      iteration: 0,
+      status: "success",
     });
   } catch (err) {
     console.error("Intent Agent: failed to write audit record", err);
