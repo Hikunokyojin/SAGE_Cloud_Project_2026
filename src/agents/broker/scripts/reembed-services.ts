@@ -35,8 +35,12 @@ interface ServiceDoc {
   serviceId: string;
   name: string;
   description: string;
+  capability?: string;
   price: number;
   uptime: number;
+  latencyMs?: number;
+  dependencies?: string[];
+  constraints?: string[];
   endpoint: string;
 }
 
