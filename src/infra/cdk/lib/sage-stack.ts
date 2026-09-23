@@ -24,6 +24,7 @@ export class SageStack extends Stack {
         agents.brokerFn,
         agents.negotiatorFn,
         agents.reviewerFn,
+        agents.unsatisfiableEscalationFn,
         agents.explainerFn,
         agents.escalationExplainerFn,
       ],

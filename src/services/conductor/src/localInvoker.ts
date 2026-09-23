@@ -2,7 +2,7 @@ import { handler as inputGuardHandler } from "input-guard-agent";
 import { handler as intentHandler } from "intent-agent";
 import { handler as brokerHandler } from "broker-agent";
 import { handler as negotiatorHandler } from "negotiator-agent";
-import { handler as reviewerHandler } from "reviewer-agent";
+import { handler as reviewerHandler, escalateUnsatisfiable as escalateUnsatisfiableHandler } from "reviewer-agent";
 import { handler as explainerHandler, explainEscalation as explainEscalationHandler } from "explainer-agent";
 import type { AgentInvoker } from "./pipeline";
 
@@ -19,4 +19,5 @@ export const localInvoker: AgentInvoker = {
   reviewer: reviewerHandler,
   explainer: explainerHandler,
   explainEscalation: explainEscalationHandler,
+  escalateUnsatisfiable: escalateUnsatisfiableHandler,
 };

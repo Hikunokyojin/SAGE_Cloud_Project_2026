@@ -33,6 +33,7 @@ export class AgentsConstruct extends Construct {
   public readonly brokerFn: lambda.Function;
   public readonly negotiatorFn: lambda.Function;
   public readonly reviewerFn: lambda.Function;
+  public readonly unsatisfiableEscalationFn: lambda.Function;
   public readonly explainerFn: lambda.Function;
   public readonly escalationExplainerFn: lambda.Function;
 
@@ -163,6 +164,26 @@ export class AgentsConstruct extends Construct {
     });
     props.escalationTopic.grantPublish(this.reviewerFn);
     props.auditTable.grant(this.reviewerFn, "dynamodb:PutItem");
+
+    // Shares Reviewer's dist bundle (same two-functions-from-one-asset pattern as
+    // Explainer/EscalationExplainer below) -- Conductor calls this when Negotiator
+    // finds zero eligible candidates, a failure mode that never reaches the main
+    // Reviewer handler and so needs its own route to the same SNS escalation.
+    const reviewerAsset = lambda.Code.fromAsset(agentDir("reviewer"));
+    this.unsatisfiableEscalationFn = new lambda.Function(this, "UnsatisfiableEscalationFunction", {
+      functionName: "sage-unsatisfiable-escalation",
+      runtime: lambda.Runtime.NODEJS_24_X,
+      handler: "index.escalateUnsatisfiable",
+      code: reviewerAsset,
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        SNS_TOPIC_ARN: props.escalationTopic.topicArn,
+        AUDIT_TABLE_NAME: props.auditTable.tableName,
+      },
+    });
+    props.escalationTopic.grantPublish(this.unsatisfiableEscalationFn);
+    props.auditTable.grant(this.unsatisfiableEscalationFn, "dynamodb:PutItem");
 
     const explainerAsset = lambda.Code.fromAsset(agentDir("explainer"));
 
