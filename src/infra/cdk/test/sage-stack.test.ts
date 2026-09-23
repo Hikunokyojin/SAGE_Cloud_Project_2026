@@ -10,16 +10,16 @@ function synth(): Template {
 }
 
 describe("SageStack", () => {
-  it("provisions exactly 7 agent Lambda functions (5 agents + Input Guard + escalation-explainer)", () => {
+  it("provisions exactly 8 agent Lambda functions (5 agents + Input Guard + escalation-explainer + unsatisfiable-escalation)", () => {
     const template = synth();
     // resourceCountIs would also count CDK's own auto-generated "S3 auto-delete objects"
     // custom-resource Lambda (added once the Conductor deploy bucket set
     // autoDeleteObjects: true) -- filter to functions with an explicit sage-* name
-    // instead of a raw total, since only those are our 7 agent functions.
+    // instead of a raw total, since only those are our 8 agent functions.
     const sageFunctions = template.findResources("AWS::Lambda::Function", {
       Properties: { FunctionName: Match.stringLikeRegexp("^sage-") },
     });
-    expect(Object.keys(sageFunctions)).toHaveLength(7);
+    expect(Object.keys(sageFunctions)).toHaveLength(8);
   });
 
   it("grants no function bedrock:InvokeModel (Bedrock is unreachable for this account)", () => {
@@ -56,7 +56,7 @@ describe("SageStack", () => {
     expect(Object.keys(groqPolicies)).toHaveLength(3);
   });
 
-  it("gives only the Reviewer function sns:Publish on the escalation topic", () => {
+  it("gives only Reviewer and the unsatisfiable-escalation function sns:Publish on the escalation topic", () => {
     const template = synth();
 
     const snsPolicies = template.findResources("AWS::IAM::Policy", {
@@ -67,7 +67,9 @@ describe("SageStack", () => {
       },
     });
 
-    expect(Object.keys(snsPolicies)).toHaveLength(1);
+    // Reviewer (circuit-breaker escalation) and the new unsatisfiable-escalation
+    // function (Negotiator-found-zero-candidates escalation) -- no other role.
+    expect(Object.keys(snsPolicies)).toHaveLength(2);
   });
 
   it("creates the agent_decisions DynamoDB table with requestId/timestamp keys", () => {
