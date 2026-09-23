@@ -1,6 +1,13 @@
 import { randomUUID } from "crypto";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import type { ReviewerAgentInput, ReviewerResult, Constraint, Violation } from "@sage/shared-types";
+import type {
+  ReviewerAgentInput,
+  ReviewerResult,
+  Constraint,
+  Violation,
+  UnsatisfiableEscalationInput,
+  EscalationExplanation,
+} from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
 // Hard circuit breaker: once iteration reaches this, we escalate to a human
@@ -161,4 +168,61 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
     },
     `Composition violates ${violations.length} mandatory constraint(s) on iteration ${iteration}: ${violations.map((v) => v.constraint).join(", ")}. Will retry with the violation fed back into re-negotiation.`
   );
+}
+
+// Separate Lambda entry point sharing this same bundle (deployed as its own function,
+// same pattern as Explainer's handler/explainEscalation split) -- reuses Reviewer's
+// existing SNS permission rather than granting it to Conductor or any other role.
+//
+// Found via live testing (not code review): when Negotiator finds zero candidates
+// satisfying the mandatory constraints (a genuine no-valid-solution or
+// constraint-conflict outcome), it never reaches this file's handler at all, so the
+// normal Reviewer -> SNS escalation path was structurally unreachable for that
+// failure mode -- Conductor was returning a bare "failed" status with no
+// Human-in-the-Loop notification. This function gives Conductor an escalation path
+// for that specific case too, reusing the same SNS topic and Human-in-the-Loop
+// channel as a circuit-breaker escalation.
+export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation> {
+  const topicArn = process.env.SNS_TOPIC_ARN;
+  if (!topicArn) {
+    throw new Error("Reviewer Agent: SNS_TOPIC_ARN is not set, cannot escalate to Human-in-the-Loop");
+  }
+
+  const constraintsText = input.constraints
+    .map((c) => `${c.field} ${describeOperator(c.operator)} ${c.value} (${c.mandatory ? "mandatory" : "optional"})`)
+    .join("; ");
+
+  await getSnsClient().send(
+    new PublishCommand({
+      TopicArn: topicArn,
+      Subject: `SAGE: request ${input.requestId} needs human review (no valid candidate)`,
+      Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}`,
+    })
+  );
+
+  const explanation =
+    `No available service could satisfy every requirement at once: ${input.reason}. ` +
+    `The constraints requested were: ${constraintsText}. ` +
+    `Consider relaxing one of the mandatory constraints above (for example, raising a budget limit or lowering a minimum uptime/latency requirement) and resubmitting the request.`;
+
+  const output: EscalationExplanation = {
+    requestId: input.requestId,
+    explanation,
+    attemptedOptions: [],
+  };
+
+  try {
+    await recordDecision({
+      requestId: input.requestId,
+      agent: "ReviewerAgent",
+      timestamp: new Date().toISOString(),
+      input,
+      output,
+      reasoning: `No candidate satisfied the mandatory constraints; escalated to Human-in-the-Loop via SNS without a Negotiator/Reviewer cycle. Reason: ${input.reason}.`,
+    });
+  } catch (err) {
+    console.error("Reviewer Agent (unsatisfiable escalation): failed to write audit record", err);
+  }
+
+  return output;
 }

@@ -94,6 +94,11 @@ function makeInvoker(overrides: Partial<AgentInvoker> = {}): AgentInvoker {
       explanation: "Nothing fit; consider raising your budget.",
       attemptedOptions: input.attempts.map((a: { composition: Composition }) => a.composition.chosen.service),
     })),
+    escalateUnsatisfiable: vi.fn(async (input) => ({
+      requestId: input.requestId,
+      explanation: `No candidate satisfied the mandatory constraints: ${input.reason}`,
+      attemptedOptions: [],
+    })),
     ...overrides,
   };
 }
@@ -142,7 +147,7 @@ describe("runPipeline", () => {
     expect(invoker.negotiator).not.toHaveBeenCalled();
   });
 
-  it("returns 'failed' when Negotiator throws (no candidate satisfies the mandatory constraints)", async () => {
+  it("escalates to Human-in-the-Loop when Negotiator throws (no candidate satisfies the mandatory constraints)", async () => {
     const invoker = makeInvoker({
       negotiator: vi.fn(async () => {
         throw new Error("Negotiator Agent: no candidate satisfies the mandatory constraints");
@@ -151,9 +156,15 @@ describe("runPipeline", () => {
 
     const result = await runPipeline("req-1", "anything", invoker);
 
-    expect(result.status).toBe("failed");
-    if (result.status === "failed") {
-      expect(result.error).toContain("no candidate satisfies the mandatory constraints");
+    expect(result.status).toBe("paused_for_review");
+    expect(invoker.escalateUnsatisfiable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId: "req-1",
+        reason: expect.stringContaining("no candidate satisfies the mandatory constraints"),
+      })
+    );
+    if (result.status === "paused_for_review") {
+      expect(result.escalation.explanation).toContain("no candidate satisfies the mandatory constraints");
     }
   });
 

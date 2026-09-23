@@ -37,4 +37,5 @@ export const lambdaInvoker: AgentInvoker = {
   reviewer: (input) => invokeFunction("REVIEWER_FUNCTION_NAME", input),
   explainer: (input) => invokeFunction("EXPLAINER_FUNCTION_NAME", input),
   explainEscalation: (input) => invokeFunction("ESCALATION_EXPLAINER_FUNCTION_NAME", input),
+  escalateUnsatisfiable: (input) => invokeFunction("UNSATISFIABLE_ESCALATION_FUNCTION_NAME", input),
 };

@@ -9,6 +9,7 @@ import type {
   EscalationExplanation,
   InputGuardAgentOutput,
   Violation,
+  UnsatisfiableEscalationInput,
 } from "@sage/shared-types";
 
 // One typed method per agent -- both the local (in-process) and Lambda-backed
@@ -43,6 +44,10 @@ export interface AgentInvoker {
     constraints: Constraint[];
     attempts: NegotiationAttempt[];
   }): Promise<EscalationExplanation>;
+  // Live testing found this path was needed: Negotiator finding zero eligible
+  // candidates never reaches Reviewer, so it needs its own escalation route to the
+  // same Human-in-the-Loop channel -- see reviewer/src/index.ts's escalateUnsatisfiable.
+  escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation>;
 }
 
 export type PipelineResult =
@@ -98,13 +103,15 @@ export async function runPipeline(
     } catch (err) {
       // Negotiator throws when no candidate satisfies the mandatory constraints
       // (with or without a prior-violation exclusion) -- a genuine no-valid-solution
-      // outcome, not an unexpected system error, so it's surfaced as a normal failed
-      // result rather than an unhandled exception.
-      return {
-        status: "failed",
-        requestId,
-        error: err instanceof Error ? err.message : "Negotiator Agent failed to produce a composition.",
-      };
+      // or constraint-conflict outcome. Found via live testing: this never reaches
+      // Reviewer, so without this explicit route it would silently bypass the
+      // Human-in-the-Loop escalation path entirely (a bare "failed" status, no SNS
+      // notification) -- exactly the kind of unresolved request a human should be
+      // notified about. Routed through the same escalation channel as a
+      // Reviewer-driven circuit-breaker trip.
+      const reason = err instanceof Error ? err.message : "Negotiator Agent failed to produce a composition.";
+      const escalation = await invoker.escalateUnsatisfiable({ requestId, constraints: intent.constraints, reason });
+      return { status: "paused_for_review", requestId, escalation };
     }
 
     const reviewResult = await invoker.reviewer({ requestId, composition, constraints: intent.constraints });
