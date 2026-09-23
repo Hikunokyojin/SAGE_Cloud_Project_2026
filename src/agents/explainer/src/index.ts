@@ -55,13 +55,16 @@ async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: num
 }
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
-Given a chosen service composition and the alternatives it was selected over, write a short,
-plain-language explanation (2-4 sentences) of why the chosen service was picked.
+Given a chosen service composition, the alternatives it was selected over, and (when present)
+a history of earlier attempts that were rejected during negotiation, write a short,
+plain-language explanation (2-4 sentences) of why the chosen service was picked. If there is
+prior-attempt history, briefly mention what was tried first and why it was rejected before
+explaining the final choice.
 Return ONLY the explanation text, no markdown formatting, no preamble.`;
 
 export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
-  const { blueprint } = input;
-  const { chosen, alternatives } = blueprint;
+  const { composition, negotiationHistory } = input;
+  const { chosen, alternatives } = composition;
 
   const alternativesText = alternatives.length
     ? alternatives
@@ -69,13 +72,27 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
         .join("; ")
     : "none";
 
-  const userPrompt = `Chosen: ${chosen.service.name} (price: ${chosen.service.price}, uptime: ${chosen.service.uptime}%, score: ${chosen.score.toFixed(3)})
-Alternatives considered: ${alternativesText}`;
+  const historyText =
+    negotiationHistory && negotiationHistory.length > 1
+      ? negotiationHistory
+          .slice(0, -1)
+          .map(
+            (attempt) =>
+              `Attempt ${attempt.iteration}: ${attempt.composition.chosen.service.name} was rejected -- ${attempt.reviewerResult.violations
+                .map((v) => `${v.constraint} was ${v.actualValue}, required ${v.correctiveAction}`)
+                .join("; ")}`
+          )
+          .join("\n")
+      : "none -- approved on the first attempt";
 
-  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 300);
+  const userPrompt = `Chosen: ${chosen.service.name} (price: ${chosen.service.price}, uptime: ${chosen.service.uptime}%, score: ${chosen.score.toFixed(3)})
+Alternatives considered: ${alternativesText}
+Prior rejected attempts: ${historyText}`;
+
+  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 350);
 
   const output: ExplainedBlueprint = {
-    ...blueprint,
+    ...composition,
     explanation,
   };
 
@@ -109,10 +126,13 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
   const { attempts, constraints } = input;
 
   const attemptsText = attempts
-    .map(
-      (a) =>
-        `${a.candidate.name} (price: ${a.candidate.price}, uptime: ${a.candidate.uptime}%) violated: ${a.violatedConstraints.join(", ")}`
-    )
+    .map((attempt) => {
+      const { service } = attempt.composition.chosen;
+      const violations = attempt.reviewerResult.violations
+        .map((v) => `${v.constraint}: actual ${v.actualValue}, required ${v.requiredValue}`)
+        .join("; ");
+      return `Attempt ${attempt.iteration}: ${service.name} (price: ${service.price}, uptime: ${service.uptime}%) violated: ${violations}`;
+    })
     .join("\n");
 
   const userPrompt = `User's constraints: ${JSON.stringify(constraints)}
@@ -124,7 +144,7 @@ ${attemptsText}`;
   const output: EscalationExplanation = {
     requestId: input.requestId,
     explanation,
-    attemptedOptions: attempts.map((a) => a.candidate),
+    attemptedOptions: attempts.map((a) => a.composition.chosen.service),
   };
 
   try {
