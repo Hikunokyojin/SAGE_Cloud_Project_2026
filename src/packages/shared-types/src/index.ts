@@ -122,6 +122,18 @@ export interface EscalationExplainerInput {
   attempts: NegotiationAttempt[];
 }
 
+// Live testing surfaced a real gap after D4/D5: when Negotiator finds zero candidates
+// satisfying the mandatory constraints (a "no valid solution" case, e.g. a constraint
+// conflict), it never reaches Reviewer/the normal retry loop at all, so the normal
+// escalation path was unreachable for that failure mode -- it just failed silently
+// with no SNS notification. This input lets Conductor route that specific failure
+// through the same Human-in-the-Loop escalation Reviewer already performs.
+export interface UnsatisfiableEscalationInput {
+  requestId: string;
+  constraints: Constraint[];
+  reason: string;
+}
+
 export interface EscalationExplanation {
   requestId: string;
   explanation: string;
