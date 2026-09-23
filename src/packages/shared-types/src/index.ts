@@ -9,7 +9,11 @@ export interface IntentConstraints {
 export interface Intent {
   requestId: string;
   capability: string;
-  constraints: IntentConstraints;
+  // D4.1: Intent Agent now emits the structured, weighted Constraint[] form
+  // (mandatory/optional + priority) rather than the flat IntentConstraints
+  // shape -- IntentConstraints itself is retained above for any external
+  // consumer still on the old shape, but no agent constructs it anymore.
+  constraints: Constraint[];
   rawInput: string;
 }
 
@@ -23,12 +27,18 @@ export interface ServiceCandidate {
   uptime: number;
   endpoint: string;
   similarityScore?: number;
+  // D4.2: surfaced from the dataset's latencyMs field (v1.1.0) so Negotiator's
+  // scoring algorithm has a real latency dimension to normalize and weight,
+  // not just price/uptime. Optional since older dataset records predate it.
+  latencyMs?: number;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────
 
 export interface CompositionChoice {
-  service: ServiceCandidate;
+  // D4.3: carries the retrieval Evidence through to the final composition and
+  // explanation, not just the raw candidate fields.
+  service: ServiceCandidateWithEvidence;
   score: number;
   reason: string;
 }
@@ -40,8 +50,10 @@ export interface CompositionBlueprint {
 }
 
 // ── Explainer Output ────────────────────────────────────────
+// D4.5: extends Composition (not the older CompositionBlueprint) so the final
+// explained result still carries its iteration number and full ScoreBreakdown.
 
-export interface ExplainedBlueprint extends CompositionBlueprint {
+export interface ExplainedBlueprint extends Composition {
   explanation: string;
 }
 
@@ -68,52 +80,64 @@ export interface IntentAgentInput {
 export interface BrokerAgentInput {
   requestId: string;
   capability: string;
-  constraints: IntentConstraints;
+  // Retained on the input for symmetry with the other agents and possible
+  // future use, but Broker performs retrieval only -- per the architecture
+  // spec (S5.3) it must never filter or rank by constraints. Enforcement is
+  // exclusively Negotiator's (S5.4) and Reviewer's (S5.5) responsibility.
+  constraints: Constraint[];
 }
 
 export interface NegotiatorAgentInput {
   requestId: string;
-  candidates: ServiceCandidate[];
-  constraints: IntentConstraints;
+  candidates: ServiceCandidateWithEvidence[];
+  constraints: Constraint[];
+  iteration: number;
+  // D5: on a refinement iteration following a verification failure, the
+  // prior iteration's violations are fed back in so re-negotiation is
+  // informed rather than blind.
+  priorViolations?: Violation[];
 }
 
 export interface ReviewerAgentInput {
   requestId: string;
-  blueprint: CompositionBlueprint;
-  constraints: IntentConstraints;
-  attempt: number;
-}
-
-export interface ReviewerAgentOutput {
-  requestId: string;
-  approved: boolean;
-  blueprint: CompositionBlueprint;
-  attempt: number;
-  escalated: boolean;
+  composition: Composition;
+  constraints: Constraint[];
 }
 
 export interface ExplainerAgentInput {
   requestId: string;
-  blueprint: CompositionBlueprint;
+  composition: Composition;
+  // D5: when the approved composition was reached after one or more failed
+  // iterations, the full refinement history is passed through so the
+  // rationale can reference what was tried and rejected, not just the
+  // final choice.
+  negotiationHistory?: NegotiationAttempt[];
 }
 
 // ── Escalation Explanation (Human-in-the-Loop context) ─────
 
-export interface EscalationAttempt {
-  candidate: ServiceCandidate;
-  violatedConstraints: string[];
-}
-
 export interface EscalationExplainerInput {
   requestId: string;
-  constraints: IntentConstraints;
-  attempts: EscalationAttempt[];
+  constraints: Constraint[];
+  attempts: NegotiationAttempt[];
+}
+
+// Live testing surfaced a real gap after D4/D5: when Negotiator finds zero candidates
+// satisfying the mandatory constraints (a "no valid solution" case, e.g. a constraint
+// conflict), it never reaches Reviewer/the normal retry loop at all, so the normal
+// escalation path was unreachable for that failure mode -- it just failed silently
+// with no SNS notification. This input lets Conductor route that specific failure
+// through the same Human-in-the-Loop escalation Reviewer already performs.
+export interface UnsatisfiableEscalationInput {
+  requestId: string;
+  constraints: Constraint[];
+  reason: string;
 }
 
 export interface EscalationExplanation {
   requestId: string;
   explanation: string;
-  attemptedOptions: ServiceCandidate[];
+  attemptedOptions: ServiceCandidateWithEvidence[];
 }
 
 // ── Audit Trail ──────────────────────────────────────────────
@@ -245,6 +269,12 @@ export interface ReviewerResult {
   approved: boolean;
   violations: Violation[];
   iteration: number;
+  // Practical additions beyond the architecture spec's minimal definition:
+  // Conductor needs the reviewed composition back (to hand to Explainer or
+  // to promote on the next iteration) and an explicit escalation flag
+  // (iteration reached the configured maximum without a passing result).
+  composition: Composition;
+  escalated: boolean;
 }
 
 // ── NegotiationAttempt (S6.6 in the architecture spec) ───────────────────

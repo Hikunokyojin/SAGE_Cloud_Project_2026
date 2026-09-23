@@ -25,12 +25,15 @@ describe("Intent Agent handler", () => {
     resolveSecretMock.mockResolvedValue("test-groq-key");
   });
 
-  it("converts a natural-language request into a structured Intent", async () => {
+  it("converts a natural-language request into a structured Intent with Constraint[]", async () => {
     fetchMock.mockResolvedValue(
       groqResponse(
         JSON.stringify({
           capability: "fast image resizing service",
-          constraints: { maxBudget: 0.05, minUptime: 99 },
+          constraints: [
+            { field: "price", operator: "lte", value: 0.05, mandatory: true },
+            { field: "uptime", operator: "gte", value: 99, mandatory: true },
+          ],
         })
       )
     );
@@ -43,9 +46,51 @@ describe("Intent Agent handler", () => {
     expect(result).toEqual({
       requestId: "req-1",
       capability: "fast image resizing service",
-      constraints: { maxBudget: 0.05, minUptime: 99 },
+      constraints: [
+        { field: "price", operator: "lte", value: 0.05, mandatory: true },
+        { field: "uptime", operator: "gte", value: 99, mandatory: true },
+      ],
       rawInput: "I need a cheap, reliable image resizer",
     });
+  });
+
+  it("defaults an omitted priority to 5 on an optional (non-mandatory) constraint", async () => {
+    fetchMock.mockResolvedValue(
+      groqResponse(
+        JSON.stringify({
+          capability: "image resizing",
+          constraints: [{ field: "price", operator: "lte", value: 0.1, mandatory: false }],
+        })
+      )
+    );
+
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1a", rawInput: "prefer cheap resizing" });
+
+    expect(result.constraints).toEqual([
+      { field: "price", operator: "lte", value: 0.1, mandatory: false, priority: 5 },
+    ]);
+  });
+
+  it("drops a malformed constraint entry (bad field, bad operator, or non-numeric value) rather than propagating it", async () => {
+    fetchMock.mockResolvedValue(
+      groqResponse(
+        JSON.stringify({
+          capability: "image resizing",
+          constraints: [
+            { field: "price", operator: "lte", value: 0.05, mandatory: true },
+            { field: "notARealField", operator: "lte", value: 1, mandatory: true },
+            { field: "uptime", operator: "notARealOperator", value: 99, mandatory: true },
+            { field: "uptime", operator: "gte", value: "not-a-number", mandatory: true },
+          ],
+        })
+      )
+    );
+
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1b", rawInput: "anything" });
+
+    expect(result.constraints).toEqual([{ field: "price", operator: "lte", value: 0.05, mandatory: true }]);
   });
 
   it("calls Groq's chat completions endpoint with the resolved API key", async () => {
@@ -63,13 +108,13 @@ describe("Intent Agent handler", () => {
     expect(body.messages[1].content).toBe("transcode my videos");
   });
 
-  it("defaults constraints to an empty object when the model omits them", async () => {
+  it("defaults constraints to an empty array when the model omits them", async () => {
     fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "video transcoding" })));
 
     const { handler } = await import("./index");
     const result = await handler({ requestId: "req-2", rawInput: "transcode my videos" });
 
-    expect(result.constraints).toEqual({});
+    expect(result.constraints).toEqual([]);
   });
 
   it("throws a descriptive error when the model returns non-JSON output", async () => {
