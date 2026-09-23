@@ -91,21 +91,29 @@ describe("Broker Agent handler", () => {
     const input: BrokerAgentInput = {
       requestId: "req-1",
       capability: "fast image resizing service",
-      constraints: { maxBudget: 0.05, minUptime: 99 },
+      constraints: [],
     };
 
     const { handler } = await import("./index");
     const result = await handler(input);
 
-    expect(result).toEqual([
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      serviceId: "svc-1",
+      name: "FastResize",
+      description: "Quick image resizer",
+      price: 0.02,
+      uptime: 99.9,
+      endpoint: "https://api.example.com/resize",
+      similarityScore: 0.92,
+    });
+    // D4.2: every candidate now carries Evidence recording why it was retrieved.
+    expect(result[0].evidence).toEqual([
+      { source: "semantic-search", similarityScore: 0.92, retrievedAt: expect.any(String) },
       {
-        serviceId: "svc-1",
-        name: "FastResize",
-        description: "Quick image resizer",
-        price: 0.02,
-        uptime: 99.9,
-        endpoint: "https://api.example.com/resize",
-        similarityScore: 0.92,
+        source: "structured-metadata-store",
+        matchedFields: ["price", "uptime", "latencyMs", "endpoint"],
+        retrievedAt: expect.any(String),
       },
     ]);
   });
@@ -115,7 +123,7 @@ describe("Broker Agent handler", () => {
     mongoFindToArrayMock.mockResolvedValue([]);
 
     const { handler } = await import("./index");
-    await handler({ requestId: "req-payload", capability: "anything", constraints: {} });
+    await handler({ requestId: "req-payload", capability: "anything", constraints: [] });
 
     const searchCall = qdrantSearchMock.mock.calls[0][1];
     expect(searchCall.with_payload).toBe(true);
@@ -125,7 +133,7 @@ describe("Broker Agent handler", () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);
 
-    const input: BrokerAgentInput = { requestId: "req-embed", capability: "fast image resizing", constraints: {} };
+    const input: BrokerAgentInput = { requestId: "req-embed", capability: "fast image resizing", constraints: [] };
 
     const { handler } = await import("./index");
     await handler(input);
@@ -145,8 +153,8 @@ describe("Broker Agent handler", () => {
     mongoFindToArrayMock.mockResolvedValue([]);
 
     const { handler } = await import("./index");
-    await handler({ requestId: "req-a", capability: "a", constraints: {} });
-    await handler({ requestId: "req-b", capability: "b", constraints: {} });
+    await handler({ requestId: "req-a", capability: "a", constraints: [] });
+    await handler({ requestId: "req-b", capability: "b", constraints: [] });
 
     expect(pipelineFactoryMock).toHaveBeenCalledTimes(1);
   });
@@ -172,7 +180,7 @@ describe("Broker Agent handler", () => {
     const input: BrokerAgentInput = {
       requestId: "req-2",
       capability: "anything",
-      constraints: { maxBudget: 0.05, minUptime: 95 },
+      constraints: [],
     };
 
     const { handler } = await import("./index");
@@ -185,7 +193,7 @@ describe("Broker Agent handler", () => {
     qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-missing", 0.9)]);
     mongoFindToArrayMock.mockResolvedValue([]); // no metadata found
 
-    const input: BrokerAgentInput = { requestId: "req-3", capability: "anything", constraints: {} };
+    const input: BrokerAgentInput = { requestId: "req-3", capability: "anything", constraints: [] };
 
     const { handler } = await import("./index");
     const result = await handler(input);
@@ -202,7 +210,7 @@ describe("Broker Agent handler", () => {
     qdrantSearchMock.mockResolvedValue(hits);
     mongoFindToArrayMock.mockResolvedValue(docs);
 
-    const input: BrokerAgentInput = { requestId: "req-4", capability: "anything", constraints: {} };
+    const input: BrokerAgentInput = { requestId: "req-4", capability: "anything", constraints: [] };
 
     const { handler } = await import("./index");
     const result = await handler(input);
@@ -215,7 +223,7 @@ describe("Broker Agent handler", () => {
     mongoFindToArrayMock.mockResolvedValue([]);
 
     const { handler } = await import("./index");
-    await handler({ requestId: "req-5", capability: "anything", constraints: {} });
+    await handler({ requestId: "req-5", capability: "anything", constraints: [] });
 
     expect(resolveSecretMock).toHaveBeenCalledWith("MONGO_URI", "/sage/broker/MONGO_URI");
     expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_URL", "/sage/broker/QDRANT_URL");

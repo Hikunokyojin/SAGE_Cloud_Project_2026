@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
-import type { BrokerAgentInput, ServiceCandidate } from "@sage/shared-types";
+import type { BrokerAgentInput, ServiceCandidateWithEvidence } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
 // Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
@@ -93,7 +93,7 @@ const TOP_N = 5;
 // pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
 const MIN_SIMILARITY = 0.35;
 
-export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate[]> {
+export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();
   await mongo.connect();
@@ -121,20 +121,34 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
     .toArray();
 
   const metadataById = new Map(metadataDocs.map((doc) => [doc.serviceId, doc]));
+  const retrievedAt = new Date().toISOString();
 
-  const candidates: ServiceCandidate[] = searchResult
+  const candidates: ServiceCandidateWithEvidence[] = searchResult
     .map((r) => {
       const serviceId = (r.payload as { serviceId?: string } | null)?.serviceId;
       const meta = serviceId ? metadataById.get(serviceId) : undefined;
       if (!meta) return null;
-      const candidate: ServiceCandidate = {
+      // D4.2: every candidate carries its retrieval Evidence -- both the semantic
+      // match (Qdrant score) and the structured-metadata lookup that supplied the
+      // rest of its fields -- so downstream agents and the audit trail can see why
+      // it was retrieved, not just that it was.
+      const candidate: ServiceCandidateWithEvidence = {
         serviceId: meta.serviceId,
         name: meta.name,
         description: meta.description,
         price: meta.price,
         uptime: meta.uptime,
+        latencyMs: typeof meta.latencyMs === "number" ? meta.latencyMs : undefined,
         endpoint: meta.endpoint,
         similarityScore: r.score,
+        evidence: [
+          { source: "semantic-search", similarityScore: r.score, retrievedAt },
+          {
+            source: "structured-metadata-store",
+            matchedFields: ["price", "uptime", "latencyMs", "endpoint"],
+            retrievedAt,
+          },
+        ],
       };
       return candidate;
     })
@@ -144,8 +158,9 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
     // anything Broker had already returned, making the retry/escalation path
     // unreachable through the real pipeline (confirmed empirically against the live
     // deployed system, not just in theory). Constraint enforcement now belongs solely
-    // to Reviewer, matching the spec's stated division of labor between the two agents.
-    .filter((c): c is ServiceCandidate => c !== null);
+    // to Negotiator (hard filtering) and Reviewer (independent verification), matching
+    // the architecture spec's division of labor -- never Broker.
+    .filter((c): c is ServiceCandidateWithEvidence => c !== null);
 
   const output = candidates.slice(0, TOP_N);
 
