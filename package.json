@@ -13,7 +13,8 @@
     "src/services/*",
     "src/agents/*",
     "src/packages/*",
-    "src/infra/*"
+    "src/infra/*",
+    "src/experiments/*"
   ],
   "repository": {
     "type": "git",

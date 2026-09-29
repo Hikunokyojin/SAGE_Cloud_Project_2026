@@ -1,0 +1,31 @@
+{
+  "name": "d8-d9-experiments",
+  "version": "1.0.0",
+  "private": true,
+  "description": "D8-D9 test suite, baselines, and ablation study for the SAGE pipeline. Runs entirely in-process (no AWS Lambda invocation, no cdk deploy) against the real agent handler functions, Groq for LLM calls, and Qdrant/MongoDB for retrieval.",
+  "main": "dist/run-experiments.js",
+  "types": "src/run-experiments.ts",
+  "scripts": {
+    "experiment": "tsx src/run-experiments.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@sage/shared-types": "*",
+    "@sage/secrets": "*",
+    "input-guard-agent": "*",
+    "intent-agent": "*",
+    "broker-agent": "*",
+    "negotiator-agent": "*",
+    "reviewer-agent": "*",
+    "explainer-agent": "*",
+    "conductor": "*",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "vitest": "^5.0.0"
+  }
+}
