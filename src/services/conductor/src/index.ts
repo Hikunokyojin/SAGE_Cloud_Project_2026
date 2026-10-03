@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { randomUUID } from "crypto";
+import { existsSync } from "fs";
+import path from "path";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { runPipeline } from "./pipeline";
 import type { AgentInvoker } from "./pipeline";
@@ -96,6 +98,14 @@ app.get("/audit/:requestId", async (req, res) => {
     });
   }
 });
+
+// Static observability dashboard (src/apps/dashboard's Vite build), served at "/" so
+// it shares Conductor's HTTPS API Gateway URL -- CloudFront is unavailable to this
+// account until AWS verifies it. Registered after the API routes so they always win.
+const DASHBOARD_DIR = process.env.DASHBOARD_DIR || path.join(__dirname, "dashboard");
+if (existsSync(path.join(DASHBOARD_DIR, "index.html"))) {
+  app.use(express.static(DASHBOARD_DIR));
+}
 
 app.listen(PORT, () => {
   console.log(`SAGE conductor listening on port ${PORT}`);

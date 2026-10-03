@@ -122,5 +122,12 @@ export class ConductorConstruct extends Construct {
     proxyResource.addMethod("ANY", proxyIntegration, {
       requestParameters: { "method.request.path.proxy": true },
     });
+
+    // {proxy+} never matches the bare stage root, so the dashboard's index.html at
+    // /prod/ needs its own method.
+    this.api.root.addMethod(
+      "GET",
+      new apigateway.HttpIntegration(`http://${this.eip.ref}:3001/`, { httpMethod: "GET", proxy: true })
+    );
   }
 }
