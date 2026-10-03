@@ -127,12 +127,12 @@ describe("runPipeline", () => {
 
     await runPipeline("req-1", "I need a cheap image resizer", invoker);
 
-    const guardCall = invoker.inputGuard.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
-    const intentCall = invoker.intent.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
-    const brokerCall = invoker.broker.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
-    const negotiatorCall = invoker.negotiator.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
-    const reviewerCall = invoker.reviewer.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
-    const explainerCall = invoker.explainer.mock.calls[0][0] as { decisionId?: string; parentDecisionId?: string };
+    const guardCall = vi.mocked(invoker.inputGuard).mock.calls[0][0];
+    const intentCall = vi.mocked(invoker.intent).mock.calls[0][0];
+    const brokerCall = vi.mocked(invoker.broker).mock.calls[0][0];
+    const negotiatorCall = vi.mocked(invoker.negotiator).mock.calls[0][0];
+    const reviewerCall = vi.mocked(invoker.reviewer).mock.calls[0][0];
+    const explainerCall = vi.mocked(invoker.explainer).mock.calls[0][0];
 
     // Every stage gets its own decisionId, and no two stages collide.
     const decisionIds = [
