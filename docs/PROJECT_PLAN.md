@@ -21,6 +21,8 @@ The original build plan below (Milestones 0-4) is **fully complete** as of 2026-
 
 **D1-D9 (the entire Reconciled Definition of Done) are now all complete as of 2026-09-26.**
 
+**Dashboard hosting (2026-10-03).** The observability dashboard is now publicly reachable at `https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod/` (trailing slash required), served by Conductor itself from `/opt/conductor/dashboard` on the EC2 instance. S3 + CloudFront was tried first and rolled back cleanly: CloudFront refuses to create distributions for this account until AWS Support verifies it, the same class of account-standing block as Bedrock. Live-verified: a request submitted through the hosted page completed through all 6 agents and rendered its full trace. To redeploy dashboard changes: `npm run build --workspace=src/apps/dashboard`, `aws s3 sync src/apps/dashboard/dist s3://<ConductorDeployBucketName>/conductor/dashboard --delete`, then via SSM `aws s3 sync s3://<bucket>/conductor/dashboard /opt/conductor/dashboard --delete` (no service restart needed for static-file-only changes; a Conductor code change still needs the existing bundle upload + `systemctl restart conductor.service`).
+
 ## How to pick this project up cold
 
 1. Read `CLAUDE.md` (architecture, current deviations from spec, commands).
