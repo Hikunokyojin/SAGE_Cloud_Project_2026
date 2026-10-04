@@ -81,7 +81,12 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
     },
     body: JSON.stringify({
       model: GROQ_MODEL,
-      max_tokens: 300,
+      // gpt-oss-20b is a reasoning model: hidden reasoning tokens count against
+      // max_tokens. At 300 with default effort, reasoning often consumed the whole
+      // budget and the JSON answer came back empty (3/6 valid in a direct probe;
+      // 6/6 with these settings).
+      reasoning_effort: "low",
+      max_tokens: 1024,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: input.rawInput },
