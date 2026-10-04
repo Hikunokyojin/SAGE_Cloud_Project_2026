@@ -256,14 +256,15 @@ async function main() {
   console.log(`Running conditions: ${toRun.map((c) => c.label).join(", ")}\n`);
 
   const existing = loadExistingRaw();
+  mkdirSync(resultsDir, { recursive: true });
   for (const c of toRun) {
     console.log(`\n-- ${c.label} --`);
     existing.conditions[c.label] = await runCondition(c.label, c.fn, TEST_CASES);
+    // Checkpoint after every condition: a full run takes about an hour, and an
+    // interrupted run should only lose the condition in progress.
+    existing.generatedAt = new Date().toISOString();
+    writeFileSync(rawResultsPath, JSON.stringify(existing, null, 2));
   }
-  existing.generatedAt = new Date().toISOString();
-
-  mkdirSync(resultsDir, { recursive: true });
-  writeFileSync(rawResultsPath, JSON.stringify(existing, null, 2));
   console.log(`\nWrote ${rawResultsPath} (conditions so far: ${Object.keys(existing.conditions).join(", ")})`);
 
   const stillMissing = UNIQUE_CONDITIONS.filter((c) => !existing.conditions[c.label]);

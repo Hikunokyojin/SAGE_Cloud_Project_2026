@@ -81,13 +81,18 @@ function sleep(ms: number): Promise<void> {
 // transient rate limit is not the same finding as an actual model/parsing failure.
 // Retries a bounded number of times before giving up and letting the caller treat
 // it as a real error -- documented in the report's "Limitations" section.
-async function callGroqRaw(systemPrompt: string, userPrompt: string, maxTokens = 400, attempt = 1): Promise<string> {
+async function callGroqRaw(systemPrompt: string, userPrompt: string, maxTokens = 1024, attempt = 1): Promise<string> {
   const apiKey = await getGroqApiKey();
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: GROQ_MODEL,
+      // Same settings as the deployed Intent/Explainer agents: gpt-oss-20b's hidden
+      // reasoning tokens count against max_tokens, and small budgets at default effort
+      // frequently produced empty output. Every condition uses identical LLM settings
+      // so no baseline or ablation is handicapped relative to full SAGE.
+      reasoning_effort: "low",
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
@@ -181,7 +186,7 @@ export async function baseline1LlmOnly(tc: TestCase): Promise<RunResult> {
   const start = Date.now();
   try {
     const userPrompt = `Request: ${tc.rawInput}\n\nCatalog:\n${JSON.stringify(CATALOG)}`;
-    const raw = await callGroqRaw(BASELINE1_SYSTEM, userPrompt, 200);
+    const raw = await callGroqRaw(BASELINE1_SYSTEM, userPrompt, 1024);
     const latencyMs = Date.now() - start;
     let parsed: { serviceId: string | null; reason?: string };
     try {
@@ -234,7 +239,7 @@ export async function baseline2RetrievalPlusLlm(tc: TestCase): Promise<RunResult
     const userPrompt = `Request: ${tc.rawInput}\n\nCandidates:\n${JSON.stringify(
       candidates.map((c) => ({ serviceId: c.serviceId, name: c.name, price: c.price, uptime: c.uptime, latencyMs: c.latencyMs }))
     )}`;
-    const raw = await callGroqRaw(BASELINE2_SYSTEM, userPrompt, 200);
+    const raw = await callGroqRaw(BASELINE2_SYSTEM, userPrompt, 1024);
     llmCalls += 1;
     const latencyMs = Date.now() - start;
     let parsed: { serviceId: string | null; reason?: string };
@@ -401,7 +406,7 @@ export async function llmBasedNegotiator(tc: TestCase): Promise<RunResult> {
     const userPrompt = `Candidates:\n${JSON.stringify(
       candidates.map((c) => ({ serviceId: c.serviceId, price: c.price, uptime: c.uptime, latencyMs: c.latencyMs }))
     )}\nConstraints:\n${JSON.stringify(intent.constraints)}`;
-    const raw = await callGroqRaw(NEGOTIATOR_LLM_SYSTEM, userPrompt, 100);
+    const raw = await callGroqRaw(NEGOTIATOR_LLM_SYSTEM, userPrompt, 1024);
     llmCallsRef.count += 1;
     let parsed: { serviceId?: string };
     try {
@@ -458,7 +463,7 @@ export async function withoutScopedPayloads(tc: TestCase): Promise<RunResult> {
       `--- full service catalog (raw, unscoped) ---`,
       JSON.stringify(CATALOG),
     ].join("\n");
-    const raw = await callGroqRaw(UNSCOPED_SYSTEM, unscopedContext, 200);
+    const raw = await callGroqRaw(UNSCOPED_SYSTEM, unscopedContext, 1024);
     const latencyMs = Date.now() - start;
     let parsed: { serviceId: string | null; reason?: string };
     try {
