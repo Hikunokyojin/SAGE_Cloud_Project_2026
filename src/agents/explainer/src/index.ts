@@ -38,6 +38,9 @@ async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: num
     },
     body: JSON.stringify({
       model: GROQ_MODEL,
+      // Reasoning tokens count against max_tokens on gpt-oss-20b; see the same
+      // setting in intent/src/index.ts for the measured failure this prevents.
+      reasoning_effort: "low",
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
@@ -90,7 +93,7 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
 Alternatives considered: ${alternativesText}
 Prior rejected attempts: ${historyText}`;
 
-  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 350);
+  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 1024);
 
   const output: ExplainedBlueprint = {
     ...composition,
@@ -144,7 +147,7 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 400);
+  const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
 
   const output: EscalationExplanation = {
     requestId: input.requestId,
