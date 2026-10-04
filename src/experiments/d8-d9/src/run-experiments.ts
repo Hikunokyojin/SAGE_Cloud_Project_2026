@@ -32,6 +32,7 @@ import { handler as explainerHandler, explainEscalation } from "explainer-agent"
 import { runPipeline, type AgentInvoker, type PipelineResult } from "conductor/src/pipeline";
 
 import { TEST_CASES, type TestCase } from "./test-cases";
+import { satisfiesRequest } from "./ground-truth";
 import { summarize, formatSummaryTable, type RunResult, type MetricsSummary } from "./metrics";
 import {
   baseline1LlmOnly,
@@ -58,7 +59,24 @@ const fullSageInvoker: AgentInvoker = {
   reviewer: reviewIndependently,
   explainer: explainerHandler,
   explainEscalation: explainEscalation,
-  escalateUnsatisfiable: escalateUnsatisfiable,
+  // Same treatment as reviewIndependently: the real no-valid-solution escalation
+  // publishes to SNS, which this harness has no topic for. Without this wrapper every
+  // correct escalation was scored as a pipeline failure for Full SAGE only, while the
+  // other conditions (which escalate without SNS) scored the same cases as escalated.
+  escalateUnsatisfiable: async (input) => {
+    try {
+      return await escalateUnsatisfiable(input);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("SNS_TOPIC_ARN")) {
+        return {
+          requestId: input.requestId,
+          explanation: "No available service satisfies every mandatory requirement (escalated; SNS not configured in the local harness).",
+          attemptedOptions: [],
+        };
+      }
+      throw err;
+    }
+  },
 };
 
 async function runFullPipeline(tc: TestCase): Promise<RunResult> {
@@ -104,7 +122,7 @@ async function runFullPipeline(tc: TestCase): Promise<RunResult> {
       ...base,
       actualOutcome: "approved",
       actualServiceId: chosen.serviceId,
-      constraintsSatisfied: !tc.expectedServiceId ? undefined : chosen.serviceId === tc.expectedServiceId,
+      constraintsSatisfied: satisfiesRequest(tc.id, chosen.serviceId),
       negotiationAttempts: pipelineResult.result.iteration,
       latencyMs,
       llmCalls,
@@ -230,7 +248,12 @@ const D9_LABELS: [string, string][] = [
 ];
 
 const resultsDir = join(__dirname, "..", "..", "..", "..", "results");
-const rawResultsPath = join(resultsDir, "d8-d9-raw-results.json");
+// RESULTS_SUFFIX=.pre-fix reads/writes d8-d9-*.pre-fix.json instead, e.g. to re-score an
+// older run under the current metric definitions without making any LLM calls
+// (combine with ONLY_CONDITIONS=none).
+const suffix = process.env.RESULTS_SUFFIX ?? "";
+const rawResultsPath = join(resultsDir, `d8-d9-raw-results${suffix}.json`);
+const summaryPath = join(resultsDir, `d8-d9-metrics-summary${suffix}.json`);
 
 function loadExistingRaw(): { generatedAt: string; testCaseCount: number; conditions: Record<string, RunResult[]> } {
   try {
@@ -275,6 +298,14 @@ async function main() {
   }
 
   const d8Results: Record<string, RunResult[]> = {};
+  // Score every approved choice with the current ground-truth checker, so results
+  // recorded under an older definition are judged by the same rule.
+  for (const results of Object.values(existing.conditions)) {
+    for (const r of results) {
+      r.constraintsSatisfied = r.actualOutcome === "approved" ? satisfiesRequest(r.testCaseId, r.actualServiceId) : undefined;
+    }
+  }
+  writeFileSync(rawResultsPath, JSON.stringify(existing, null, 2));
   for (const [uniqueLabel, displayLabel] of D8_LABELS) d8Results[displayLabel] = existing.conditions[uniqueLabel];
   const d9Results: Record<string, RunResult[]> = {};
   for (const [uniqueLabel, displayLabel] of D9_LABELS) d9Results[displayLabel] = existing.conditions[uniqueLabel];
@@ -288,12 +319,12 @@ async function main() {
   console.log(formatSummaryTable(d9Summaries));
 
   writeFileSync(
-    join(resultsDir, "d8-d9-metrics-summary.json"),
+    summaryPath,
     JSON.stringify({ generatedAt: new Date().toISOString(), d8: d8Summaries, d9: d9Summaries }, null, 2)
   );
 
   console.log(`\nWrote ${join(resultsDir, "d8-d9-raw-results.json")}`);
-  console.log(`Wrote ${join(resultsDir, "d8-d9-metrics-summary.json")}`);
+  console.log(`Wrote ${summaryPath}`);
 }
 
 main().catch((err) => {

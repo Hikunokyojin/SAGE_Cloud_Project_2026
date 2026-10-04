@@ -42,6 +42,7 @@ import type {
   Violation,
 } from "@sage/shared-types";
 import type { TestCase } from "./test-cases";
+import { satisfiesRequest } from "./ground-truth";
 import type { RunResult } from "./metrics";
 
 // ── Shared plumbing ──────────────────────────────────────────────────────────
@@ -129,17 +130,12 @@ function baseResult(tc: TestCase): Omit<RunResult, "actualOutcome"> {
   };
 }
 
-// Independent, harness-side re-check of a chosen service against whatever ground
-// truth can be inferred from the test case's own expectation -- mirrors Reviewer's
-// own discipline (never trust a condition's self-report) so CSR/CVR mean the same
-// thing across every condition, including ones with no Reviewer at all. Only
-// meaningful for cases with an expectedServiceId (unambiguous ground truth); for
-// cases without one, the check is left undefined (no independent ground truth to
-// check against here) rather than silently assumed correct.
-function checkConstraints(tc: TestCase, chosenServiceId: string | undefined): boolean | undefined {
-  if (!tc.expectedServiceId) return undefined;
-  if (!chosenServiceId) return false;
-  return chosenServiceId === tc.expectedServiceId;
+// Independent, harness-side check of a chosen service against the request's real
+// capability and mandatory constraints (ground-truth.ts), using catalog values --
+// never a condition's self-report, so CSR/CVR mean the same thing for every
+// condition. Whether the *best* valid service was picked is Selection Accuracy's job.
+function checkConstraints(tc: TestCase, chosenServiceId: string | undefined): boolean {
+  return satisfiesRequest(tc.id, chosenServiceId);
 }
 
 // Reviewer's real handler attempts a real SNS publish once an iteration's
