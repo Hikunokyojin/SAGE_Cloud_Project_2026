@@ -6,9 +6,24 @@ export interface IntentConstraints {
   maxLatencyMs?: number;
 }
 
+// The catalog's service categories (dataset/services.json `capability`). Intent maps
+// each request onto one of these so Negotiator and Reviewer can reject candidates from
+// the wrong category -- semantic retrieval alone returns near neighbours across
+// categories. Must be updated when the dataset gains a new category.
+export const SERVICE_CATEGORIES = [
+  "image-resizing", "video-transcoding", "speech-transcription", "object-storage",
+  "content-delivery", "email-delivery", "messaging", "authentication", "payment-processing",
+  "ml-inference", "embedding-generation", "product-analytics", "message-queue",
+  "full-text-search", "document-generation", "compute", "geolocation",
+] as const;
+
 export interface Intent {
   requestId: string;
+  // Free-text description of what's needed; drives Broker's semantic search.
   capability: string;
+  // Canonical catalog category (one of SERVICE_CATEGORIES), or undefined when the
+  // request fits none -- in which case no category filter is applied.
+  category?: string;
   // D4.1: Intent Agent now emits the structured, weighted Constraint[] form
   // (mandatory/optional + priority) rather than the flat IntentConstraints
   // shape -- IntentConstraints itself is retained above for any external
@@ -31,6 +46,8 @@ export interface ServiceCandidate {
   // scoring algorithm has a real latency dimension to normalize and weight,
   // not just price/uptime. Optional since older dataset records predate it.
   latencyMs?: number;
+  // Catalog category (one of SERVICE_CATEGORIES), checked against Intent.category.
+  capability?: string;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────
@@ -107,6 +124,9 @@ export interface NegotiatorAgentInput {
   // prior iteration's violations are fed back in so re-negotiation is
   // informed rather than blind.
   priorViolations?: Violation[];
+  // When set, candidates outside this category are excluded like a failed
+  // mandatory constraint.
+  requiredCategory?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -115,6 +135,8 @@ export interface ReviewerAgentInput {
   requestId: string;
   composition: Composition;
   constraints: Constraint[];
+  // Re-verified independently of Negotiator's own category filter.
+  requiredCategory?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }

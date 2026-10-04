@@ -155,6 +155,23 @@ describe("runPipeline", () => {
     expect(explainerCall.parentDecisionId).toBe(reviewerCall.decisionId);
   });
 
+  it("passes Intent's category to both Negotiator and Reviewer as requiredCategory", async () => {
+    const invoker = makeInvoker({
+      intent: vi.fn(async (input) => ({
+        requestId: input.requestId,
+        capability: "email delivery",
+        category: "email-delivery",
+        constraints: [] as Constraint[],
+        rawInput: input.rawInput,
+      })),
+    });
+
+    await runPipeline("req-1", "I need a cheap email delivery service", invoker);
+
+    expect(vi.mocked(invoker.negotiator).mock.calls[0][0].requiredCategory).toBe("email-delivery");
+    expect(vi.mocked(invoker.reviewer).mock.calls[0][0].requiredCategory).toBe("email-delivery");
+  });
+
   it("threads the Input Guard's sanitized input into Intent Agent, not the raw input", async () => {
     const invoker = makeInvoker({
       inputGuard: vi.fn(async (input) => ({
