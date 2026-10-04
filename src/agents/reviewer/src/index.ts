@@ -54,6 +54,17 @@ function findViolations(input: ReviewerAgentInput): Violation[] {
   const service = input.composition.chosen.service;
   const violations: Violation[] = [];
 
+  if (input.requiredCategory && service.capability !== input.requiredCategory) {
+    violations.push({
+      constraint: "capability",
+      actualValue: service.capability ?? "unknown",
+      requiredValue: input.requiredCategory,
+      severity: "hard",
+      affectedCandidate: service.serviceId,
+      correctiveAction: `select a candidate in the "${input.requiredCategory}" category`,
+    });
+  }
+
   for (const constraint of input.constraints.filter((c) => c.mandatory)) {
     const actual = fieldValue(service, constraint.field);
     if (actual === undefined || violatesConstraint(actual, constraint)) {

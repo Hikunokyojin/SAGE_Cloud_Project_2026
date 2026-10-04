@@ -76,13 +76,21 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   // re-negotiation is informed by the specific reason for the prior failure
   // rather than being an undirected retry over the full candidate set.
   const excludedIds = new Set((input.priorViolations ?? []).map((v) => v.affectedCandidate));
+  // Category is a hard filter like a mandatory constraint: semantic retrieval returns
+  // near neighbours from other categories (e.g. a message queue for an email request),
+  // and without this the cheapest/fastest wrong-category candidate would win. A
+  // candidate with no recorded category is excluded, conservatively.
+  const inRequiredCategory = (c: ServiceCandidateWithEvidence) =>
+    !input.requiredCategory || c.capability === input.requiredCategory;
+
   const eligible = input.candidates.filter(
-    (c) => !excludedIds.has(c.serviceId) && passesMandatoryConstraints(c, input.constraints)
+    (c) => !excludedIds.has(c.serviceId) && inRequiredCategory(c) && passesMandatoryConstraints(c, input.constraints)
   );
 
   if (eligible.length === 0) {
     throw new Error(
       "Negotiator Agent: no candidate satisfies the mandatory constraints" +
+        (input.requiredCategory ? ` in category "${input.requiredCategory}"` : "") +
         (excludedIds.size > 0 ? ` after excluding ${excludedIds.size} previously-failed candidate(s)` : "")
     );
   }

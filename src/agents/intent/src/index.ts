@@ -1,10 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
+import { SERVICE_CATEGORIES } from "@sage/shared-types";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
 const VALID_FIELDS = new Set(["price", "uptime", "latencyMs"]);
 const VALID_OPERATORS: ConstraintOperator[] = ["lt", "lte", "gt", "gte", "eq"];
+
+// Only an exact catalog category is accepted; anything else (including "unknown")
+// means no category filter downstream, rather than filtering on a guess.
+export function normalizeCategory(raw: unknown): string | undefined {
+  return typeof raw === "string" && (SERVICE_CATEGORIES as readonly string[]).includes(raw) ? raw : undefined;
+}
 
 // D4.1: normalizes the LLM's raw JSON into strictly-typed Constraint[] --
 // a model can produce a malformed field/operator/type despite the prompt's
@@ -59,6 +66,7 @@ const SYSTEM_PROMPT = `You are the Intent Agent for SAGE, a cloud service market
 Convert the user's request into a JSON object with exactly these fields:
 {
   "capability": "<short description of what they need>",
+  "category": "<exactly one of: ${SERVICE_CATEGORIES.join(", ")}; or \"unknown\" if none fits>",
   "constraints": [
     { "field": "price" | "uptime" | "latencyMs", "operator": "lt" | "lte" | "gt" | "gte" | "eq", "value": <number>, "mandatory": true | false, "priority": <1-10, only when mandatory is false> }
   ]
@@ -102,7 +110,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const responseBody = await response.json();
   const modelText: string = responseBody.choices[0].message.content;
 
-  let parsed: { capability: string; constraints: unknown };
+  let parsed: { capability: string; category?: unknown; constraints: unknown };
   try {
     parsed = JSON.parse(modelText);
   } catch {
@@ -112,6 +120,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const output: Intent = {
     requestId: input.requestId,
     capability: parsed.capability,
+    category: normalizeCategory(parsed.category),
     constraints: normalizeConstraints(parsed.constraints),
     rawInput: input.rawInput,
   };
@@ -123,7 +132,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Parsed capability "${output.capability}" with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
+      reasoning: `Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,
