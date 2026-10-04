@@ -78,8 +78,9 @@ Found via live testing, not code review: Broker used to hard-filter candidates b
 
 ## Known open items / risks (not yet acted on)
 
-- Root `package.json` still declares `@aws-sdk/client-bedrock-runtime` as a dependency; nothing imports it anymore (Bedrock was fully replaced). Dead weight, safe to remove.
-- Root `package.json` declares `mongodb ^7.5.0`; Broker's own manifest separately pins `^6.8.0`. Two major versions of the same package in one workspace tree.
+- ~~Unused root `@aws-sdk/client-bedrock-runtime`; root `mongodb ^7.5.0` alongside Broker's `^6.8.0`~~ **Resolved 2026-10-04** (both removed from root; Broker still resolves 6.21.0 and its Lambda bundle is byte-identical). Note: a plain `npm install` fails on Windows because Broker deliberately declares Linux-only sharp binaries for its Lambda; use `npm install --force`, as `src/agents/broker/scripts/copy-native-deps.js` documents.
+- **Demo dry run, 2026-10-04.** Found and fixed live: Intent was failing most requests with empty LLM output. `gpt-oss-20b`'s hidden reasoning tokens count against `max_tokens`, and at 300 they often used the whole budget. `reasoning_effort: "low"` + `max_tokens: 1024` fixed it (3/6 to 6/6 valid in a direct probe), and the same fix was applied to Explainer. The escalation message shown to users no longer leaks internal error text. Post-fix live run: 10/10 requests behaved as intended (5 normal, 3 prompt-injection attempts flagged and still served, 2 impossible requests escalated); about 1.5-3s each after a ~9s cold start. **The D8/D9 numbers predate this fix**, and their dominant error ("non-JSON output") was this bug, so a re-run would likely show much lower error rates.
+- Intent sometimes mis-assigns preference priorities from loose phrasing (e.g. "fastest possible ..., budget is a low priority" produced latency priority 1). Explicit phrasing ("latency under 100 ms") works. This is an LLM extraction-quality limit, not a pipeline defect.
 - `MIN_SIMILARITY = 0.35` in Broker was calibrated on a handful of manually-checked query/service pairs, not a systematic evaluation — may need revisiting as more services are added to `dataset/services.json`.
 
 ## Deployed AWS resources (live as of 2026-09-14, account 420974348746, region ap-south-1)
