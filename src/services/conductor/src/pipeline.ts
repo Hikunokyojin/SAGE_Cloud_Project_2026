@@ -47,6 +47,7 @@ export interface AgentInvoker {
     constraints: Constraint[];
     iteration: number;
     priorViolations?: Violation[];
+    requiredCategory?: string;
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<Composition>;
@@ -54,6 +55,7 @@ export interface AgentInvoker {
     requestId: string;
     composition: Composition;
     constraints: Constraint[];
+    requiredCategory?: string;
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<ReviewerResult>;
@@ -143,6 +145,7 @@ export async function runPipeline(
         constraints: intent.constraints,
         iteration,
         priorViolations,
+        requiredCategory: intent.category,
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
       });
@@ -171,6 +174,7 @@ export async function runPipeline(
       requestId,
       composition,
       constraints: intent.constraints,
+      requiredCategory: intent.category,
       decisionId: reviewerDecisionId,
       parentDecisionId: negotiatorDecisionId,
     });
