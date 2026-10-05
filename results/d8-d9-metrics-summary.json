@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T17:00:54.248Z",
+  "generatedAt": "2026-10-05T07:23:22.400Z",
   "d8": [
     {
       "conditionName": "Baseline1-LLMOnly",
@@ -49,34 +49,34 @@
     {
       "conditionName": "Proposed-FullSAGE",
       "totalRequests": 27,
-      "constraintSatisfactionRate": 0.6666666666666666,
-      "constraintViolationRate": 0.07407407407407407,
+      "constraintSatisfactionRate": 0.7407407407407407,
+      "constraintViolationRate": 0,
       "selectionAccuracy": 0.8888888888888888,
       "averageNegotiationAttempts": 0.7407407407407407,
-      "hitlEscalationRate": 0.25925925925925924,
-      "endToEndLatency": 1872.888888888889,
+      "hitlEscalationRate": 0.2222222222222222,
+      "endToEndLatency": 1618.7407407407406,
       "totalLlmCalls": 47,
       "averageLlmCallsPerRequest": 1.7407407407407407,
-      "auditCompleteness": 1,
+      "auditCompleteness": 0.9629629629629629,
       "explanationConsistency": 1,
-      "errorRate": 0
+      "errorRate": 0.037037037037037035
     }
   ],
   "d9": [
     {
       "conditionName": "A-FullSAGE",
       "totalRequests": 27,
-      "constraintSatisfactionRate": 0.6666666666666666,
-      "constraintViolationRate": 0.07407407407407407,
+      "constraintSatisfactionRate": 0.7407407407407407,
+      "constraintViolationRate": 0,
       "selectionAccuracy": 0.8888888888888888,
       "averageNegotiationAttempts": 0.7407407407407407,
-      "hitlEscalationRate": 0.25925925925925924,
-      "endToEndLatency": 1872.888888888889,
+      "hitlEscalationRate": 0.2222222222222222,
+      "endToEndLatency": 1618.7407407407406,
       "totalLlmCalls": 47,
       "averageLlmCallsPerRequest": 1.7407407407407407,
-      "auditCompleteness": 1,
+      "auditCompleteness": 0.9629629629629629,
       "explanationConsistency": 1,
-      "errorRate": 0
+      "errorRate": 0.037037037037037035
     },
     {
       "conditionName": "B-WithoutReviewer",
