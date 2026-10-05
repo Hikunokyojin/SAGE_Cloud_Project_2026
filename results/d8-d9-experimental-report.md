@@ -1,6 +1,6 @@
 # SAGE — D8/D9 Experimental Report: Test Suite, Baselines, and Ablation Study
 
-Final run: 2026-10-04 (`results/d8-d9-raw-results.json`, `results/d8-d9-metrics-summary.json`). It supersedes the 2026-09-26 run, whose data is kept as `*.pre-fix.json` and compared in the "What changed from the first run" section below. Covers D8 (test suite and baselines) and D9 (experimental validation and ablation study) of the Reconciled Definition of Done.
+Final run: 2026-10-04 (`results/d8-d9-raw-results.json`, `results/d8-d9-metrics-summary.json`), with the full-SAGE condition re-run on 2026-10-05 after adding a service-category check (see "Capability check" below). It supersedes the 2026-09-26 run, whose data is kept as `*.pre-fix.json` and compared in the "What changed from the first run" section below. Covers D8 (test suite and baselines) and D9 (experimental validation and ablation study) of the Reconciled Definition of Done.
 
 ## Methodology
 
@@ -25,18 +25,18 @@ Final run: 2026-10-04 (`results/d8-d9-raw-results.json`, `results/d8-d9-metrics-
 | Baseline 1: LLM only | 74.1% | 0.0% | 100.0% | 0.00 | 0.0% | 682 | 1.00 | 0.0% | 100.0% | 0.0% |
 | Baseline 2: retrieval + LLM | 55.6% | 18.5% | 77.8% | 0.00 | 0.0% | 1,162 | 1.00 | 0.0% | 100.0% | 0.0% |
 | Baseline 3: SAGE without Reviewer | 70.4% | 3.7% | 88.9% | 0.74 | 0.0% | 1,361 | 1.74 | 74.1% | 74.1% | 0.0% |
-| Proposed: full SAGE | 66.7% | 7.4% | 88.9% | 0.74 | 25.9% | 1,873 | 1.74 | 100.0% | 100.0% | 0.0% |
+| Proposed: full SAGE (with capability check) | 74.1% | 0.0% | 88.9% | 0.74 | 22.2% | 1,619 | 1.74 | 96.3% | 100.0% | 3.7% |
 
-- **Baseline 1 is the most accurate condition on this dataset.** It reached the maximum possible CSR, 100% selection accuracy, no violations, and escalated all 7 impossible requests, while being the fastest. The likely reason is that the whole 21-service catalog (with each service's capability field) fits in a single prompt, so the model sees every option at once. That approach does not scale to a realistic marketplace, and it has no decision provenance or deterministic, reproducible scoring. On this catalog, though, SAGE's structure does not buy accuracy, and this report does not claim otherwise.
-- **Full SAGE handles failure cases well.** It produced no errors, escalated all 7 impossible requests through the real human-escalation route (HITL 25.9% = exactly those 7), and is the only condition with 100% audit completeness.
-- **Full SAGE's two violations share one root cause.** SS-1 ("the cheapest email delivery service") chose a message queue, and PO-3 ("the fastest compute instances") chose an image-resizing service. Broker's semantic search returns similar services from neighbouring capabilities, and neither the Negotiator nor the Reviewer checks that a candidate is in the requested capability; they check only price, uptime, and latency. With no numeric constraint to exclude them, the cheapest or fastest wrong-category candidate wins. **This is a real design gap**, and the old metric (which only compared against the expected service ID) could not distinguish it from a non-optimal but valid pick. The fix is a capability-match filter in the Negotiator, verified independently by the Reviewer; it is listed under future work and has not been implemented.
+- **Full SAGE now matches the best condition on constraint safety.** With the capability check, it reaches the maximum possible CSR (74.1%) with no violations, the same as Baseline 1. It is the only condition that also keeps a decision-provenance chain for its requests.
+- **Baseline 1 is still the most accurate at choosing the *best* option** (100% against 88.9%). The likely reason is that the whole 21-service catalog fits in a single prompt, so the model sees every option at once. That approach does not scale to a realistic marketplace, and it has no decision provenance or deterministic scoring.
+- **Full SAGE's three remaining misses.** Two (CO-1, CO-3) picked a valid but not the cheapest service: Intent read "the cheapest possible …; performance and uptime are a low priority" without a strong price preference. That is an Intent extraction-quality limit, not a violation. The third (NVS-3, "compute under $0.001") **failed instead of escalating**: in this run Broker's search returned no candidates at all, and the pipeline's "no candidates found" path returns a bare failure without notifying a human. That path predates the capability check and is listed as an open gap below. It also accounts for the one error and the one incomplete audit chain.
 - **Baseline 2 is the least safe condition.** Its 18.5% CVR comes from picking services from the wrong capability, or ones that break stated constraints, with no checking step.
 
 ## D9: Ablation study
 
 | Condition | CSR | CVR | Sel. acc. | Avg tries | HITL | Latency (ms) | LLM calls/req | Audit | Expl. | Errors |
 |---|---|---|---|---|---|---|---|---|---|---|
-| A: full SAGE | 66.7% | 7.4% | 88.9% | 0.74 | 25.9% | 1,873 | 1.74 | 100.0% | 100.0% | 0.0% |
+| A: full SAGE (with capability check) | 74.1% | 0.0% | 88.9% | 0.74 | 22.2% | 1,619 | 1.74 | 96.3% | 100.0% | 3.7% |
 | B: without Reviewer | 70.4% | 3.7% | 88.9% | 0.74 | 0.0% | 1,361 | 1.74 | 74.1% | 74.1% | 0.0% |
 | C: without re-negotiation | 70.4% | 3.7% | 96.3% | 0.74 | 0.0% | 1,541 | 1.74 | 74.1% | 74.1% | 0.0% |
 | D: LLM-based Negotiator | 70.4% | 0.0% | 63.0% | 0.74 | 0.0% | 2,031 | 2.67 | 74.1% | 90.5% | 22.2% |
@@ -45,9 +45,28 @@ Final run: 2026-10-04 (`results/d8-d9-raw-results.json`, `results/d8-d9-metrics-
 
 - **D, the LLM-based Negotiator: valid picks, worse choices, broken failure handling.** It never approved an invalid service (CVR 0%), but selection accuracy drops to 63.0% because it often picks a valid but non-optimal service (e.g. the cheap option when the request asked for the fastest). It also fails 6 of the 7 impossible requests outright instead of escalating them (it returns no service ID rather than declaring "no valid option"), and it needs the most LLM calls (2.67 per request). The deterministic Negotiator's advantage is optimal choices, clean escalation, and lower cost, not raw validity. *The first run's claim that D "collapses" (11.1% CSR, 88.9% errors) is retracted*: that result came from a token-budget bug that hit this condition hardest (see below).
 - **E, without scoped payloads: approved an impossible request.** It approved a service for NVS-1 (100% uptime, which no service offers), and it is the only ablation to do so. Its audit completeness is 0%, the same as both baselines, because with no structured payloads there is nothing for a decision chain to attach to. Scoped payloads and provenance remain causally linked.
-- **B, without the Reviewer: no measurable benefit from the Reviewer on this data.** B scores as well as full SAGE or slightly better. That is expected given the earlier D7 finding: the Negotiator already applies the same numeric mandatory-constraint filter that the Reviewer re-checks, so on consistent data they never disagree, and the Reviewer does not check capability, which is where the remaining violations come from. The Reviewer's value is defence in depth against a faulty Negotiator, which this dataset never produces.
+- **Comparing A with B–F: only A was re-run with the capability check.** B–F still run without it, so A's lower violation rate here reflects the capability check rather than the single component each ablation removes. A like-for-like ablation would need B–F re-run with the check in place.
+- **B, without the Reviewer: no measurable benefit from the Reviewer on this data.** That is expected given the earlier D7 finding: the Negotiator already applies the same mandatory filters that the Reviewer re-checks (now including category), so on consistent data they never disagree. The Reviewer's value is defence in depth against a faulty Negotiator, which this dataset never produces.
 - **C, without re-negotiation: highest selection accuracy (96.3%).** It also has one fewer violation than full SAGE. With one run per condition, a one-case difference (3.7 percentage points) is within noise. Since the retry loop rarely triggers on consistent data, removing it costs nothing here.
 - **F, without provenance: audit completeness 0% by construction.** Its other metrics track full SAGE.
+
+## Capability check (2026-10-05)
+
+The 2026-10-04 run traced all of full SAGE's constraint violations to one gap: Broker's semantic search returns similar services from neighbouring categories, and nothing checked the chosen service's category. For example, "the cheapest email delivery service" chose a message queue, and "the fastest compute instances" chose an image resizer. The fix, now deployed:
+
+- **Intent** classifies each request into one of the catalog's 17 categories, or none.
+- **Broker** passes each candidate's category through.
+- **Negotiator** excludes wrong-category candidates as a hard filter, so a request with no valid candidate in its category still escalates.
+- **Reviewer** re-verifies the category on its own code path.
+
+| Full SAGE | CSR | CVR | Selection accuracy | Errors | HITL | Audit |
+|---|---|---|---|---|---|---|
+| Without capability check (2026-10-04) | 66.7% | 7.4% | 88.9% | 0.0% | 25.9% | 100.0% |
+| With capability check (2026-10-05) | **74.1%** | **0.0%** | 88.9% | 3.7% | 22.2% | 96.3% |
+
+Both violations are gone, and both cases are now answered correctly, which was also confirmed live on the deployed system. Selection accuracy is unchanged because one other case regressed: NVS-3 failed rather than escalating, for the reason described under D8 above, which is unrelated to the capability check. That one case also accounts for the error rate, HITL, and audit differences.
+
+**Open gap: the "no candidates found" path does not reach a human.** When Broker returns no candidates at all, the pipeline returns `failed` without notifying anyone. That breaks the design rule that every failure path must reach a human. The fix is the same as for the earlier no-valid-solution gap (route it through the escalation function), but it has not been made.
 
 ## What changed from the first run (2026-09-26)
 
@@ -76,7 +95,8 @@ Four further corrections were made for this run:
 4. **HITL% and explanation consistency are partial measures** (see Metrics). Escalation correctness is better read from selection accuracy, and explanation quality is not judged.
 5. **The local harness has no SNS topic or audit-table writes.** Both are verified on the deployed system instead (D5/D6 and the 2026-10-04 dry run).
 6. **Groq free tier: 8,000 tokens per minute and 200,000 per day.** With the fixed settings, the full run completed with no rate-limit retries.
+7. **Only full SAGE was re-run with the capability check.** The baselines and ablations B–F are from 2026-10-04 and run without it, so A-versus-ablation differences partly reflect the capability check.
 
 ## Summary
 
-With the LLM defect fixed, every condition is far more reliable, and the comparison reads differently from the first run. On this small catalog a single LLM call over the whole catalog was the most accurate approach, and full SAGE does not beat it on correctness. SAGE's measurable strengths are in how it fails and what it records. It never crashed, it escalated every impossible request to a human through the real escalation route, and it produced a complete decision-provenance trail for every request, which no baseline does. Two ablations carry clear evidence. The deterministic Negotiator makes better choices, handles impossible requests correctly, and is cheaper than an LLM-based one. Dropping scoped payloads removes provenance entirely, and in this run that condition also approved an impossible request. The evaluation also exposed a concrete design gap: no stage checks that a chosen service is in the requested capability. That gap accounts for all of full SAGE's remaining violations, and fixing it is the clearest next improvement.
+With the LLM defect fixed, every condition is far more reliable, and the comparison reads differently from the first run. The evaluation exposed one concrete design gap, the missing category check. That gap has since been fixed and deployed, and full SAGE now never approves an invalid service, matching the best condition on constraint safety while also keeping a decision-provenance record, which no baseline does. A single LLM call over the whole small catalog still chooses the *best* option more often (100% against 88.9%). Two ablations carry clear evidence. The deterministic Negotiator makes better choices, handles impossible requests correctly, and is cheaper than an LLM-based one. Dropping scoped payloads removes provenance entirely, and that condition also approved an impossible request. One gap remains open: when retrieval finds no candidates at all, the request fails without reaching a human.
