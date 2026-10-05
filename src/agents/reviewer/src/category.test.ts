@@ -43,6 +43,24 @@ describe("Reviewer category check", () => {
     expect(result.approved).toBe(true);
   });
 
+  it("explains a no-match escalation plainly when the request had no constraints", async () => {
+    const { escalateUnsatisfiable } = await import("./index");
+    const out = await escalateUnsatisfiable({ requestId: "r", constraints: [], reason: "no matching services were found" });
+    expect(out.explanation).toContain("No service in the catalog matches this request");
+    expect(out.explanation).not.toContain("constraints requested were");
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists the constraints when an escalation had some", async () => {
+    const { escalateUnsatisfiable } = await import("./index");
+    const out = await escalateUnsatisfiable({
+      requestId: "r",
+      constraints: [{ field: "uptime", operator: "gte", value: 100, mandatory: true }],
+      reason: "no candidate satisfies the mandatory constraints",
+    });
+    expect(out.explanation).toContain("uptime is at least 100");
+  });
+
   it("does not check category when none is required", async () => {
     const { handler } = await import("./index");
     const result = await handler({ requestId: "r", composition: composition(undefined), constraints: [] });
