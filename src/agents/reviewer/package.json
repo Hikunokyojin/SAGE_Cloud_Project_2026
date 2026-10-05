@@ -2,6 +2,8 @@
   "name": "reviewer-agent",
   "version": "1.0.0",
   "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
   "scripts": {
     "test:local": "tsx src/local-test.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/index.js",
@@ -9,6 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.600.0",
+    "@sage/audit": "*",
     "@sage/shared-types": "*"
   },
   "devDependencies": {
