@@ -124,8 +124,17 @@ export async function runPipeline(
     parentDecisionId: intentDecisionId,
   });
 
+  // Retrieval finding nothing is still an unresolved request, so it goes to a human
+  // like any other no-valid-solution outcome rather than ending as a bare failure.
   if (candidates.length === 0) {
-    return { status: "failed", requestId, error: "No candidate services matched this request." };
+    const escalation = await invoker.escalateUnsatisfiable({
+      requestId,
+      constraints: intent.constraints,
+      reason: "no matching services were found in the catalog for this request",
+      decisionId: randomUUID(),
+      parentDecisionId: brokerDecisionId,
+    });
+    return { status: "paused_for_review", requestId, escalation };
   }
 
   const history: NegotiationAttempt[] = [];
