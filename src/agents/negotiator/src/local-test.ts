@@ -11,6 +11,7 @@ async function run() {
         price: 0.02,
         uptime: 99.9,
         endpoint: "https://api.example.com/resize",
+        evidence: [],
       },
       {
         serviceId: "svc-2",
@@ -19,9 +20,14 @@ async function run() {
         price: 0.01,
         uptime: 98.5,
         endpoint: "https://api.example.com/resize2",
+        evidence: [],
       },
     ],
-    constraints: { maxBudget: 0.05, minUptime: 95 },
+    constraints: [
+      { field: "price", operator: "lte", value: 0.05, mandatory: true },
+      { field: "uptime", operator: "gte", value: 95, mandatory: true },
+    ],
+    iteration: 1,
   });
   console.log(JSON.stringify(result, null, 2));
 }
