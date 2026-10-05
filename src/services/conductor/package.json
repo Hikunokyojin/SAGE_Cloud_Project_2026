@@ -5,17 +5,28 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "express": "^4.19.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "@sage/shared-types": "*"
+    "@aws-sdk/client-lambda": "^3.600.0",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@sage/shared-types": "*",
+    "input-guard-agent": "*",
+    "intent-agent": "*",
+    "broker-agent": "*",
+    "negotiator-agent": "*",
+    "reviewer-agent": "*",
+    "explainer-agent": "*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
     "@types/node": "^20.14.0",
     "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
     "tsx": "^4.16.0"
   }
 }

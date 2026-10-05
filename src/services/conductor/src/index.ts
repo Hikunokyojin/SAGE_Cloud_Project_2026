@@ -1,28 +1,111 @@
 import "dotenv/config";
 import express from "express";
-import type { PipelineState } from "@sage/shared-types";
+import cors from "cors";
+import { randomUUID } from "crypto";
+import { existsSync } from "fs";
+import path from "path";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { runPipeline } from "./pipeline";
+import type { AgentInvoker } from "./pipeline";
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
+
+// Table name is a fixed literal (see src/infra/cdk/lib/data-construct.ts), not a
+// generated CloudFormation token, so a hardcoded default here keeps a Conductor
+// redeploy from needing to touch the EC2 systemd unit's env vars every time --
+// AUDIT_TABLE_NAME still overrides it if ever pointed at a different table.
+const AUDIT_TABLE_NAME = process.env.AUDIT_TABLE_NAME || "agent_decisions";
+const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-south-1" });
+
+// AGENT_INVOKE_MODE selects how Conductor talks to the agents: "local" (default) calls
+// each agent's handler in-process for local dev; "lambda" invokes the real deployed
+// AWS Lambda functions. pipeline.ts is identical either way.
+//
+// Loaded lazily (not a top-level import of both modules) because localInvoker.ts
+// statically imports all 6 agent packages -- a static import of it would force those
+// packages to exist even in "lambda" mode, bloating the EC2 deployment artifact with
+// code that's never called there. Cached after first resolution.
+let invokerPromise: Promise<AgentInvoker> | null = null;
+function getInvoker(): Promise<AgentInvoker> {
+  if (!invokerPromise) {
+    invokerPromise =
+      process.env.AGENT_INVOKE_MODE === "lambda"
+        ? import("./lambdaInvoker").then((m) => m.lambdaInvoker)
+        : import("./localInvoker").then((m) => m.localInvoker);
+  }
+  return invokerPromise;
+}
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "sage-conductor" });
 });
 
-app.post("/request", (req, res) => {
+app.post("/request", async (req, res) => {
   const rawInput: string = req.body.text ?? "";
+  const requestId = randomUUID();
 
-  const placeholderState: PipelineState = {
-    requestId: crypto.randomUUID(),
-    status: "in_progress",
-    currentAgent: "IntentAgent",
-    retryCount: 0,
-  };
+  try {
+    const invoker = await getInvoker();
+    const result = await runPipeline(requestId, rawInput, invoker);
 
-  res.json({ received: rawInput, pipeline: placeholderState });
+    if (result.status === "completed") {
+      res.status(200).json(result);
+    } else if (result.status === "paused_for_review") {
+      res.status(202).json(result);
+    } else {
+      res.status(422).json(result);
+    }
+  } catch (err) {
+    res.status(500).json({
+      requestId,
+      status: "failed",
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
 });
+
+// Read API for the observability dashboard (Milestone 3, tasks 17-18): returns every
+// AuditRecord written for a given requestId, ordered oldest-first (matches the table's
+// own sort key), with input/output JSON-parsed back from the strings @sage/audit wrote.
+app.get("/audit/:requestId", async (req, res) => {
+  try {
+    const response = await dynamoClient.send(
+      new QueryCommand({
+        TableName: AUDIT_TABLE_NAME,
+        KeyConditionExpression: "requestId = :r",
+        ExpressionAttributeValues: { ":r": { S: req.params.requestId } },
+        ScanIndexForward: true,
+      })
+    );
+
+    const steps = (response.Items ?? []).map((item) => ({
+      agent: item.agent?.S ?? "",
+      timestamp: item.timestamp?.S ?? "",
+      reasoning: item.reasoning?.S,
+      input: item.input?.S ? JSON.parse(item.input.S) : undefined,
+      output: item.output?.S ? JSON.parse(item.output.S) : undefined,
+    }));
+
+    res.status(200).json({ requestId: req.params.requestId, steps });
+  } catch (err) {
+    res.status(500).json({
+      requestId: req.params.requestId,
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
+});
+
+// Static observability dashboard (src/apps/dashboard's Vite build), served at "/" so
+// it shares Conductor's HTTPS API Gateway URL -- CloudFront is unavailable to this
+// account until AWS verifies it. Registered after the API routes so they always win.
+const DASHBOARD_DIR = process.env.DASHBOARD_DIR || path.join(__dirname, "dashboard");
+if (existsSync(path.join(DASHBOARD_DIR, "index.html"))) {
+  app.use(express.static(DASHBOARD_DIR));
+}
 
 app.listen(PORT, () => {
   console.log(`SAGE conductor listening on port ${PORT}`);
