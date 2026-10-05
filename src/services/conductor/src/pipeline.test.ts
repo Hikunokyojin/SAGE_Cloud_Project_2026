@@ -188,13 +188,17 @@ describe("runPipeline", () => {
     expect(invoker.intent).toHaveBeenCalledWith(expect.objectContaining({ rawInput: "SANITIZED VERSION" }));
   });
 
-  it("returns 'failed' without calling Negotiator when Broker finds no candidates", async () => {
+  it("escalates to a human without calling Negotiator when Broker finds no candidates", async () => {
     const invoker = makeInvoker({ broker: vi.fn(async () => []) });
 
     const result = await runPipeline("req-1", "anything", invoker);
 
-    expect(result.status).toBe("failed");
+    expect(result.status).toBe("paused_for_review");
     expect(invoker.negotiator).not.toHaveBeenCalled();
+    const call = vi.mocked(invoker.escalateUnsatisfiable).mock.calls[0][0];
+    expect(call.reason).toContain("no matching services");
+    // Links into the provenance chain right after Broker's decision.
+    expect(call.parentDecisionId).toBe(vi.mocked(invoker.broker).mock.calls[0][0].decisionId);
   });
 
   it("escalates to Human-in-the-Loop when Negotiator throws (no candidate satisfies the mandatory constraints)", async () => {

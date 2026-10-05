@@ -219,8 +219,10 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
 
   // User-facing text: input.reason carries internal error plumbing (e.g. the
   // lambdaInvoker prefix), so it goes only to the SNS message and audit record.
-  const explanation =
-    `No available service could satisfy every mandatory requirement at once. ` +
+  const explanation = input.constraints.length === 0
+    ? `No service in the catalog matches this request, so it has been passed to a human reviewer. ` +
+      `Try describing the service you need differently, or check whether the marketplace offers it.`
+    : `No available service could satisfy every mandatory requirement at once. ` +
     `The constraints requested were: ${constraintsText}. ` +
     `Consider relaxing one of the mandatory constraints above (for example, raising a budget limit or lowering a minimum uptime/latency requirement) and resubmitting the request.`;
 
