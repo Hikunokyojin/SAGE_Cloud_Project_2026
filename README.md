@@ -1,98 +1,97 @@
 # SAGE — Service-Agent Graph Ecosystem
 
-SAGE is an AI-driven cloud service marketplace that autonomously composes and optimizes microservice pipelines from a natural-language request, using a coordinated chain of specialized AI agents.
+SAGE is an AI-driven cloud service marketplace. A user describes the service they need in plain English, and a chain of specialized agents finds, selects, verifies and explains a matching service, or passes the request to a human when nothing fits. Every decision is recorded and traceable. Deployed live on AWS.
 
-Full requirements, constraints, and architecture rationale live in [`docs/spec.md`](docs/spec.md) — that's the source of truth for scope. This README covers setup, architecture, and how to run/demo the system.
+**Live dashboard:** https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod/ (trailing slash required). See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for suggested requests and the full service catalogue.
 
 ## Architecture
 
-A user's natural-language request flows through six typed stages, each a strictly-scoped JSON handoff — never raw conversation history:
-
 ```
-user request → Input Guard → Intent Agent → Broker Agent → Negotiator Agent → Reviewer Agent → Explainer Agent → response
+request → Input Guard → Intent → Broker → Negotiator ⇄ Reviewer → Explainer → response
+                                            (bounded loop)
 ```
 
-| Stage | What it does | Status |
-|---|---|---|
-| **Input Guard** | Screens the request for prompt injection before any LLM-facing agent runs | Not yet built |
-| **Intent Agent** | Bedrock call that turns the natural-language request into a structured `Intent` (capability + constraints) | Implemented |
-| **Broker Agent** | Semantic search (Qdrant Cloud embeddings via Bedrock Titan) + hard-constraint filtering (MongoDB Atlas — price/uptime) to find candidate services | Implemented |
-| **Negotiator Agent** | Deterministic cost/uptime scoring + dependency resolution to pick the optimal composition — explicitly *not* an LLM call, so the decision is reproducible and auditable | Implemented |
-| **Reviewer Agent** | Validates the chosen composition against constraints; hard max-retries circuit breaker (3 attempts) escalates to a Human-in-the-Loop node via SNS instead of looping indefinitely | Implemented |
-| **Explainer Agent** | Produces a plain-language rationale for the final composition via Bedrock | Implemented |
-| **Conductor** | Orchestrates the full chain via AWS SDK Lambda invocations; intended to run always-on on EC2 (t2/t3.micro) behind API Gateway | Skeleton only — not yet wired to invoke the agents |
+Every handoff between agents is a typed payload from [`src/packages/shared-types`](src/packages/shared-types), never raw conversation history.
 
-Every inter-agent payload is a type from [`src/packages/shared-types`](src/packages/shared-types) — this shared contract layer is what keeps agents decoupled and avoids passing full conversation history between them (see `docs/spec.md` §1 for why that matters).
+| Stage | What it does |
+|---|---|
+| **Input Guard** | Rule-based screen for prompt injection; replaces matched phrases with `[filtered]` before any LLM sees the request |
+| **Intent** | LLM turns the request into a service category plus structured constraints (price, uptime, latency; mandatory or preferred) |
+| **Broker** | Semantic search over the catalogue (Qdrant Cloud) joined with service metadata (MongoDB Atlas); retrieval only, no filtering |
+| **Negotiator** | Deterministic scoring, no LLM: excludes candidates in the wrong category or breaking a mandatory constraint, then ranks the rest by a weighted, normalised score |
+| **Reviewer** | Independently re-checks the choice with its own logic; on failure feeds structured violations back to the Negotiator (max 3 attempts), then escalates to a human via SNS |
+| **Explainer** | LLM writes a plain-language rationale, or remediation advice when a request is escalated |
+| **Conductor** | Orchestrates the chain on EC2 behind API Gateway, invoking each agent as its own Lambda; also serves the dashboard |
 
-Architecture diagrams: [`architecture/AWS_Architecture.png`](architecture/AWS_Architecture.png), [`architecture/System_Architecture.png`](architecture/System_Architecture.png).
+Requests that no service can satisfy, including ones that match nothing in the catalogue, are escalated to a human rather than failing silently. Each agent writes a decision record to DynamoDB, linked to the decision before it, so a request's full decision path can be reconstructed and viewed in the dashboard.
 
-### Why EC2 + Lambda
+Architecture diagrams: [`architecture/`](architecture).
 
-The Conductor runs as steady-state, always-on orchestration on EC2, while individual agents run as bursty, isolated Lambda functions. This hybrid split is a deliberate cost/performance trade-off (see `docs/spec.md` §4) — don't move Conductor to Lambda or add other always-on compute without an equally strong reason.
+### Deviations from the original design
 
-### Data stores / external services
+This AWS account is restricted by AWS (new account), which forced two changes:
+- **Amazon Bedrock is unavailable.** Intent and Explainer use Groq (`openai/gpt-oss-20b`); Broker runs a local embedding model (`Xenova/all-MiniLM-L6-v2`) inside its Lambda.
+- **CloudFront is unavailable.** The dashboard is served by the Conductor instead of S3 + CloudFront.
 
-- **MongoDB Atlas** — structured service metadata (price, uptime, endpoint) for hard-constraint filtering
-- **Qdrant Cloud** — vector search over service embeddings for semantic candidate retrieval
-- **Amazon Bedrock** — all LLM inference (Intent, Explainer) and embeddings (Broker) — no third-party LLM API is used anywhere
-- **DynamoDB + CloudTrail** *(planned)* — immutable per-agent audit trail
-- **SNS** *(planned deployment; logic already implemented in Reviewer)* — Human-in-the-Loop escalation alerts
+### AWS resources
+
+8 Lambda functions (one least-privilege role each), an EC2 t3.micro Conductor (SSM access only, no SSH), API Gateway, DynamoDB (`agent_decisions`), SNS (human escalation), CloudTrail, and an AWS Budgets alert, all defined in CDK under [`src/infra/cdk`](src/infra/cdk). The VPC has no NAT gateways.
 
 ## Repository structure
 
 ```
-docs/           spec.md (source of truth) and other project documentation
+docs/           specification, project plan and status, demo guide, IAM policy review
 architecture/   architecture diagrams
-dataset/        seed data for the service marketplace (not yet populated)
-results/        demo outputs / audit evidence (not yet populated)
+dataset/        service catalogue (21 services) and edge-case scenarios
+results/        experiment results and reports, prompt-injection report
 src/
-  agents/       one folder per agent (intent, broker, negotiator, reviewer, explainer)
+  agents/       input-guard, intent, broker, negotiator, reviewer, explainer
   services/     conductor (orchestration API)
-  packages/     shared-types (contract layer)
-  apps/         dashboard (observability UI — not yet built)
-  infra/        infrastructure-as-code (not yet built)
+  packages/     shared-types (contracts), audit (decision records), secrets
+  apps/         dashboard (decision-trace viewer)
+  infra/        AWS CDK app
+  experiments/  D8-D9 test suite, baselines and ablation study
 ```
 
-This is an npm workspaces monorepo (workspaces: `src/apps/*`, `src/services/*`, `src/agents/*`, `src/packages/*`). Built and tested with Node 22+ (no `engines` field is enforced yet).
+npm workspaces monorepo, Node 22+.
 
 ## Setup
 
 ```bash
-npm install
+npm install --force
 ```
 
-Each agent that calls external services (Bedrock, MongoDB, Qdrant) needs its own `.env` file — see `src/agents/broker/.env` for the expected variables (`MONGO_URI`, `QDRANT_URL`, `QDRANT_API_KEY`, `AWS_REGION`). Never commit `.env` files; they're gitignored.
+`--force` is required on Windows/macOS: Broker deliberately declares Linux-only native binaries for its Lambda. Secrets (Groq API key, MongoDB and Qdrant credentials) are read from a local `.env` in development and from AWS SSM Parameter Store in production. Never commit `.env` files.
 
-## Running locally
-
-Per-agent (`src/agents/intent`, `src/agents/broker`, `src/agents/negotiator`, `src/agents/reviewer`, `src/agents/explainer`):
+## Running and testing
 
 ```bash
-npm run test:local --workspace=src/agents/<name>   # runs src/local-test.ts via tsx against real Bedrock/Mongo/Qdrant — needs a valid .env
-npm run typecheck --workspace=src/agents/<name>     # tsc --noEmit
-npm run build --workspace=src/agents/<name>         # esbuild bundle to dist/index.js (the eventual Lambda deployment artifact)
+npm test                                              # full Vitest suite (125 tests)
+npm run typecheck  --workspace=src/agents/<name>      # per-package typecheck
+npm run build      --workspace=src/agents/<name>      # esbuild bundle (the Lambda artifact)
+npm run test:local --workspace=src/agents/<name>      # run an agent against the real external services
+npm run dev --workspace=src/services/conductor        # run Conductor locally (in-process agents, port 3001)
+npm run dev --workspace=src/apps/dashboard            # run the dashboard locally
+npm run experiment --workspace=src/experiments/d8-d9  # run the D8-D9 evaluation (uses most of a day's Groq quota)
 ```
 
-Conductor (`src/services/conductor`):
+## Deploying
 
 ```bash
-npm run dev --workspace=src/services/conductor      # tsx watch, runs the Express server locally (default port 3001)
-npm run build --workspace=src/services/conductor    # tsc
-npm run start --workspace=src/services/conductor    # node dist/index.js
+cd src/infra/cdk && npx cdk diff && npx cdk deploy --require-approval never
 ```
 
-Shared types (`src/packages/shared-types`):
+Build every agent first; CDK packages each agent's existing `dist/`. Conductor's application code is deployed separately (bundle to S3, then install and restart on EC2 via SSM). The exact steps are in [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md).
 
-```bash
-npm run build --workspace=src/packages/shared-types # tsc — run after changing shared types so dependent packages pick up dist/
-```
+## Evaluation
 
-There is currently no automated test framework (no Jest/Vitest) — the `local-test.ts` scripts make live calls to real external services rather than mocking them, so they need valid credentials and network access. A mocked unit-test layer is planned (see `docs/spec.md`).
+27 controlled test cases, three baselines and a six-condition ablation study; see [`results/d8-d9-experimental-report.md`](results/d8-d9-experimental-report.md). In short, SAGE never approved a service that broke a stated requirement, escalated every impossible request to a human, and is the only approach tested that keeps a complete decision record. On this small catalogue, a single LLM given the whole catalogue picked the best option more often (100% against 88.9%).
 
-## Deploying / demoing on AWS
+## Documentation
 
-Not yet available — Conductor isn't wired to invoke the agent chain, no agent is deployed as a Lambda function, and there's no infrastructure-as-code yet. This section will be filled in once that work lands; track progress against the Definition of Done in `docs/spec.md` §6.
+- [`docs/spec.md`](docs/spec.md): original requirements and scope
+- [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md): dated status of every milestone and the reasoning behind each change
+- [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md): demonstration guide and service catalogue
+- [`docs/iam-policy-review.md`](docs/iam-policy-review.md): least-privilege review of every IAM role
 
-## Status
-
-This project is under active development against a 4-week build deadline. See `docs/spec.md` for the full must-haves list, constraints, deliverables, and Definition of Done.
+Current release: `v1.0` (released 2026-10-05).
