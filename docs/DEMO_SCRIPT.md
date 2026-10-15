@@ -29,6 +29,36 @@ The first request after a period of inactivity takes about 15 seconds while the 
 | 5 | An impossible request is passed to a human | `I need an image resizing service with 100 percent uptime guaranteed` | **Paused for review**: no service can meet the requirement, so a human reviewer is notified and a suggestion is given |
 | 6 | A request outside the catalogue | `I need a service that teleports physical furniture between cities` | **Paused for review**: no service in the catalogue matches the request |
 
+## Service catalogue
+
+You can also write your own requests. The catalogue contains the 21 services below; ask for any category in plain English, optionally with limits on price, uptime or latency (for example, *"I need object storage under 0.01 dollars with at least 99 percent uptime"*). Limits that no service in a category can meet will be passed to a human reviewer, as in requests 5 and 6.
+
+| Category | Service | Price per request | Uptime | Latency |
+|---|---|---|---|---|
+| authentication | SecureAuth | $0 | 99.99% | 80 ms |
+| compute | SpotCompute | $0.008 | 95% | 3000 ms |
+| compute | SteadyCompute | $0.12 | 99.99% | 200 ms |
+| content delivery | EdgeDeliver | $0.06 | 99.95% | 25 ms |
+| document generation | DocForge | $0.01 | 98.8% | 750 ms |
+| email delivery | MailRelay | $0.001 | 99.7% | 220 ms |
+| embedding generation | VectorForge | $0.05 | 99.3% | 150 ms |
+| full text search | FastSearch | $0.04 | 99.5% | 90 ms |
+| geolocation | GeoLocate | $0.002 | 99.3% | 60 ms |
+| image resizing | BudgetResize | $0.005 | 97.5% | 650 ms |
+| image resizing | FastResize | $0.02 | 99.9% | 180 ms |
+| image resizing | TurboResize | $0.045 | 99.7% | 45 ms |
+| message queue | QueueRunner | $0.0007 | 99.9% | 15 ms |
+| messaging (SMS) | TextBridge | $0.012 | 99.6% | 500 ms |
+| ML inference | InferEdge | $0.25 | 99.4% | 40 ms |
+| object storage | ArchiveBin | $0.004 | 99% | 1200 ms |
+| object storage | CloudVault | $0.023 | 99.99% | 60 ms |
+| payment processing | PayFlow | $0.029 | 99.98% | 350 ms |
+| product analytics | MetricPulse | $0.018 | 99.6% | 300 ms |
+| speech transcription | VoiceScribe | $0.08 | 99.2% | 900 ms |
+| video transcoding | StreamTranscode | $0.15 | 99.5% | 4200 ms |
+
+Categories with more than one service (compute, image resizing, object storage) are the most interesting to test, since SAGE has to choose between them.
+
 ## What the decision trace shows
 
 - **Six steps, in order:** Input Guard → Intent → Broker → Negotiator → Reviewer → Explainer. Each is a separate AWS Lambda function, and each records its own decision in DynamoDB, linked to the decision before it.
