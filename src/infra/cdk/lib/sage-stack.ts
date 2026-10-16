@@ -42,7 +42,7 @@ export class SageStack extends Stack {
 
     new BudgetConstruct(this, "Budget", {
       limitUsd: Number(this.node.tryGetContext("budgetLimitUsd") ?? 50),
-      alertEmail: this.node.tryGetContext("budgetAlertEmail") ?? "alerts@example.com",
+      alertEmail: this.node.tryGetContext("budgetAlertEmail") ?? "divikbhaskar@gmail.com",
     });
   }
 }
