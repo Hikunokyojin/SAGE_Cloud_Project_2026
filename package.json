@@ -1,32 +1,49 @@
 {
-  "name": "sage-cloud-project-2026",
+  "name": "sage",
   "version": "1.0.0",
   "private": true,
-  "description": "",
+  "description": "SAGE (Service-Agent Graph Ecosystem): a multi-agent AI system that turns a plain-English request into a verified, explained and audited cloud-service choice.",
+  "license": "Apache-2.0",
+  "author": "Divik Bhaskar",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "experiment": "npm run experiment --workspace=evaluation",
+    "security-report": "npm run security-report --workspace=agents/input-guard"
   },
   "workspaces": [
-    "src/apps/*",
-    "src/services/*",
-    "src/agents/*",
-    "src/packages/*",
-    "src/infra/*",
-    "src/experiments/*"
+    "apps/*",
+    "services/*",
+    "agents/*",
+    "packages/*",
+    "infra/*",
+    "evaluation"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/issues"
   },
   "homepage": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026#readme",
+  "keywords": [
+    "multi-agent",
+    "llm",
+    "aws",
+    "aws-cdk",
+    "serverless",
+    "rag",
+    "typescript",
+    "explainable-ai",
+    "agentic-ai"
+  ],
   "devDependencies": {
     "@types/aws-lambda": "^8.10.162",
     "@types/node": "^26.1.2",

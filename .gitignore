@@ -1,11 +1,22 @@
-﻿node_modules/
+# Dependencies and build output
+node_modules/
 dist/
-.env
-.env.*
-*.log
-CLAUDE.md
 coverage/
 cdk.out/
 cdk.context.json
 deploy-bundle.js
-*_Technical_Documentation.pdf
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local-only documents
+*.pdf
