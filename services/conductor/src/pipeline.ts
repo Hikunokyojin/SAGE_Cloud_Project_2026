@@ -16,7 +16,7 @@ import type {
 // One typed method per agent -- both the local (in-process) and Lambda-backed
 // invokers implement this same shape, so runPipeline doesn't care which is used.
 //
-// D6.1: every call also carries decisionId/parentDecisionId (optional on each
+// every call also carries decisionId/parentDecisionId (optional on each
 // agent's own input type, see shared-types) -- runPipeline is the sole assigner
 // of decisionId (via randomUUID()) and the sole threader of parentDecisionId
 // across stages, so each agent's own audit record can be linked into a full
@@ -89,7 +89,7 @@ export type PipelineResult =
 // no unbounded agent retry loops).
 const SAFETY_MAX_ATTEMPTS = 5;
 
-// D5: the bounded re-negotiation loop. Each iteration calls Negotiator (which now
+// the bounded re-negotiation loop. Each iteration calls Negotiator (which now
 // does its own hard-constraint filtering and, from iteration 2 on, excludes whatever
 // candidate the prior iteration's Violation named) then Reviewer (which independently
 // re-derives pass/fail). Conductor no longer manually promotes "the next alternative"
@@ -101,7 +101,7 @@ export async function runPipeline(
   rawInput: string,
   invoker: AgentInvoker
 ): Promise<PipelineResult> {
-  // D6.1: decisionId is assigned here, once per stage invocation, and the previous
+  // decisionId is assigned here, once per stage invocation, and the previous
   // stage's decisionId is threaded in as parentDecisionId -- the only place in the
   // system that needs to know the pipeline's actual call order.
   const inputGuardDecisionId = randomUUID();

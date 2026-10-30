@@ -107,7 +107,7 @@ describe("Broker Agent handler", () => {
       endpoint: "https://api.example.com/resize",
       similarityScore: 0.92,
     });
-    // D4.2: every candidate now carries Evidence recording why it was retrieved.
+    // every candidate now carries Evidence recording why it was retrieved.
     expect(result[0].evidence).toEqual([
       { source: "semantic-search", similarityScore: 0.92, retrievedAt: expect.any(String) },
       {

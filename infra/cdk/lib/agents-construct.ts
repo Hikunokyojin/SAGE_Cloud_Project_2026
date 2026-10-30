@@ -9,7 +9,7 @@ import { Duration, Stack } from "aws-cdk-lib";
 export interface AgentsConstructProps {
   /** SNS topic Reviewer publishes to when it escalates to Human-in-the-Loop. */
   escalationTopic: sns.ITopic;
-  /** agent_decisions audit-trail table -- every agent writes its own AuditRecord here (Milestone 3, task 15). */
+  /** agent_decisions audit-trail table -- every agent writes its own AuditRecord here. */
   auditTable: dynamodb.ITable;
 }
 

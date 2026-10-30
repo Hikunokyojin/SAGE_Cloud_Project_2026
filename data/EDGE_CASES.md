@@ -1,6 +1,6 @@
 # SAGE Service Dataset — Edge-Case Scenario Coverage
 
-This document maps the 9 edge-case categories required by the D3 (service dataset & evidence layer) specification to concrete, reproducible example requests against `services.json` v1.1.0. Each scenario names the exact services and constraint values involved, so it can be run verbatim once the Negotiator/Reviewer rework (D4-D5) lands, and reused directly as part of the D8 test suite later.
+This document maps the 9 edge-case categories used by the evaluation suite to concrete, reproducible example requests against `services.json` v1.1.0. Each scenario names the exact services and constraint values involved, so it can be run verbatim once the Negotiator/Reviewer rework (D4-D5) lands, and reused directly as part of the D8 test suite later.
 
 Categories 1-4 and 8 are demonstrated primarily using the `image-resizing` capability group, which was specifically extended in v1.1.0 (see `CHANGELOG.md`) to contain three candidates spanning the full cost/latency/reliability space:
 

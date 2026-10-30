@@ -1,4 +1,4 @@
-// D8: controlled test suite (>= 20 cases) covering the 9 required categories.
+// Controlled test suite (>= 20 cases) covering 9 categories.
 //
 // Built directly on top of data/services.json (v1.1.0, 21 services) and the 9
 // documented scenarios in data/EDGE_CASES.md -- each category below is a
@@ -19,7 +19,7 @@
 // mandatory-constraint check independently. The two are therefore always consistent by
 // construction, which means the "re-negotiation" and "hitl-escalation" categories below
 // cannot organically reach a *second* Negotiator/Reviewer round through Broker retrieval
-// alone (that would require Negotiator and Reviewer to disagree, which the D4/D5 fix
+// alone (that would require Negotiator and Reviewer to disagree, which a later fix
 // deliberately eliminated) -- and Reviewer's iteration>=MAX_RETRIES circuit breaker is
 // consequently unreachable through the full pipeline today, the same way the earlier
 // Reviewer escalation/retry path was unreachable before that fix.
@@ -201,7 +201,7 @@ export const TEST_CASES: TestCase[] = [
       "computespot meets budget (0.008) but not uptime (95% < 99%); computereserved meets uptime (99.99%) but not budget (0.12 > 0.01). Constraint conflict -> escalated.",
   },
 
-  // ── 7. re-negotiation (exercises the D5 bounded refinement loop mechanism) ──
+  // ── 7. re-negotiation (exercises the bounded refinement loop) ──
   {
     id: "RN-1",
     category: "re-negotiation",
@@ -288,7 +288,7 @@ export const TEST_CASES: TestCase[] = [
   },
 ];
 
-// Lowercase alias used by run-experiments.ts (the D8/D9 orchestrator script).
+// Lowercase alias used by run-experiments.ts (the evaluation orchestrator script).
 export const testCases = TEST_CASES;
 
 export function testCasesByCategory(): Record<TestCategory, TestCase[]> {

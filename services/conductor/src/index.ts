@@ -68,7 +68,7 @@ app.post("/request", async (req, res) => {
   }
 });
 
-// Read API for the observability dashboard (Milestone 3, tasks 17-18): returns every
+// Read API for the observability dashboard: returns every
 // AuditRecord written for a given requestId, ordered oldest-first (matches the table's
 // own sort key), with input/output JSON-parsed back from the strings @sage/audit wrote.
 app.get("/audit/:requestId", async (req, res) => {

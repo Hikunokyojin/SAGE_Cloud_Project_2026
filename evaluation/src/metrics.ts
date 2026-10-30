@@ -1,6 +1,6 @@
-// D9: pure metric functions computed from a batch of RunResults. Kept dependency-free
+// Pure metric functions computed from a batch of RunResults. Kept dependency-free
 // (no I/O) so they're trivially unit-testable (see metrics.test.ts) and reusable across
-// both the D8 baseline comparison and the D9 ablation study.
+// both the baseline comparison and the ablation study.
 //
 // Honesty note (see also docs/EVALUATION.md "Methodology" and
 // "Limitations"): a few of these metrics are automated proxies rather than a ground-truth

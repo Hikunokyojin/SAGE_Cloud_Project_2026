@@ -1,8 +1,8 @@
-// D8/D9 runnable script (npm run experiment --workspace=evaluation).
+// Runnable evaluation script (npm run experiment --workspace=evaluation).
 //
-// D8: runs {Baseline 1, Baseline 2, Baseline 3, Proposed/Full SAGE} against the
+// Runs {Baseline 1, Baseline 2, Baseline 3, Proposed/Full SAGE} against the
 //     full test suite (test-cases.ts).
-// D9: runs ablation conditions (A) Full SAGE, (B) without Reviewer, (C) without
+// Runs ablation conditions (A) Full SAGE, (B) without Reviewer, (C) without
 //     re-negotiation, (D) LLM-based Negotiator, (E) without scoped payloads,
 //     (F) without provenance -- against the same suite.
 //
@@ -217,10 +217,10 @@ async function runCondition(label: string, fn: ConditionFn, cases: TestCase[]): 
   return results;
 }
 
-// Unique underlying condition functions. "Proposed-FullSAGE" (D8) and "A-FullSAGE"
-// (D9) are the same function, as are "Baseline3-NoReviewer" (D8) and
-// "B-WithoutReviewer" (D9) -- run each unique function exactly once and reuse the
-// result for both its D8 and D9 label(s), instead of paying for it twice.
+// Unique underlying condition functions. "Proposed-FullSAGE" and "A-FullSAGE"
+// are the same function, as are "Baseline3-NoReviewer" and
+// "B-WithoutReviewer" -- run each unique function exactly once and reuse the
+// result for each of its labels, instead of paying for it twice.
 const UNIQUE_CONDITIONS: { label: string; fn: ConditionFn }[] = [
   { label: "Baseline1-LLMOnly", fn: baseline1LlmOnly },
   { label: "Baseline2-Retrieval+LLM", fn: baseline2RetrievalPlusLlm },
@@ -275,7 +275,7 @@ async function main() {
   const onlyLabels = process.env.ONLY_CONDITIONS?.split(",").map((s) => s.trim()).filter(Boolean);
   const toRun = onlyLabels ? UNIQUE_CONDITIONS.filter((c) => onlyLabels.includes(c.label)) : UNIQUE_CONDITIONS;
 
-  console.log(`SAGE D8/D9 experiment run -- ${TEST_CASES.length} test cases, ${new Date().toISOString()}`);
+  console.log(`SAGE evaluation run -- ${TEST_CASES.length} test cases, ${new Date().toISOString()}`);
   console.log(`Running conditions: ${toRun.map((c) => c.label).join(", ")}\n`);
 
   const existing = loadExistingRaw();
@@ -313,9 +313,9 @@ async function main() {
   const d8Summaries: MetricsSummary[] = D8_LABELS.map(([, displayLabel]) => summarize(displayLabel, d8Results[displayLabel], TEST_CASES));
   const d9Summaries: MetricsSummary[] = D9_LABELS.map(([, displayLabel]) => summarize(displayLabel, d9Results[displayLabel], TEST_CASES));
 
-  console.log("\n\n=== D8 Summary: Baselines vs. Proposed Method ===");
+  console.log("\n\n=== Summary: Baselines vs. Proposed Method ===");
   console.log(formatSummaryTable(d8Summaries));
-  console.log("\n\n=== D9 Summary: Ablation Study ===");
+  console.log("\n\n=== Summary: Ablation Study ===");
   console.log(formatSummaryTable(d9Summaries));
 
   writeFileSync(

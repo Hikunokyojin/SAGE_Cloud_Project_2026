@@ -4,7 +4,7 @@ This dataset (`services.json`) is versioned independently of the application cod
 
 ## v1.1.0 — 2026-09-23
 
-**Schema change (additive, backward-compatible):** every service record gained four new fields, per the D3 (service dataset & evidence layer) specification:
+**Schema change (additive, backward-compatible):** every service record gained four new fields, to support evidence tracking and latency-aware scoring:
 
 | Field | Type | Purpose |
 |---|---|---|

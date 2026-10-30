@@ -74,7 +74,7 @@ export async function handler(input: InputGuardAgentInput): Promise<InputGuardAg
   };
 
   // Audit-trail write is best-effort: a DynamoDB hiccup shouldn't block the pipeline,
-  // it should just leave a gap in the trail for that step (Milestone 3, task 15).
+  // it should just leave a gap in the trail for that step.
   try {
     await recordDecision({
       requestId: input.requestId,

@@ -60,7 +60,7 @@ describe("recordDecision", () => {
     expect(sendMock.mock.calls[0][0].input.Item.reasoning).toBeUndefined();
   });
 
-  it("writes decisionId/parentDecisionId/iteration/status/constraintStatus/score/evidence when provided (D6.1)", async () => {
+  it("writes decisionId/parentDecisionId/iteration/status/constraintStatus/score/evidence when provided ", async () => {
     const { recordDecision } = await import("./index");
 
     await recordDecision(

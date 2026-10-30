@@ -10,7 +10,7 @@ import type {
 } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
-// D4.3: formalized deterministic scoring algorithm (architecture spec S8). Still
+// Deterministic scoring algorithm. Still
 // no LLM call anywhere in this file -- the same candidates, constraints, and prior
 // violations always produce the same composition.
 
@@ -39,7 +39,7 @@ function fieldValue(candidate: ServiceCandidateWithEvidence, field: string): num
   return undefined;
 }
 
-// Step 4 of S8: apply every mandatory constraint as a hard exclusion filter --
+// Step 4: apply every mandatory constraint as a hard exclusion filter --
 // a candidate failing a mandatory constraint is excluded outright, not penalized.
 // A candidate missing the relevant field (e.g. no latencyMs on record) is treated
 // as failing a mandatory constraint on that field, conservatively.
@@ -53,7 +53,7 @@ function passesMandatoryConstraints(candidate: ServiceCandidateWithEvidence, con
 
 // Step 1: min-max normalization to [0, 1] across the current eligible candidate
 // set. When every candidate ties on a dimension, that dimension is fully
-// favorable for everyone (matches the pre-D4 tie-handling behavior).
+// favorable for everyone (matches the earlier tie-handling behavior).
 function normalizedDimension(value: number, allValues: number[], higherIsBetter: boolean): number {
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
@@ -72,7 +72,7 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
     throw new Error("Negotiator Agent: no candidates to score");
   }
 
-  // D5: exclude any candidate a prior iteration's Violation named, so
+  // exclude any candidate a prior iteration's Violation named, so
   // re-negotiation is informed by the specific reason for the prior failure
   // rather than being an undirected retry over the full candidate set.
   const excludedIds = new Set((input.priorViolations ?? []).map((v) => v.affectedCandidate));

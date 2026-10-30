@@ -90,7 +90,7 @@ export class ConductorConstruct extends Construct {
       // is synthesized, which silently triggers a full instance replacement (new
       // instance ID, Conductor's manually-deployed app code gone) on the next
       // unrelated `cdk deploy` -- confirmed via `cdk diff` while working on an
-      // unrelated change (task 14a). Pinned to the AMI this instance is actually
+      // unrelated change. Pinned to the AMI this instance is actually
       // running today (verified via `aws ec2 describe-instances`); bump deliberately,
       // not as a drift side effect, if this ever needs to move.
       machineImage: ec2.MachineImage.genericLinux({

@@ -5,9 +5,8 @@ import { RemovalPolicy } from "aws-cdk-lib";
 
 /**
  * The immutable audit trail (DynamoDB) and the Human-in-the-Loop escalation channel
- * (SNS). Neither is wired to agent code yet -- that's Milestone 3 (audit writes) and
- * already-implemented Reviewer code (SNS publish) respectively. Provisioning the
- * resources now, ahead of the write code, keeps infra and feature work separable.
+ * (SNS). Agents write their own audit records to the table, and the Reviewer and
+ * escalation functions publish to the topic; each role is granted only that access.
  */
 export class DataConstruct extends Construct {
   public readonly auditTable: dynamodb.Table;

@@ -1,8 +1,8 @@
 # SAGE Input Guard -- Prompt-Injection Verification Report
 
-Generated: 2026-09-15T18:29:59.961Z
+Generated: 2026-10-30T17:50:59.306Z
 
-Verification method for the objectives document objective 5 ("better security": explicit Input Guard against prompt injection). Source case list: `src/agents/input-guard/src/security/cases.ts`, asserted identically by `src/agents/input-guard/src/security/prompt-injection-suite.test.ts` (`npm test`). This report is a human-readable snapshot of the same run, not a separate claim.
+Verification of the Input Guard against prompt injection. Source case list: `agents/input-guard/src/security/cases.ts`, asserted identically by `agents/input-guard/src/security/prompt-injection-suite.test.ts` (`npm test`). This report is a human-readable snapshot of the same run, not a separate claim.
 
 ## Summary: 21/21 cases behaved as expected
 

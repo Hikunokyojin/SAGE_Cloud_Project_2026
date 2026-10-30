@@ -34,8 +34,7 @@ async function main() {
   lines.push(`Generated: ${new Date().toISOString()}`);
   lines.push("");
   lines.push(
-    "Verification method for the objectives document objective 5 (\"better security\": explicit Input Guard " +
-      "against prompt injection). Source case list: `agents/input-guard/src/security/cases.ts`, " +
+    "Verification of the Input Guard against prompt injection. Source case list: `agents/input-guard/src/security/cases.ts`, " +
       "asserted identically by `agents/input-guard/src/security/prompt-injection-suite.test.ts` " +
       "(`npm test`). This report is a human-readable snapshot of the same run, not a separate claim."
   );

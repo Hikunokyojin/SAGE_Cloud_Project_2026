@@ -1,5 +1,4 @@
-// Formal prompt-injection verification suite (Milestone 4, task 19; the objectives document's
-// stated verification method for objective 5 -- "better security"). Distinct from the
+// Formal prompt-injection verification suite. Distinct from the
 // ordinary unit tests in ../index.test.ts: this is a structured, documented case list
 // with an explicit true-positive/true-negative/known-gap split, consumed by both
 // prompt-injection-suite.test.ts (asserts against it) and

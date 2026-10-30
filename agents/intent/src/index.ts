@@ -13,7 +13,7 @@ export function normalizeCategory(raw: unknown): string | undefined {
   return typeof raw === "string" && (SERVICE_CATEGORIES as readonly string[]).includes(raw) ? raw : undefined;
 }
 
-// D4.1: normalizes the LLM's raw JSON into strictly-typed Constraint[] --
+// normalizes the LLM's raw JSON into strictly-typed Constraint[] --
 // a model can produce a malformed field/operator/type despite the prompt's
 // instructions, so this is defensive parsing, not a pass-through cast.
 function normalizeConstraints(raw: unknown): Constraint[] {

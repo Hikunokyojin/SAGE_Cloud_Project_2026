@@ -4,7 +4,7 @@ import * as cloudtrail from "aws-cdk-lib/aws-cloudtrail";
 import * as s3 from "aws-cdk-lib/aws-s3";
 
 /**
- * Secondary audit layer required by spec S1/S3 (Milestone 3, task 16), distinct from
+ * Secondary audit layer for accountability, distinct from
  * the DynamoDB agent_decisions table -- CloudTrail records AWS API activity (who
  * called what, when) across the account, not agent decisions. Single-region only
  * (this project runs entirely in ap-south-1) and management events only, not data

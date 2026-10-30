@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handler } from "../index";
 import { SECURITY_CASES } from "./cases";
 
-// Formal, dedicated security-verification artifact (Milestone 4, task 19) -- distinct
+// Formal, dedicated security-verification artifact -- distinct
 // from ../index.test.ts's ordinary unit tests. Every case here is documented (id,
 // category, description) and this file's job is specifically to prove the Input
 // Guard's behavior against a structured attack/benign/known-gap case list, not to

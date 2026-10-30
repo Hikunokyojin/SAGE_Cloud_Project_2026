@@ -24,7 +24,7 @@ export interface Intent {
   // Canonical catalog category (one of SERVICE_CATEGORIES), or undefined when the
   // request fits none -- in which case no category filter is applied.
   category?: string;
-  // D4.1: Intent Agent now emits the structured, weighted Constraint[] form
+  // Intent Agent now emits the structured, weighted Constraint[] form
   // (mandatory/optional + priority) rather than the flat IntentConstraints
   // shape -- IntentConstraints itself is retained above for any external
   // consumer still on the old shape, but no agent constructs it anymore.
@@ -42,7 +42,7 @@ export interface ServiceCandidate {
   uptime: number;
   endpoint: string;
   similarityScore?: number;
-  // D4.2: surfaced from the dataset's latencyMs field (v1.1.0) so Negotiator's
+  // surfaced from the dataset's latencyMs field (v1.1.0) so Negotiator's
   // scoring algorithm has a real latency dimension to normalize and weight,
   // not just price/uptime. Optional since older dataset records predate it.
   latencyMs?: number;
@@ -53,7 +53,7 @@ export interface ServiceCandidate {
 // ── Negotiator/Optimizer Output ────────────────────────────
 
 export interface CompositionChoice {
-  // D4.3: carries the retrieval Evidence through to the final composition and
+  // carries the retrieval Evidence through to the final composition and
   // explanation, not just the raw candidate fields.
   service: ServiceCandidateWithEvidence;
   score: number;
@@ -67,7 +67,7 @@ export interface CompositionBlueprint {
 }
 
 // ── Explainer Output ────────────────────────────────────────
-// D4.5: extends Composition (not the older CompositionBlueprint) so the final
+// extends Composition (not the older CompositionBlueprint) so the final
 // explained result still carries its iteration number and full ScoreBreakdown.
 
 export interface ExplainedBlueprint extends Composition {
@@ -76,7 +76,7 @@ export interface ExplainedBlueprint extends Composition {
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
 
-// D6.1: every agent input optionally carries the decisionId Conductor assigned
+// every agent input optionally carries the decisionId Conductor assigned
 // to *this* invocation and the parentDecisionId of whichever prior decision fed
 // into it -- letting each agent's own DecisionProvenance record link back into
 // a reconstructable per-request causal chain, without changing any agent's
@@ -120,7 +120,7 @@ export interface NegotiatorAgentInput {
   candidates: ServiceCandidateWithEvidence[];
   constraints: Constraint[];
   iteration: number;
-  // D5: on a refinement iteration following a verification failure, the
+  // on a refinement iteration following a verification failure, the
   // prior iteration's violations are fed back in so re-negotiation is
   // informed rather than blind.
   priorViolations?: Violation[];
@@ -144,7 +144,7 @@ export interface ReviewerAgentInput {
 export interface ExplainerAgentInput {
   requestId: string;
   composition: Composition;
-  // D5: when the approved composition was reached after one or more failed
+  // when the approved composition was reached after one or more failed
   // iterations, the full refinement history is passed through so the
   // rationale can reference what was tried and rejected, not just the
   // final choice.
@@ -163,7 +163,7 @@ export interface EscalationExplainerInput {
   parentDecisionId?: string;
 }
 
-// Live testing surfaced a real gap after D4/D5: when Negotiator finds zero candidates
+// Live testing surfaced a real gap after the bounded refinement loop was added: when Negotiator finds zero candidates
 // satisfying the mandatory constraints (a "no valid solution" case, e.g. a constraint
 // conflict), it never reaches Reviewer/the normal retry loop at all, so the normal
 // escalation path was unreachable for that failure mode -- it just failed silently
@@ -224,7 +224,7 @@ export interface PipelineState {
   retryCount: number;
 }
 
-// ── Generalized Constraints (Phase 2 / architecture spec S6.1) ──────────────
+// ── Generalized Constraints  ──────────────
 // Extends IntentConstraints (retained, unchanged, still used by every agent
 // today) with a structured, weighted representation: a list of individual
 // Constraint entries distinguishing a mandatory hard filter from an optional,

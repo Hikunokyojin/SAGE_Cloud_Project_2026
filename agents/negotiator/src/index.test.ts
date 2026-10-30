@@ -143,7 +143,7 @@ describe("Negotiator Agent handler", () => {
     expect(result.scoreBreakdown.totalScore).toBe(result.chosen.score);
   });
 
-  it("excludes a candidate named in a prior iteration's Violation (D5 re-negotiation)", async () => {
+  it("excludes a candidate named in a prior iteration's Violation (re-negotiation)", async () => {
     const priorViolations: Violation[] = [
       {
         constraint: "uptime",

@@ -129,7 +129,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       const serviceId = (r.payload as { serviceId?: string } | null)?.serviceId;
       const meta = serviceId ? metadataById.get(serviceId) : undefined;
       if (!meta) return null;
-      // D4.2: every candidate carries its retrieval Evidence -- both the semantic
+      // every candidate carries its retrieval Evidence -- both the semantic
       // match (Qdrant score) and the structured-metadata lookup that supplied the
       // rest of its fields -- so downstream agents and the audit trail can see why
       // it was retrieved, not just that it was.

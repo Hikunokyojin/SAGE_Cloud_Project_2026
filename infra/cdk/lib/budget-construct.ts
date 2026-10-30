@@ -2,7 +2,7 @@ import { Construct } from "constructs";
 import * as budgets from "aws-cdk-lib/aws-budgets";
 
 export interface BudgetConstructProps {
-  /** Monthly cost limit in USD -- sized against the cloud budget (spec S3 must-have 12 / plan task 14a). */
+  /** Monthly cost limit in USD -- sized against the cloud budget (cost-control safety net). */
   limitUsd: number;
   /** Email notified when spend crosses the alert thresholds below. */
   alertEmail: string;

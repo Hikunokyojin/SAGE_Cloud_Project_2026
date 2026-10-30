@@ -1,4 +1,4 @@
-// D8/D9: Baseline and ablation condition implementations. Every function here is a
+// Baseline and ablation condition implementations. Every function here is a
 // separately-invokable async function `(testCase) => RunResult`, using the REAL
 // agent handler functions imported directly (same in-process pattern as
 // services/conductor/src/localInvoker.ts) plus, where noted, a real Groq call.
@@ -140,7 +140,7 @@ function checkConstraints(tc: TestCase, chosenServiceId: string | undefined): bo
 
 // Reviewer's real handler attempts a real SNS publish once an iteration's
 // violations trip its MAX_RETRIES=3 circuit breaker. SNS publishing is not among
-// the external calls the D8/D9 spec lists as fine to make live, and this harness
+// the external calls that are fine to make live, and this harness
 // never sets SNS_TOPIC_ARN, so that call throws. Caught here and converted into the
 // escalation it represents -- the same outcome a real SNS failure or success both
 // eventually produce from the caller's point of view. Documented as a deliberate

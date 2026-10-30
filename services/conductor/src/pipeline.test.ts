@@ -122,7 +122,7 @@ describe("runPipeline", () => {
     }
   });
 
-  it("assigns a decisionId per stage and threads parentDecisionId into a reconstructable chain (D6.1)", async () => {
+  it("assigns a decisionId per stage and threads parentDecisionId into a reconstructable chain ", async () => {
     const invoker = makeInvoker();
 
     await runPipeline("req-1", "I need a cheap image resizer", invoker);
@@ -222,7 +222,7 @@ describe("runPipeline", () => {
     }
   });
 
-  it("feeds Reviewer's Violation back into Negotiator on the next iteration (D5 bounded re-negotiation)", async () => {
+  it("feeds Reviewer's Violation back into Negotiator on the next iteration (bounded re-negotiation)", async () => {
     let reviewerCallCount = 0;
     const invoker = makeInvoker({
       negotiator: vi.fn(async (input) => {

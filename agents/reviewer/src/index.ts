@@ -22,7 +22,7 @@ function getSnsClient(): SNSClient {
   return snsClient;
 }
 
-// D4.4: independent re-derivation, deliberately a separate code path from
+// independent re-derivation, deliberately a separate code path from
 // Negotiator's own evaluateConstraint (negotiator/src/index.ts) rather than a
 // shared/imported helper -- Reviewer must never trust Negotiator's
 // self-reported ScoreBreakdown.constraintStatus, so a defect confined to

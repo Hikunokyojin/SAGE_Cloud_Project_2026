@@ -1,7 +1,7 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import type { AuditRecord, DecisionProvenance } from "@sage/shared-types";
 
-// Immutable audit trail writer (Milestone 3, task 15; extended for D6.1 decision
+// Immutable audit trail writer (extended for decision
 // provenance): every agent calls this once per decision, writing to the
 // `agent_decisions` DynamoDB table (partition key requestId, sort key timestamp --
 // see infra/cdk/lib/data-construct.ts). `input`/`output` are arbitrary
@@ -9,7 +9,7 @@ import type { AuditRecord, DecisionProvenance } from "@sage/shared-types";
 // DynamoDB maps -- keeps this writer agent-agnostic and avoids a util-dynamodb
 // dependency just for nested unknown shapes.
 //
-// D6.1: accepts the full DecisionProvenance shape (a superset of AuditRecord) so the
+// Accepts the full DecisionProvenance shape (a superset of AuditRecord) so the
 // causal chain -- decisionId, parentDecisionId, iteration, score, constraintStatus,
 // evidence, status -- is captured per record, letting a full request's decision path
 // be reconstructed by following parentDecisionId links. AuditRecord alone is still
