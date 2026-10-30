@@ -1,7 +1,33 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import * as fs from "fs";
+import * as path from "path";
 import * as cdk from "aws-cdk-lib";
 import { Template, Match } from "aws-cdk-lib/assertions";
 import { SageStack } from "../lib/sage-stack";
+
+// CDK needs each agent's compiled bundle (agents/<name>/dist) to exist before it can
+// synthesise the stack. These tests assert infrastructure and permissions, not the
+// bundles themselves, so when a bundle has not been built (a fresh clone, CI) a minimal
+// placeholder is created for the duration of the run and removed afterwards.
+const AGENT_NAMES = ["input-guard", "intent", "broker", "negotiator", "reviewer", "explainer"];
+const createdPlaceholders: string[] = [];
+
+beforeAll(() => {
+  for (const name of AGENT_NAMES) {
+    const distDir = path.join(__dirname, "..", "..", "..", "agents", name, "dist");
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+      fs.writeFileSync(path.join(distDir, "index.js"), "exports.handler = async () => ({});" + String.fromCharCode(10));
+      createdPlaceholders.push(distDir);
+    }
+  }
+});
+
+afterAll(() => {
+  for (const dir of createdPlaceholders) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 function synth(): Template {
   const app = new cdk.App();

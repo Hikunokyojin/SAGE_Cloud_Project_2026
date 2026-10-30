@@ -9,6 +9,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "npm run build --workspace=packages/shared-types && npm run build --workspace=packages/secrets && npm run build --workspace=packages/audit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
