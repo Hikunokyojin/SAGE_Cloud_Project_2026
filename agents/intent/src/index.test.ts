@@ -3,9 +3,14 @@ import type { IntentAgentInput } from "@sage/shared-types";
 
 const resolveSecretMock = vi.fn();
 const fetchMock = vi.fn();
+const recordDecisionMock = vi.fn();
 
 vi.mock("@sage/secrets", () => ({
   resolveSecret: resolveSecretMock,
+}));
+
+vi.mock("@sage/audit", () => ({
+  recordDecision: recordDecisionMock,
 }));
 
 vi.stubGlobal("fetch", fetchMock);
@@ -13,7 +18,10 @@ vi.stubGlobal("fetch", fetchMock);
 function groqResponse(content: string) {
   return {
     ok: true,
-    json: async () => ({ choices: [{ message: { content } }] }),
+    json: async () => ({
+      choices: [{ message: { content } }],
+      usage: { prompt_tokens: 120, completion_tokens: 80, total_tokens: 200 },
+    }),
   };
 }
 
@@ -22,6 +30,8 @@ describe("Intent Agent handler", () => {
     vi.resetModules();
     resolveSecretMock.mockReset();
     fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
     resolveSecretMock.mockResolvedValue("test-groq-key");
   });
 
@@ -131,5 +141,16 @@ describe("Intent Agent handler", () => {
 
     const { handler } = await import("./index");
     await expect(handler({ requestId: "req-4", rawInput: "anything" })).rejects.toThrow(/Groq API error/);
+  });
+
+  it("records the token usage Groq reports and how long the step took", async () => {
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "video transcoding", category: "video-transcoding" })));
+    const { handler } = await import("./index");
+
+    await handler({ requestId: "req-1", rawInput: "I need video transcoding" } as IntentAgentInput);
+
+    const recorded = recordDecisionMock.mock.calls[0][0];
+    expect(recorded.usage).toEqual({ promptTokens: 120, completionTokens: 80, totalTokens: 200 });
+    expect(recorded.durationMs).toBeGreaterThanOrEqual(0);
   });
 });

@@ -23,6 +23,15 @@ function getClient(): DynamoDBClient {
   return client;
 }
 
+// The first record a process writes is treated as its cold start: in a Lambda container
+// that is the first invocation, which includes module and model loading.
+let firstRecordInProcess = true;
+function takeColdStart(): boolean {
+  const cold = firstRecordInProcess;
+  firstRecordInProcess = false;
+  return cold;
+}
+
 export async function recordDecision(record: AuditRecord | DecisionProvenance): Promise<void> {
   const tableName = process.env.AUDIT_TABLE_NAME;
   if (!tableName) {
@@ -30,6 +39,7 @@ export async function recordDecision(record: AuditRecord | DecisionProvenance): 
   }
 
   const provenance = record as Partial<DecisionProvenance>;
+  const coldStart = provenance.coldStart ?? takeColdStart();
 
   await getClient().send(
     new PutItemCommand({
@@ -52,6 +62,9 @@ export async function recordDecision(record: AuditRecord | DecisionProvenance): 
           : {}),
         ...(provenance.score !== undefined ? { score: { S: JSON.stringify(provenance.score) } } : {}),
         ...(provenance.evidence !== undefined ? { evidence: { S: JSON.stringify(provenance.evidence) } } : {}),
+        ...(provenance.durationMs !== undefined ? { durationMs: { N: String(provenance.durationMs) } } : {}),
+        ...(provenance.usage !== undefined ? { usage: { S: JSON.stringify(provenance.usage) } } : {}),
+        coldStart: { BOOL: coldStart },
       },
     })
   );

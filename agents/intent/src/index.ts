@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
-import { SERVICE_CATEGORIES } from "@sage/shared-types";
+import { SERVICE_CATEGORIES, toLlmUsage } from "@sage/shared-types";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
@@ -79,6 +79,7 @@ Rules for "constraints":
 Return ONLY the JSON object, no explanation, no markdown formatting.`;
 
 export async function handler(input: IntentAgentInput): Promise<Intent> {
+  const startedAt = Date.now();
   const apiKey = await getApiKey();
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -109,6 +110,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
 
   const responseBody = await response.json();
   const modelText: string = responseBody.choices[0].message.content;
+  const usage = toLlmUsage(responseBody.usage);
 
   let parsed: { capability: string; category?: unknown; constraints: unknown };
   try {
@@ -127,11 +129,13 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "IntentAgent",
       timestamp: new Date().toISOString(),
       input,
       output,
+      usage,
       reasoning: `Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,

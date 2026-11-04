@@ -11,6 +11,7 @@ import type {
   InputGuardAgentOutput,
   Violation,
   UnsatisfiableEscalationInput,
+  StageTiming,
 } from "@sage/shared-types";
 
 // One typed method per agent -- both the local (in-process) and Lambda-backed
@@ -79,10 +80,32 @@ export interface AgentInvoker {
   escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation>;
 }
 
-export type PipelineResult =
+export type PipelineResult = (
   | { status: "completed"; requestId: string; result: ExplainedBlueprint }
   | { status: "paused_for_review"; requestId: string; escalation: EscalationExplanation }
-  | { status: "failed"; requestId: string; error: string };
+  | { status: "failed"; requestId: string; error: string }
+) & {
+  // Wall-clock time of each agent call, in call order (retries appear once per attempt).
+  timings?: StageTiming[];
+};
+
+// Wraps every invoker method so each call's duration is recorded, without changing what
+// the call does or returns. Timing lives here, not in the agents, because only the
+// Conductor sees the full request including network and Lambda overhead.
+function withTimings(invoker: AgentInvoker, timings: StageTiming[]): AgentInvoker {
+  const timed = {} as Record<string, unknown>;
+  for (const [stage, fn] of Object.entries(invoker) as [string, (arg: unknown) => Promise<unknown>][]) {
+    timed[stage] = async (arg: unknown) => {
+      const started = Date.now();
+      try {
+        return await fn(arg);
+      } finally {
+        timings.push({ stage, durationMs: Date.now() - started });
+      }
+    };
+  }
+  return timed as unknown as AgentInvoker;
+}
 
 // Hard safety cap independent of Reviewer's own MAX_RETRIES=3 -- if something ever
 // changed Reviewer's behavior, Conductor still refuses to loop forever (spec constraint:
@@ -97,6 +120,16 @@ const SAFETY_MAX_ATTEMPTS = 5;
 // Reviewer's structured feedback, per the architecture spec's S5.3/S5.4 division of
 // labor.
 export async function runPipeline(
+  requestId: string,
+  rawInput: string,
+  invoker: AgentInvoker
+): Promise<PipelineResult> {
+  const timings: StageTiming[] = [];
+  const result = await runStages(requestId, rawInput, withTimings(invoker, timings));
+  return { ...result, timings };
+}
+
+async function runStages(
   requestId: string,
   rawInput: string,
   invoker: AgentInvoker

@@ -346,10 +346,39 @@ export interface NegotiationAttempt {
 // parentDecisionId linking to the preceding decision, the iteration number,
 // and the score/constraint/evidence context behind that specific decision.
 
+// Token usage reported by the language-model API for one call.
+export interface LlmUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+// Converts an OpenAI-compatible "usage" object (as Groq returns it) into LlmUsage, or
+// undefined when the response did not include usable counts.
+export function toLlmUsage(raw: unknown): LlmUsage | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const u = raw as Record<string, unknown>;
+  const prompt = u.prompt_tokens, completion = u.completion_tokens, total = u.total_tokens;
+  if (typeof prompt !== "number" || typeof completion !== "number" || typeof total !== "number") return undefined;
+  return { promptTokens: prompt, completionTokens: completion, totalTokens: total };
+}
+
+// One pipeline stage's wall-clock time, measured by the Conductor around each call.
+export interface StageTiming {
+  stage: string;
+  durationMs: number;
+}
+
 export interface DecisionProvenance extends AuditRecord {
   decisionId: string;
   parentDecisionId?: string;
   iteration: number;
+  // Latency and cost evidence: how long the agent's own work took, the language-model
+  // tokens it used (LLM agents only), and whether this was the first record written by
+  // its process (a cold start, for a Lambda container).
+  durationMs?: number;
+  usage?: LlmUsage;
+  coldStart?: boolean;
   score?: ScoreBreakdown;
   constraintStatus?: "pass" | "fail" | "n/a";
   evidence?: Evidence[];

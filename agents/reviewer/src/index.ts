@@ -112,9 +112,15 @@ async function escalate(input: ReviewerAgentInput, violations: Violation[]): Pro
   );
 }
 
-async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoning: string): Promise<ReviewerResult> {
+async function finish(
+  startedAt: number,
+  input: ReviewerAgentInput,
+  output: ReviewerResult,
+  reasoning: string
+): Promise<ReviewerResult> {
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "ReviewerAgent",
       timestamp: new Date().toISOString(),
@@ -135,12 +141,14 @@ async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoni
 }
 
 export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult> {
+  const startedAt = Date.now();
   const iteration = input.composition.iteration;
   const violations = findViolations(input);
   const decisionId = input.decisionId ?? randomUUID();
 
   if (violations.length === 0) {
     return finish(
+      startedAt,
       input,
       {
         requestId: input.requestId,
@@ -158,6 +166,7 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
   if (iteration >= MAX_RETRIES) {
     await escalate(input, violations);
     return finish(
+      startedAt,
       input,
       {
         requestId: input.requestId,
@@ -173,6 +182,7 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
   }
 
   return finish(
+    startedAt,
     input,
     {
       requestId: input.requestId,
@@ -200,6 +210,7 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
 // for that specific case too, reusing the same SNS topic and Human-in-the-Loop
 // channel as a circuit-breaker escalation.
 export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation> {
+  const startedAt = Date.now();
   const topicArn = process.env.SNS_TOPIC_ARN;
   if (!topicArn) {
     throw new Error("Reviewer Agent: SNS_TOPIC_ARN is not set, cannot escalate to Human-in-the-Loop");
@@ -241,6 +252,7 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "ReviewerAgent",
       timestamp: new Date().toISOString(),

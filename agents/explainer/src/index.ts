@@ -5,7 +5,9 @@ import type {
   ExplainedBlueprint,
   EscalationExplainerInput,
   EscalationExplanation,
+  LlmUsage,
 } from "@sage/shared-types";
+import { toLlmUsage } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
@@ -27,7 +29,11 @@ async function getApiKey(): Promise<string> {
   return cachedApiKey;
 }
 
-async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<string> {
+async function callGroq(
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number
+): Promise<{ text: string; usage: LlmUsage | undefined }> {
   const apiKey = await getApiKey();
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -55,7 +61,7 @@ async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: num
   }
 
   const responseBody = await response.json();
-  return responseBody.choices[0].message.content;
+  return { text: responseBody.choices[0].message.content, usage: toLlmUsage(responseBody.usage) };
 }
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
@@ -67,6 +73,7 @@ explaining the final choice.
 Return ONLY the explanation text, no markdown formatting, no preamble.`;
 
 export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
+  const startedAt = Date.now();
   const { composition, negotiationHistory } = input;
   const { chosen, alternatives } = composition;
 
@@ -93,7 +100,7 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
 Alternatives considered: ${alternativesText}
 Prior rejected attempts: ${historyText}`;
 
-  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 1024);
+  const { text: explanation, usage } = await callGroq(SYSTEM_PROMPT, userPrompt, 1024);
 
   const output: ExplainedBlueprint = {
     ...composition,
@@ -102,6 +109,8 @@ Prior rejected attempts: ${historyText}`;
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
+      usage,
       requestId: input.requestId,
       agent: "ExplainerAgent",
       timestamp: new Date().toISOString(),
@@ -131,6 +140,7 @@ percentage, or broadening the request). Return ONLY the explanation text, no mar
 formatting, no preamble.`;
 
 export async function explainEscalation(input: EscalationExplainerInput): Promise<EscalationExplanation> {
+  const startedAt = Date.now();
   const { attempts, constraints } = input;
 
   const attemptsText = attempts
@@ -147,7 +157,7 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
+  const { text: explanation, usage } = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
 
   const output: EscalationExplanation = {
     requestId: input.requestId,
@@ -157,6 +167,8 @@ ${attemptsText}`;
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
+      usage,
       requestId: input.requestId,
       agent: "ExplainerAgent",
       timestamp: new Date().toISOString(),

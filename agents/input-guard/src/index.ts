@@ -47,6 +47,7 @@ const CATEGORIES: PatternCategory[] = [
 ];
 
 export async function handler(input: InputGuardAgentInput): Promise<InputGuardAgentOutput> {
+  const startedAt = Date.now();
   let sanitized = input.rawInput;
   const detected: string[] = [];
 
@@ -77,6 +78,7 @@ export async function handler(input: InputGuardAgentInput): Promise<InputGuardAg
   // it should just leave a gap in the trail for that step.
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "InputGuardAgent",
       timestamp: new Date().toISOString(),
