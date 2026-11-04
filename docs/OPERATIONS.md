@@ -16,6 +16,16 @@ SAGE is hosted to cost as close to nothing as possible, and the expensive part c
 
 The dashboard lives on GitHub, not AWS, so it stays online whatever the backend is doing. When the backend is paused it detects that (via `/health`) and shows a notice instead of an error.
 
+## The dashboard copy served from the API address
+
+The Conductor also serves a copy of the dashboard at the API Gateway address (`https://<api-id>.execute-api.<region>.amazonaws.com/prod`). That copy must be built in **api mode**, which uses absolute asset paths under the stage (`/prod/assets/...`):
+
+```bash
+npm run build:dashboard-api      # writes apps/dashboard/dist with /prod/ asset paths
+```
+
+A normal build uses relative paths (`./assets/...`), which is right for GitHub Pages but breaks here: opened as `.../prod` without a trailing slash, the page loads but its script is requested from the domain root, returns 403 and the screen stays white. With absolute paths both `.../prod` and `.../prod/` work. To install it, upload `apps/dashboard/dist` to the private deploy bucket and sync it into `/opt/conductor/dashboard` on the instance over SSM; no restart is needed.
+
 ## Protecting the free quotas
 
 Every request calls two language-model APIs on a free tier, so the public `POST /request` route is rate limited by the Conductor:
