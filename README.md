@@ -9,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![AWS](https://img.shields.io/badge/AWS-Lambda%20%C2%B7%20EC2%20%C2%B7%20DynamoDB%20%C2%B7%20CDK-ff9900)
 
-[Live dashboard](https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod/) (trailing slash required) · [Architecture](docs/ARCHITECTURE.md) · [Evaluation](docs/EVALUATION.md) · [Security](docs/SECURITY.md)
+[Live dashboard](https://hikunokyojin.github.io/SAGE_Cloud_Project_2026/) · [Architecture](docs/ARCHITECTURE.md) · [Evaluation](docs/EVALUATION.md) · [Security](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md)
 
 </div>
 
@@ -27,7 +27,7 @@ Choosing among many third-party services (price, uptime, latency, kind) is slow 
 
 ## Try it
 
-Open the [dashboard](https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod/) and paste a request. The first request after idle takes about 15 seconds while the functions start.
+Open the [dashboard](https://hikunokyojin.github.io/SAGE_Cloud_Project_2026/) and paste a request. The first request after idle takes about 15 seconds while the functions start. To save cost the live backend is sometimes paused; the dashboard then says so and the rest of this repository still tells the story (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
 
 | Request | What happens |
 |---|---|
@@ -109,6 +109,18 @@ cd infra/cdk && npx cdk diff && npx cdk deploy
 ```
 
 The broker bundles Linux native libraries for Lambda. On Windows or macOS, build on Linux/WSL/CI, or first run `npm install --no-save --force @img/sharp-linux-x64@0.34.5 @img/sharp-libvips-linux-x64@1.2.4`. The Conductor's application code is delivered separately (bundle to S3, then installed on the EC2 instance through SSM Session Manager).
+
+## Hosting
+
+The dashboard is hosted free on GitHub Pages and stays up even when the AWS backend is switched off. The backend can be paused and resumed with one command, and the public endpoint is rate limited to protect the free-tier language-model quota:
+
+```bash
+npm run backend:status   # is the backend up?
+npm run backend:pause    # stop the EC2 Conductor to save cost
+npm run backend:resume   # start it again
+```
+
+Details, costs and the checklist for publishing it for real are in [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Design notes and limitations
 
