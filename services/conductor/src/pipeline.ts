@@ -49,6 +49,7 @@ export interface AgentInvoker {
     iteration: number;
     priorViolations?: Violation[];
     requiredCategory?: string;
+    preferences?: Intent["preferences"];
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<Composition>;
@@ -204,6 +205,7 @@ async function runStages(
         iteration,
         priorViolations,
         requiredCategory: intent.category,
+        preferences: intent.preferences,
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
       });

@@ -32,7 +32,16 @@ export interface Intent {
   // shape -- IntentConstraints itself is retained above for any external
   // consumer still on the old shape, but no agent constructs it anymore.
   constraints: Constraint[];
+  // Soft wishes ("fast", "cheapest", "X is not a concern") as scoring weights.
+  preferences?: Preferences;
   rawInput: string;
+}
+
+// Scoring weight per dimension taken from soft words in the request (default weight is 1).
+export interface Preferences {
+  price?: number;
+  uptime?: number;
+  latencyMs?: number;
 }
 
 // ── Marketplace Data Types ─────────────────────────────────
@@ -133,6 +142,8 @@ export interface NegotiatorAgentInput {
   // When set, candidates outside this category are excluded like a failed
   // mandatory constraint.
   requiredCategory?: string;
+  // Soft preference weights from Intent; an optional constraint's priority overrides them.
+  preferences?: Preferences;
   decisionId?: string;
   parentDecisionId?: string;
 }
