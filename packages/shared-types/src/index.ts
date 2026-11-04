@@ -75,6 +75,9 @@ export interface CompositionBlueprint {
 
 export interface ExplainedBlueprint extends Composition {
   explanation: string;
+  // "model" when the language model's wording passed the claim check, "facts" when the
+  // deterministic fact sheet was used instead.
+  explanationSource?: "model" | "facts";
 }
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
@@ -300,9 +303,19 @@ export interface ScoreBreakdown {
 // number and full score breakdown needed for the bounded refinement loop
 // and the decision-provenance chain.
 
+// A candidate the Negotiator excluded before scoring, with the plain-language rule it failed.
+export interface RejectedCandidate {
+  serviceId: string;
+  name: string;
+  reason: string;
+}
+
 export interface Composition extends CompositionBlueprint {
   iteration: number;
   scoreBreakdown: ScoreBreakdown;
+  // Every candidate excluded by a hard filter (wrong category, a failed mandatory
+  // constraint, or rejected on an earlier attempt), so explanations can name them.
+  rejected?: RejectedCandidate[];
 }
 
 // ── Violation (S6.5) ──────────────────────────────────────────────────────

@@ -140,7 +140,8 @@ describe("Explainer Agent handler", () => {
     const requestBody = JSON.parse(options.body);
     const userMessage: string = requestBody.messages[1].content;
 
-    expect(userMessage).toContain("Alternatives considered: none");
+    expect(userMessage).toContain("FastResize was selected");
+    expect(userMessage).not.toContain("ahead of");
   });
 
   it("mentions a prior rejected attempt when negotiationHistory has more than one entry", async () => {
@@ -194,7 +195,8 @@ describe("Explainer Agent handler", () => {
     const userMessage: string = requestBody.messages[1].content;
 
     expect(userMessage).toContain("BudgetResize");
-    expect(userMessage).toContain("Prior rejected attempts");
+    expect(userMessage).toContain("BudgetResize was rejected on attempt 1");
+    expect(userMessage).toContain("uptime was 97.5, required 99");
   });
 
   it("throws when Groq's API returns a non-OK response", async () => {
@@ -377,5 +379,80 @@ describe("Explainer Agent explainEscalation", () => {
     const recorded = recordDecisionMock.mock.calls[0][0];
     expect(recorded.usage).toEqual({ promptTokens: 300, completionTokens: 90, totalTokens: 390 });
     expect(recorded.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("faithful explanations", () => {
+  function compositionWithRejections(): Composition {
+    return {
+      ...composition(),
+      alternatives: [],
+      rejected: [
+        { serviceId: "svc-budget", name: "BudgetResize", reason: "uptime 97.5% is not at least 99.5%" },
+        { serviceId: "svc-slow", name: "SlowResize", reason: "latency 180 ms is not below 100 ms" },
+      ],
+      scoreBreakdown: { ...composition().scoreBreakdown, soleSurvivor: true },
+    };
+  }
+
+  beforeEach(() => {
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("uses the model's wording when it keeps every fact", async () => {
+    const faithful =
+      "FastResize was picked: it costs $0.02 with 99.9% uptime, and it was the only option meeting every requirement. " +
+      "BudgetResize was ruled out because its uptime of 97.5% is below 99.5%, and SlowResize because 180 ms is above 100 ms.";
+    fetchMock.mockResolvedValue(groqResponse(faithful));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(out.explanation).toBe(faithful);
+  });
+
+  it("falls back to the plain facts when the model invents a number", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize costs only $0.01 and has 99.99% uptime. BudgetResize and SlowResize failed."));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(out.explanation).toContain("BudgetResize (uptime 97.5% is not at least 99.5%)");
+    expect(out.explanation).toContain("SlowResize (latency 180 ms is not below 100 ms)");
+    expect(out.explanation).not.toContain("0.01");
+  });
+
+  it("falls back when the model leaves out a rejected candidate or claims there were no alternatives", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen because there were no other alternatives."));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(out.explanation).toContain("Not chosen:");
+    expect(out.explanation).not.toContain("no other alternatives");
+  });
+});
+
+describe("checkClaims", () => {
+  it("accepts text whose numbers and names all come from the facts", async () => {
+    const { checkClaims } = await import("./claimCheck");
+    const facts = { text: "A costs $0.02 with 99.9% uptime. Not chosen: B (uptime 97.5% is not at least 99.5%).", chosenName: "A", rejectedNames: ["B"] };
+    expect(checkClaims("A ($0.02, 99.9% uptime) beat B, whose 97.5% uptime missed the 99.5% minimum.", facts)).toEqual([]);
+  });
+
+  it("reports invented numbers, missing names and a false no-alternatives claim", async () => {
+    const { checkClaims } = await import("./claimCheck");
+    const facts = { text: "A costs $0.02. Not chosen: B (uptime 97.5% is not at least 99.5%).", chosenName: "A", rejectedNames: ["B"] };
+    const problems = checkClaims("A costs $0.03 and there were no other alternatives.", facts);
+    expect(problems).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("0.03"),
+        expect.stringContaining("B"),
+        expect.stringContaining("alternatives"),
+      ])
+    );
   });
 });

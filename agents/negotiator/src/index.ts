@@ -7,6 +7,7 @@ import type {
   Constraint,
   ScoreBreakdown,
   ScoreDimensions,
+  RejectedCandidate,
 } from "@sage/shared-types";
 import { CATALOGUE_REFERENCES } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
@@ -40,17 +41,6 @@ function fieldValue(candidate: ServiceCandidateWithEvidence, field: string): num
   return undefined;
 }
 
-// Step 4: apply every mandatory constraint as a hard exclusion filter --
-// a candidate failing a mandatory constraint is excluded outright, not penalized.
-// A candidate missing the relevant field (e.g. no latencyMs on record) is treated
-// as failing a mandatory constraint on that field, conservatively.
-function passesMandatoryConstraints(candidate: ServiceCandidateWithEvidence, constraints: Constraint[]): boolean {
-  for (const constraint of constraints.filter((c) => c.mandatory)) {
-    const actual = fieldValue(candidate, constraint.field);
-    if (actual === undefined || !evaluateConstraint(actual, constraint)) return false;
-  }
-  return true;
-}
 
 // Step 1: min-max normalization to [0, 1] across the current eligible candidate
 // set. When every candidate ties on a dimension, that dimension is fully
@@ -77,6 +67,16 @@ function mandatoryLimit(constraints: Constraint[], field: "price" | "uptime" | "
   return typeof limit?.value === "number" ? limit.value : undefined;
 }
 
+const FIELD_LABEL: Record<string, string> = { price: "price", uptime: "uptime", latencyMs: "latency" };
+const OPERATOR_WORDS: Record<string, string> = { lt: "below", lte: "at most", gt: "above", gte: "at least", eq: "exactly" };
+
+function withUnit(field: string, value: number): string {
+  if (field === "price") return `$${value}`;
+  if (field === "uptime") return `${value}%`;
+  if (field === "latencyMs") return `${value} ms`;
+  return String(value);
+}
+
 function resolveWeight(field: "price" | "uptime" | "latencyMs", constraints: Constraint[]): number {
   const optional = constraints.find((c) => !c.mandatory && c.field === field);
   return optional?.priority ?? DEFAULT_WEIGHT;
@@ -99,9 +99,29 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   const inRequiredCategory = (c: ServiceCandidateWithEvidence) =>
     !input.requiredCategory || c.capability === input.requiredCategory;
 
-  const eligible = input.candidates.filter(
-    (c) => !excludedIds.has(c.serviceId) && inRequiredCategory(c) && passesMandatoryConstraints(c, input.constraints)
-  );
+  // Every candidate either passes all hard filters or is recorded with the first rule it
+  // failed, so the explanation can say exactly why it was not chosen.
+  const rejected: RejectedCandidate[] = [];
+  const eligible = input.candidates.filter((c) => {
+    const reason = rejectionReason(c);
+    if (reason) rejected.push({ serviceId: c.serviceId, name: c.name, reason });
+    return !reason;
+  });
+
+  function rejectionReason(c: ServiceCandidateWithEvidence): string | undefined {
+    if (excludedIds.has(c.serviceId)) return "rejected by the Reviewer on an earlier attempt";
+    if (!inRequiredCategory(c)) return `wrong category (${c.capability ?? "unknown"}, needed ${input.requiredCategory})`;
+    for (const constraint of input.constraints.filter((k) => k.mandatory)) {
+      const actual = fieldValue(c, constraint.field);
+      if (actual === undefined) return `no recorded ${constraint.field}`;
+      if (!evaluateConstraint(actual, constraint)) {
+        const label = FIELD_LABEL[constraint.field] ?? constraint.field;
+        const words = OPERATOR_WORDS[constraint.operator] ?? constraint.operator;
+        return `${label} ${withUnit(constraint.field, actual)} is not ${words} ${withUnit(constraint.field, constraint.value as number)}`;
+      }
+    }
+    return undefined;
+  }
 
   if (eligible.length === 0) {
     throw new Error(
@@ -225,6 +245,7 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
     alternatives,
     iteration: input.iteration,
     scoreBreakdown,
+    rejected,
   };
 
   try {
