@@ -77,9 +77,13 @@ function withUnit(field: string, value: number): string {
   return String(value);
 }
 
-function resolveWeight(field: "price" | "uptime" | "latencyMs", constraints: Constraint[]): number {
+function resolveWeight(
+  field: "price" | "uptime" | "latencyMs",
+  constraints: Constraint[],
+  preferences?: NegotiatorAgentInput["preferences"]
+): number {
   const optional = constraints.find((c) => !c.mandatory && c.field === field);
-  return optional?.priority ?? DEFAULT_WEIGHT;
+  return optional?.priority ?? preferences?.[field] ?? DEFAULT_WEIGHT;
 }
 
 export async function handler(input: NegotiatorAgentInput): Promise<Composition> {
@@ -140,9 +144,9 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   const latencyValues = latencyDimensionPresent ? eligible.map((c) => c.latencyMs as number) : [];
   const capabilityValues = eligible.map((c) => c.similarityScore ?? 0);
 
-  const priceWeight = resolveWeight("price", input.constraints);
-  const uptimeWeight = resolveWeight("uptime", input.constraints);
-  const latencyWeight = latencyDimensionPresent ? resolveWeight("latencyMs", input.constraints) : 0;
+  const priceWeight = resolveWeight("price", input.constraints, input.preferences);
+  const uptimeWeight = resolveWeight("uptime", input.constraints, input.preferences);
+  const latencyWeight = latencyDimensionPresent ? resolveWeight("latencyMs", input.constraints, input.preferences) : 0;
   const weights: ScoreDimensions = {
     price: priceWeight,
     uptime: uptimeWeight,

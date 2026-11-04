@@ -78,6 +78,40 @@ Rules for "constraints":
 - price is in dollars, uptime is a percentage (0-100), latencyMs is milliseconds.
 Return ONLY the JSON object, no explanation, no markdown formatting.`;
 
+type PreferenceField = "price" | "uptime" | "latencyMs";
+
+// Deterministic soft-word reading: these words never become hard constraints, only weights.
+const PREFERENCE_WORDS: { field: PreferenceField; strong: RegExp; normal: RegExp; low: RegExp }[] = [
+  {
+    field: "price",
+    strong: /\b(cheapest|lowest[- ]cost|lowest price)\b/i,
+    normal: /\b(cheap|inexpensive|affordable|low[- ]cost)\b/i,
+    low: /\b(price|cost|budget)\s+(is\s+)?(not a concern|doesn'?t matter|does not matter|is low priority|low priority)/i,
+  },
+  {
+    field: "latencyMs",
+    strong: /\b(fastest|lowest latency)\b/i,
+    normal: /\b(fast|quick|low[- ]latency|responsive)\b/i,
+    low: /\b(speed|latency)\s+(is\s+)?(not a concern|doesn'?t matter|does not matter|low priority)/i,
+  },
+  {
+    field: "uptime",
+    strong: /\b(most reliable|highly reliable|very reliable)\b/i,
+    normal: /\b(reliable|dependable|stable)\b/i,
+    low: /\b(reliability|uptime)\s+(is\s+)?(not a concern|doesn'?t matter|does not matter|low priority)/i,
+  },
+];
+
+export function extractPreferences(text: string): NonNullable<Intent["preferences"]> {
+  const out: NonNullable<Intent["preferences"]> = {};
+  for (const w of PREFERENCE_WORDS) {
+    if (w.low.test(text)) out[w.field] = 0.5;
+    else if (w.strong.test(text)) out[w.field] = 3;
+    else if (w.normal.test(text)) out[w.field] = 2;
+  }
+  return out;
+}
+
 export async function handler(input: IntentAgentInput): Promise<Intent> {
   const startedAt = Date.now();
   const apiKey = await getApiKey();
@@ -126,6 +160,8 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
     constraints: normalizeConstraints(parsed.constraints),
     rawInput: input.rawInput,
   };
+  const preferences = extractPreferences(input.rawInput);
+  if (Object.keys(preferences).length > 0) output.preferences = preferences;
 
   try {
     await recordDecision({

@@ -172,6 +172,23 @@ describe("runPipeline", () => {
     expect(explainerCall.parentDecisionId).toBe(reviewerCall.decisionId);
   });
 
+  it("passes Intent's soft preferences to the Negotiator", async () => {
+    const invoker = makeInvoker({
+      intent: vi.fn(async (input) => ({
+        requestId: input.requestId,
+        capability: "email delivery",
+        category: "email-delivery",
+        constraints: [] as Constraint[],
+        preferences: { price: 3 },
+        rawInput: input.rawInput,
+      })),
+    });
+
+    await runPipeline("req-1", "the cheapest email delivery service", invoker);
+
+    expect(vi.mocked(invoker.negotiator).mock.calls[0][0].preferences).toEqual({ price: 3 });
+  });
+
   it("passes Intent's category to both Negotiator and Reviewer as requiredCategory", async () => {
     const invoker = makeInvoker({
       intent: vi.fn(async (input) => ({

@@ -60,6 +60,7 @@ describe("Intent Agent handler", () => {
         { field: "price", operator: "lte", value: 0.05, mandatory: true },
         { field: "uptime", operator: "gte", value: 99, mandatory: true },
       ],
+      preferences: { price: 2, uptime: 2 },
       rawInput: "I need a cheap, reliable image resizer",
     });
   });
@@ -152,5 +153,37 @@ describe("Intent Agent handler", () => {
     const recorded = recordDecisionMock.mock.calls[0][0];
     expect(recorded.usage).toEqual({ promptTokens: 120, completionTokens: 80, totalTokens: 200 });
     expect(recorded.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("extractPreferences", () => {
+  it("turns soft words into preference weights", async () => {
+    const { extractPreferences } = await import("./index");
+    expect(extractPreferences("I need a fast image resizing service")).toEqual({ latencyMs: 2 });
+    expect(extractPreferences("the cheapest available email delivery service")).toEqual({ price: 3 });
+    expect(extractPreferences("a highly reliable database")).toEqual({ uptime: 3 });
+    expect(extractPreferences("cheap and reliable storage")).toEqual({ price: 2, uptime: 2 });
+  });
+
+  it("lowers the weight when the user says a dimension does not matter", async () => {
+    const { extractPreferences } = await import("./index");
+    expect(extractPreferences("the cheapest email service, reliability is not a concern")).toEqual({ price: 3, uptime: 0.5 });
+  });
+
+  it("does not read a stated budget limit as a wish for the cheapest option", async () => {
+    const { extractPreferences } = await import("./index");
+    expect(extractPreferences("I need video transcoding, budget under 2 dollars")).toEqual({});
+  });
+});
+
+describe("Intent preferences in the handler output", () => {
+  it("adds the extracted preferences to the Intent", async () => {
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "image resizing", category: "image-resizing", constraints: [] })));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "r", rawInput: "I need a fast image resizer" } as IntentAgentInput);
+
+    expect(out.preferences).toEqual({ latencyMs: 2 });
   });
 });

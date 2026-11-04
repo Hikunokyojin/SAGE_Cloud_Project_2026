@@ -254,3 +254,19 @@ describe("rejected candidates", () => {
     ]);
   });
 });
+
+describe("soft preferences", () => {
+  it("weights a dimension by the request's soft preference", async () => {
+    const candidates = [
+      candidate({ serviceId: "cheap-slow", price: 0.005, uptime: 99.7, latencyMs: 650 }),
+      candidate({ serviceId: "pricey-fast", price: 0.045, uptime: 97.5, latencyMs: 45 }),
+    ];
+
+    const neutral = await handler(baseInput({ candidates }));
+    const wantsFast = await handler(baseInput({ candidates, preferences: { latencyMs: 3 } }));
+
+    expect(neutral.chosen.service.serviceId).toBe("cheap-slow");
+    expect(wantsFast.chosen.service.serviceId).toBe("pricey-fast");
+    expect(wantsFast.scoreBreakdown.weights.latency).toBe(3);
+  });
+});
