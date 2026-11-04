@@ -87,12 +87,16 @@ async function embedText(text: string): Promise<number[]> {
 }
 
 const TOP_N = 5;
-// 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
+// The cut-off is chosen from labelled data, not by hand: see
+// evaluation/src/retrieval/calibrate.ts and results/retrieval-calibration.json.
+// History: 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
 // out genuinely relevant results once Broker switched to all-MiniLM-L6-v2 (confirmed via
 // a real deployed-Lambda test returning [] for an obviously matching query, then measured
 // directly: relevant service/query pairs score 0.53-0.67 with this model, irrelevant
 // pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
-const MIN_SIMILARITY = 0.35;
+// Calibrated 2026-11-05 on 51 in-catalogue + 15 out-of-catalogue labelled queries:
+// recall@5 0.96 and 100% out-of-catalogue refused (0.35 let 1 of 15 through).
+const MIN_SIMILARITY = 0.38;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
   const startedAt = Date.now();
@@ -107,11 +111,15 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   // ID" when a human-readable serviceId was used directly as the point ID). The point ID
   // is therefore an opaque UUID (see scripts/reembed-services.ts); serviceId travels in
   // the payload instead, so with_payload must be requested.
+  // With a category, only that category's services are searched (payload filter on the
+  // "capability" field written by scripts/reembed-services.ts). Anything below the
+  // calibrated cut-off is dropped; an empty result escalates to a human downstream.
   const searchResult = await qdrant.search("services", {
     vector: queryVector,
     limit: TOP_N * 3,
     score_threshold: MIN_SIMILARITY,
     with_payload: true,
+    ...(input.category ? { filter: { must: [{ key: "capability", match: { value: input.category } }] } } : {}),
   });
 
   const serviceIds = searchResult.map((r) => String((r.payload as { serviceId?: string } | null)?.serviceId));
@@ -175,7 +183,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}.`,
+      reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}${input.category ? ` in category ${input.category}` : " (no category filter)"}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,

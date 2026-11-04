@@ -126,6 +126,10 @@ export interface BrokerAgentInput {
   // spec (S5.3) it must never filter or rank by constraints. Enforcement is
   // exclusively Negotiator's (S5.4) and Reviewer's (S5.5) responsibility.
   constraints: Constraint[];
+  // Intent's catalogue category. When set, the vector search only returns services in
+  // that category (a Qdrant payload filter), so near neighbours from other categories
+  // never crowd out the right ones.
+  category?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }

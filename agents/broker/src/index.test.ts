@@ -230,3 +230,31 @@ describe("Broker Agent handler", () => {
     expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_API_KEY", "/sage/broker/QDRANT_API_KEY");
   });
 });
+
+describe("Broker category filter", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    qdrantSearchMock.mockReset();
+    mongoConnectMock.mockReset();
+    mongoFindToArrayMock.mockReset();
+    resolveSecretMock.mockResolvedValue("x");
+    embedderMock.mockResolvedValue(embeddingOutput([0.1, 0.2]));
+    pipelineFactoryMock.mockResolvedValue(embedderMock);
+    qdrantSearchMock.mockResolvedValue([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.8)]);
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
+  });
+
+  it("filters the vector search to Intent's category", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r", capability: "resize images", constraints: [], category: "image-resizing" } as BrokerAgentInput);
+    expect(qdrantSearchMock.mock.calls[0][1].filter).toEqual({
+      must: [{ key: "capability", match: { value: "image-resizing" } }],
+    });
+  });
+
+  it("searches without a filter when there is no category", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r", capability: "resize images", constraints: [] } as BrokerAgentInput);
+    expect(qdrantSearchMock.mock.calls[0][1].filter).toBeUndefined();
+  });
+});
