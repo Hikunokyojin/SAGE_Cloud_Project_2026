@@ -10,9 +10,11 @@
   },
   "scripts": {
     "prepare": "npm run build --workspace=packages/shared-types && npm run build --workspace=packages/secrets && npm run build --workspace=packages/audit",
+    "pretest": "npm run prepare --silent",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "pretypecheck": "npm run prepare --silent",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "experiment": "npm run experiment --workspace=evaluation",

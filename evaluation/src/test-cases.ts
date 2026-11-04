@@ -243,6 +243,14 @@ export const TEST_CASES: TestCase[] = [
     expectedOutcome: "escalated",
     notes: "Cheapest compute candidate (computespot) is 0.008; no candidate can satisfy <0.001.",
   },
+  {
+    id: "NVS-4",
+    category: "no-valid-solution",
+    rawInput: "I need a highly reliable database service with at least 99.5% uptime, budget under $2",
+    expectedOutcome: "escalated",
+    notes:
+      "Regression for a live failure: the catalogue has no database category, but retrieval returned a message queue (QueueRunner) and it was approved. Must escalate as capability_not_in_catalogue.",
+  },
 
   // ── 9. HITL escalation (routes to the same Human-in-the-Loop / SNS channel) ──
   {

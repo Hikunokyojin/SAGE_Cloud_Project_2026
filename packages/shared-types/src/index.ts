@@ -169,10 +169,18 @@ export interface EscalationExplainerInput {
 // escalation path was unreachable for that failure mode -- it just failed silently
 // with no SNS notification. This input lets Conductor route that specific failure
 // through the same Human-in-the-Loop escalation Reviewer already performs.
+// Why a request is escalated without a Negotiator/Reviewer cycle. Optional so that an
+// older caller (or an older deployed Lambda) that omits it keeps the original behaviour.
+//  - no_valid_candidate: retrieval or the mandatory constraints left nothing to choose.
+//  - capability_not_in_catalogue: the request fits no catalogue category at all, so the
+//    marketplace does not offer this kind of service.
+export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue";
+
 export interface UnsatisfiableEscalationInput {
   requestId: string;
   constraints: Constraint[];
   reason: string;
+  kind?: UnsatisfiableEscalationKind;
   decisionId?: string;
   parentDecisionId?: string;
 }
