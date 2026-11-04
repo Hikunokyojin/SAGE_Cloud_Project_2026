@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 
 interface AuditStep {
@@ -17,7 +17,12 @@ interface PipelineResponse {
   error?: string;
 }
 
-const DEFAULT_API_BASE = "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod";
+// The API address can be set at build time (VITE_API_BASE) so the same dashboard build works
+// on any host, such as GitHub Pages; the field in the page still overrides it per browser.
+const DEFAULT_API_BASE =
+  (import.meta.env.VITE_API_BASE as string | undefined) ||
+  "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod";
+const REPO_URL = "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026";
 const API_BASE_STORAGE_KEY = "sage-dashboard-api-base";
 
 function loadApiBase(): string {
@@ -66,8 +71,53 @@ function Trace({ requestId, steps }: { requestId: string; steps: AuditStep[] }) 
   );
 }
 
+type BackendStatus = "checking" | "online" | "paused";
+
+// The live backend (EC2 + Lambda) can be switched off to save cost. The dashboard is hosted
+// separately and stays up, so it checks /health and explains the state instead of failing.
+function useBackendStatus(apiBase: string): { status: BackendStatus; recheck: () => void } {
+  const [status, setStatus] = useState<BackendStatus>("checking");
+  const [tick, setTick] = useState(0);
+  const recheck = useCallback(() => setTick((n) => n + 1), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    setStatus("checking");
+    fetch(`${apiBase.replace(/\/$/, "")}/health`, { signal: controller.signal })
+      .then((res) => setStatus(res.ok ? "online" : "paused"))
+      .catch(() => setStatus("paused"))
+      .finally(() => clearTimeout(timer));
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [apiBase, tick]);
+
+  return { status, recheck };
+}
+
+function StatusBanner({ status, recheck }: { status: BackendStatus; recheck: () => void }) {
+  if (status === "checking") return <p className="status status-checking">Checking the live backend&hellip;</p>;
+  if (status === "online") return <p className="status status-online">&#9679; Live backend online</p>;
+  return (
+    <div className="status status-paused">
+      <strong>The live demo backend is paused to save cost.</strong> The dashboard is still up, and everything works
+      again as soon as the backend is switched back on. You can read how it works and see results in the{" "}
+      <a href={REPO_URL} target="_blank" rel="noreferrer">
+        project repository
+      </a>
+      , or run it yourself from there.{" "}
+      <button type="button" className="link-button" onClick={recheck}>
+        Check again
+      </button>
+    </div>
+  );
+}
+
 export function App() {
   const [apiBase, setApiBase] = useState(loadApiBase);
+  const { status: backendStatus, recheck } = useBackendStatus(apiBase);
   const [requestText, setRequestText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pipelineResult, setPipelineResult] = useState<PipelineResponse | null>(null);
@@ -145,6 +195,7 @@ export function App() {
           Conductor API base URL:
           <input value={apiBase} onChange={(e) => persistApiBase(e.target.value)} />
         </label>
+        <StatusBanner status={backendStatus} recheck={recheck} />
       </header>
 
       <section className="panel">
@@ -156,7 +207,7 @@ export function App() {
             onChange={(e) => setRequestText(e.target.value)}
             rows={3}
           />
-          <button type="submit" disabled={submitting || !requestText.trim()}>
+          <button type="submit" disabled={submitting || !requestText.trim() || backendStatus === "paused"}>
             {submitting ? "Submitting..." : "Submit request"}
           </button>
         </form>

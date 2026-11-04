@@ -166,3 +166,42 @@ button:disabled {
   max-width: 400px;
   overflow: auto;
 }
+
+.status {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.status-online {
+  color: #7ee787;
+  padding-left: 0;
+  background: none;
+}
+
+.status-checking {
+  color: #8b949e;
+  padding-left: 0;
+}
+
+.status-paused {
+  background: #3b2f12;
+  border: 1px solid #7a5d12;
+  color: #f2d68a;
+  line-height: 1.5;
+}
+
+.status-paused a {
+  color: #ffd866;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #ffd866;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
