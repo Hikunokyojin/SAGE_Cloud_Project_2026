@@ -115,6 +115,22 @@ export async function runPipeline(
     parentDecisionId: inputGuardDecisionId,
   });
 
+  // A request that fits no catalogue category is unresolved, not "any service will do".
+  // Without this check retrieval returns the nearest neighbour from an unrelated category
+  // (found live: a request for a database service was answered with a message queue), so
+  // it goes straight to a human instead, before any search.
+  if (!intent.category) {
+    const escalation = await invoker.escalateUnsatisfiable({
+      requestId,
+      constraints: intent.constraints,
+      kind: "capability_not_in_catalogue",
+      reason: `capability_not_in_catalogue: "${intent.capability}" does not match any service category in the catalogue`,
+      decisionId: randomUUID(),
+      parentDecisionId: intentDecisionId,
+    });
+    return { status: "paused_for_review", requestId, escalation };
+  }
+
   const brokerDecisionId = randomUUID();
   const candidates = await invoker.broker({
     requestId,

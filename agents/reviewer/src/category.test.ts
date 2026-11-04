@@ -51,6 +51,19 @@ describe("Reviewer category check", () => {
     expect(sendMock).toHaveBeenCalledTimes(1);
   });
 
+  it("explains a capability_not_in_catalogue escalation as a kind of service the marketplace does not offer", async () => {
+    const { escalateUnsatisfiable } = await import("./index");
+    const out = await escalateUnsatisfiable({
+      requestId: "r",
+      constraints: [{ field: "uptime", operator: "gte", value: 99.5, mandatory: true }],
+      reason: 'capability_not_in_catalogue: "highly reliable database service" does not match any service category in the catalogue',
+      kind: "capability_not_in_catalogue",
+    });
+    expect(out.explanation).toContain("does not offer this kind of service");
+    expect(out.explanation).not.toContain("Consider relaxing");
+    expect(sendMock.mock.calls[0][0].input.Subject).toContain("not in the catalogue");
+  });
+
   it("lists the constraints when an escalation had some", async () => {
     const { escalateUnsatisfiable } = await import("./index");
     const out = await escalateUnsatisfiable({

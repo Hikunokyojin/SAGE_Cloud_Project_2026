@@ -212,14 +212,21 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
   await getSnsClient().send(
     new PublishCommand({
       TopicArn: topicArn,
-      Subject: `SAGE: request ${input.requestId} needs human review (no valid candidate)`,
+      Subject:
+        input.kind === "capability_not_in_catalogue"
+          ? `SAGE: request ${input.requestId} needs human review (service type not in the catalogue)`
+          : `SAGE: request ${input.requestId} needs human review (no valid candidate)`,
       Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}`,
     })
   );
 
   // User-facing text: input.reason carries internal error plumbing (e.g. the
   // lambdaInvoker prefix), so it goes only to the SNS message and audit record.
-  const explanation = input.constraints.length === 0
+  const explanation = input.kind === "capability_not_in_catalogue"
+    ? `The marketplace does not offer this kind of service yet, so the request has been passed to a human reviewer ` +
+      `instead of being matched to an unrelated service. Try describing what you need in other words, ` +
+      `or ask the marketplace to add this type of service.`
+    : input.constraints.length === 0
     ? `No service in the catalog matches this request, so it has been passed to a human reviewer. ` +
       `Try describing the service you need differently, or check whether the marketplace offers it.`
     : `No available service could satisfy every mandatory requirement at once. ` +
