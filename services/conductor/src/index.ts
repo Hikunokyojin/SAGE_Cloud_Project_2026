@@ -7,10 +7,21 @@ import path from "path";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { runPipeline } from "./pipeline";
 import type { AgentInvoker } from "./pipeline";
+import { createRateLimiter } from "./rateLimit";
 
 const app = express();
+// Behind API Gateway the visitor address arrives in X-Forwarded-For. Trust exactly one
+// proxy hop so req.ip is the entry API Gateway appended, not a value the caller can forge.
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json());
+
+// Every /request calls two free-tier language-model APIs, so the public endpoint is
+// capped: per visitor per hour, and in total per UTC day (override with env vars).
+const requestLimiter = createRateLimiter({
+  dailyLimit: Number(process.env.DAILY_REQUEST_LIMIT) || 60,
+  perClientPerHour: Number(process.env.CLIENT_HOURLY_LIMIT) || 10,
+});
 
 const PORT = process.env.PORT || 3001;
 
@@ -44,7 +55,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "sage-conductor" });
 });
 
-app.post("/request", async (req, res) => {
+app.post("/request", requestLimiter, async (req, res) => {
   const rawInput: string = req.body.text ?? "";
   const requestId = randomUUID();
 
