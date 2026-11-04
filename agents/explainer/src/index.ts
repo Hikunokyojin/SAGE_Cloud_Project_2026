@@ -9,6 +9,7 @@ import type {
 } from "@sage/shared-types";
 import { toLlmUsage } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
+import { checkClaims, type ExplanationFacts } from "./claimCheck";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
 // access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
@@ -65,46 +66,90 @@ async function callGroq(
 }
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
-Given a chosen service composition, the alternatives it was selected over, and (when present)
-a history of earlier attempts that were rejected during negotiation, write a short,
-plain-language explanation (2-4 sentences) of why the chosen service was picked. If there is
-prior-attempt history, briefly mention what was tried first and why it was rejected before
-explaining the final choice.
+You are given a short fact sheet about a decision. Rewrite it as a plain-language explanation
+of 2-4 sentences for a non-expert. Keep every service name and every number exactly as given.
+Do not add any number, service or claim that is not in the facts, and do not leave out any
+service that was not chosen.
 Return ONLY the explanation text, no markdown formatting, no preamble.`;
+
+// How many times the model may try before the deterministic fact sheet is used instead.
+const MAX_WORDING_ATTEMPTS = 2;
+
+// The decision as deterministic sentences: the only source of facts for the explanation.
+function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
+  const { composition, negotiationHistory } = input;
+  const { chosen, alternatives, scoreBreakdown } = composition;
+  const rejected = composition.rejected ?? [];
+  const s = chosen.service;
+
+  const parts: string[] = [
+    `${s.name} was selected (price $${s.price}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}).`,
+  ];
+  if (scoreBreakdown.soleSurvivor) {
+    parts.push("It was the only candidate that met every requirement.");
+  } else if (alternatives.length > 0) {
+    parts.push(
+      `It scored ${chosen.score.toFixed(3)} out of 1, ahead of ${alternatives
+        .map((a) => `${a.service.name} (${a.score.toFixed(3)})`)
+        .join(", ")}.`
+    );
+  }
+  if (rejected.length > 0) {
+    parts.push(`Not chosen: ${rejected.map((r) => `${r.name} (${r.reason})`).join("; ")}.`);
+  }
+  if (negotiationHistory && negotiationHistory.length > 1) {
+    const earlier = negotiationHistory
+      .slice(0, -1)
+      .map(
+        (attempt) =>
+          `${attempt.composition.chosen.service.name} was rejected on attempt ${attempt.iteration} (${attempt.reviewerResult.violations
+            .map((v) => `${v.constraint} was ${v.actualValue}, required ${v.requiredValue}`)
+            .join("; ")})`
+      )
+      .join("; ");
+    parts.push(`Earlier: ${earlier}.`);
+  }
+
+  return { text: parts.join(" "), chosenName: s.name, rejectedNames: rejected.map((r) => r.name) };
+}
+
+function addUsage(a: LlmUsage | undefined, b: LlmUsage | undefined): LlmUsage | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  return {
+    promptTokens: a.promptTokens + b.promptTokens,
+    completionTokens: a.completionTokens + b.completionTokens,
+    totalTokens: a.totalTokens + b.totalTokens,
+  };
+}
 
 export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
   const startedAt = Date.now();
-  const { composition, negotiationHistory } = input;
-  const { chosen, alternatives } = composition;
+  const { composition } = input;
+  const facts = buildFacts(input);
 
-  const alternativesText = alternatives.length
-    ? alternatives
-        .map((a) => `${a.service.name} (price: ${a.service.price}, uptime: ${a.service.uptime}%, score: ${a.score.toFixed(3)})`)
-        .join("; ")
-    : "none";
-
-  const historyText =
-    negotiationHistory && negotiationHistory.length > 1
-      ? negotiationHistory
-          .slice(0, -1)
-          .map(
-            (attempt) =>
-              `Attempt ${attempt.iteration}: ${attempt.composition.chosen.service.name} was rejected -- ${attempt.reviewerResult.violations
-                .map((v) => `${v.constraint} was ${v.actualValue}, required ${v.correctiveAction}`)
-                .join("; ")}`
-          )
-          .join("\n")
-      : "none -- approved on the first attempt";
-
-  const userPrompt = `Chosen: ${chosen.service.name} (price: ${chosen.service.price}, uptime: ${chosen.service.uptime}%, score: ${chosen.score.toFixed(3)})
-Alternatives considered: ${alternativesText}
-Prior rejected attempts: ${historyText}`;
-
-  const { text: explanation, usage } = await callGroq(SYSTEM_PROMPT, userPrompt, 1024);
+  // The model only rewords the facts. Its text is used only if it passes the claim check;
+  // otherwise the deterministic fact sheet itself is the explanation.
+  let explanation = facts.text;
+  let explanationSource: "model" | "facts" = "facts";
+  let usage: LlmUsage | undefined;
+  let lastProblems: string[] = [];
+  for (let attempt = 1; attempt <= MAX_WORDING_ATTEMPTS; attempt++) {
+    const reply = await callGroq(SYSTEM_PROMPT, facts.text, 1024);
+    usage = addUsage(usage, reply.usage);
+    const candidateText = reply.text.trim();
+    lastProblems = checkClaims(candidateText, facts);
+    if (lastProblems.length === 0) {
+      explanation = candidateText;
+      explanationSource = "model";
+      break;
+    }
+  }
 
   const output: ExplainedBlueprint = {
     ...composition,
     explanation,
+    explanationSource,
   };
 
   try {
@@ -116,7 +161,10 @@ Prior rejected attempts: ${historyText}`;
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: explanation,
+      reasoning:
+        explanationSource === "model"
+          ? explanation
+          : `${explanation} (Plain facts used: the model's wording failed the fact check: ${lastProblems.join("; ")}.)`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: composition.iteration,

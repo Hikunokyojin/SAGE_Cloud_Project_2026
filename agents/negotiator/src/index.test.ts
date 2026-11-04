@@ -227,3 +227,30 @@ describe("absolute scoring against catalogue references", () => {
     expect(r.scoreBreakdown.basis).toBe("relative-to-candidates");
   });
 });
+
+describe("rejected candidates", () => {
+  it("lists every candidate that failed a hard filter, with the rule it failed", async () => {
+    const r = await handler(
+      baseInput({
+        requiredCategory: "image-resizing",
+        constraints: [
+          { field: "uptime", operator: "gte", value: 99.5, mandatory: true },
+          { field: "latencyMs", operator: "lt", value: 100, mandatory: true },
+        ],
+        candidates: [
+          candidate({ serviceId: "svc-budget", name: "BudgetResize", price: 0.005, uptime: 97.5, latencyMs: 650, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-fast", name: "FastResize", price: 0.02, uptime: 99.9, latencyMs: 180, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-turbo", name: "TurboResize", price: 0.045, uptime: 99.7, latencyMs: 45, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-queue", name: "QueueRunner", price: 0.0007, uptime: 99.9, latencyMs: 15, capability: "message-queue" }),
+        ],
+      })
+    );
+
+    expect(r.chosen.service.serviceId).toBe("svc-turbo");
+    expect(r.rejected).toEqual([
+      { serviceId: "svc-budget", name: "BudgetResize", reason: "uptime 97.5% is not at least 99.5%" },
+      { serviceId: "svc-fast", name: "FastResize", reason: "latency 180 ms is not below 100 ms" },
+      { serviceId: "svc-queue", name: "QueueRunner", reason: "wrong category (message-queue, needed image-resizing)" },
+    ]);
+  });
+});
