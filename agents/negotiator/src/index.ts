@@ -68,6 +68,7 @@ function resolveWeight(field: "price" | "uptime" | "latencyMs", constraints: Con
 }
 
 export async function handler(input: NegotiatorAgentInput): Promise<Composition> {
+  const startedAt = Date.now();
   if (input.candidates.length === 0) {
     throw new Error("Negotiator Agent: no candidates to score");
   }
@@ -177,6 +178,7 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "NegotiatorAgent",
       timestamp: new Date().toISOString(),

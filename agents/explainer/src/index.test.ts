@@ -9,9 +9,14 @@ import type {
 
 const resolveSecretMock = vi.fn();
 const fetchMock = vi.fn();
+const recordDecisionMock = vi.fn();
 
 vi.mock("@sage/secrets", () => ({
   resolveSecret: resolveSecretMock,
+}));
+
+vi.mock("@sage/audit", () => ({
+  recordDecision: recordDecisionMock,
 }));
 
 vi.stubGlobal("fetch", fetchMock);
@@ -19,7 +24,10 @@ vi.stubGlobal("fetch", fetchMock);
 function groqResponse(content: string) {
   return {
     ok: true,
-    json: async () => ({ choices: [{ message: { content } }] }),
+    json: async () => ({
+      choices: [{ message: { content } }],
+      usage: { prompt_tokens: 300, completion_tokens: 90, total_tokens: 390 },
+    }),
   };
 }
 
@@ -355,5 +363,19 @@ describe("Explainer Agent explainEscalation", () => {
     expect(userMessage).toContain("FastResize");
     expect(userMessage).toContain("price");
     expect(userMessage).toContain("0.08");
+  });
+
+  it("records the token usage Groq reports and how long the step took", async () => {
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen because it is cheapest."));
+    const { handler } = await import("./index");
+
+    await handler({ requestId: "req-1", composition: composition() } as ExplainerAgentInput);
+
+    const recorded = recordDecisionMock.mock.calls[0][0];
+    expect(recorded.usage).toEqual({ promptTokens: 300, completionTokens: 90, totalTokens: 390 });
+    expect(recorded.durationMs).toBeGreaterThanOrEqual(0);
   });
 });

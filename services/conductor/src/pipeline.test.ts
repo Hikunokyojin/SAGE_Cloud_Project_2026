@@ -123,6 +123,22 @@ describe("runPipeline", () => {
     }
   });
 
+  it("reports how long each stage took, in call order", async () => {
+    const invoker = makeInvoker();
+
+    const result = await runPipeline("req-1", "I need a cheap image resizer", invoker);
+
+    expect(result.timings?.map((t) => t.stage)).toEqual([
+      "inputGuard",
+      "intent",
+      "broker",
+      "negotiator",
+      "reviewer",
+      "explainer",
+    ]);
+    for (const t of result.timings ?? []) expect(t.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
   it("assigns a decisionId per stage and threads parentDecisionId into a reconstructable chain ", async () => {
     const invoker = makeInvoker();
 

@@ -119,4 +119,32 @@ describe("recordDecision", () => {
     await expect(recordDecision(record())).rejects.toThrow("AUDIT_TABLE_NAME is not set");
     expect(sendMock).not.toHaveBeenCalled();
   });
+
+  it("writes LLM token usage and the step duration when provided", async () => {
+    const { recordDecision } = await import("./index");
+
+    await recordDecision({
+      ...record(),
+      decisionId: "d-1",
+      iteration: 0,
+      status: "success",
+      usage: { promptTokens: 120, completionTokens: 80, totalTokens: 200 },
+      durationMs: 1234,
+    });
+
+    const item = sendMock.mock.calls[0][0].input.Item;
+    expect(JSON.parse(item.usage.S)).toEqual({ promptTokens: 120, completionTokens: 80, totalTokens: 200 });
+    expect(item.durationMs).toEqual({ N: "1234" });
+  });
+
+  it("marks the first record a process writes as a cold start and later ones as warm", async () => {
+    vi.resetModules();
+    const { recordDecision } = await import("./index");
+
+    await recordDecision(record());
+    await recordDecision(record());
+
+    expect(sendMock.mock.calls[0][0].input.Item.coldStart).toEqual({ BOOL: true });
+    expect(sendMock.mock.calls[1][0].input.Item.coldStart).toEqual({ BOOL: false });
+  });
 });

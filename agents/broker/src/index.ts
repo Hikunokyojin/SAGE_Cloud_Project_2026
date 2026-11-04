@@ -95,6 +95,7 @@ const TOP_N = 5;
 const MIN_SIMILARITY = 0.35;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
+  const startedAt = Date.now();
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();
   await mongo.connect();
@@ -168,6 +169,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "BrokerAgent",
       timestamp: new Date().toISOString(),
