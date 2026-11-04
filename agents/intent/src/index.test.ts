@@ -15,6 +15,16 @@ vi.mock("@sage/audit", () => ({
 
 vi.stubGlobal("fetch", fetchMock);
 
+// The shared DynamoDB cache: a plain Map stands in for the table.
+const sharedStore = new Map<string, unknown>();
+vi.mock("./sharedCache", () => ({
+  cacheKey: (req: string, version: string) => `${version}|${req}`,
+  getShared: vi.fn(async (k: string) => sharedStore.get(k)),
+  putShared: vi.fn(async (k: string, v: unknown) => {
+    sharedStore.set(k, v);
+  }),
+}));
+
 function groqResponse(content: string) {
   return {
     ok: true,
@@ -28,6 +38,7 @@ function groqResponse(content: string) {
 describe("Intent Agent handler", () => {
   beforeEach(() => {
     vi.resetModules();
+    sharedStore.clear();
     resolveSecretMock.mockReset();
     fetchMock.mockReset();
     recordDecisionMock.mockReset();
@@ -191,6 +202,7 @@ describe("Intent preferences in the handler output", () => {
 describe("Intent reproducibility", () => {
   beforeEach(() => {
     vi.resetModules();
+    sharedStore.clear();
     fetchMock.mockReset();
     recordDecisionMock.mockReset();
     recordDecisionMock.mockResolvedValue(undefined);
@@ -226,5 +238,31 @@ describe("Intent reproducibility", () => {
     await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
     await handler({ requestId: "r2", rawInput: "resize images" } as IntentAgentInput);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("shared Intent cache", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    sharedStore.clear();
+    fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "email delivery", category: "email-delivery", constraints: [] })));
+  });
+
+  it("a fresh instance reuses a parse another instance stored", async () => {
+    const first = await import("./index");
+    await first.handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    expect(sharedStore.size).toBe(1);
+
+    vi.resetModules(); // a new Lambda instance: empty memory cache, same table
+    const second = await import("./index");
+    const out = await second.handler({ requestId: "r2", rawInput: "Send emails" } as IntentAgentInput);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(out.capability).toBe("email delivery");
+    expect(recordDecisionMock.mock.calls[1][0].reasoning).toMatch(/shared cache/);
   });
 });

@@ -3,6 +3,7 @@ import { resolveSecret } from "@sage/secrets";
 import { SERVICE_CATEGORIES, toLlmUsage } from "@sage/shared-types";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
+import { cacheKey, getShared, putShared } from "./sharedCache";
 
 const VALID_FIELDS = new Set(["price", "uptime", "latencyMs"]);
 const VALID_OPERATORS: ConstraintOperator[] = ["lt", "lte", "gt", "gte", "eq"];
@@ -114,6 +115,8 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
 
 
 const GROQ_SEED = 42;
+// Bump when the prompt or schema changes so the shared cache stops serving old parses.
+const CACHE_VERSION = `${GROQ_MODEL}|intent-v1`;
 
 const INTENT_JSON_SCHEMA = {
   name: "intent",
@@ -215,12 +218,26 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const startedAt = Date.now();
   const apiKey = await getApiKey();
 
+  // Lookup order: this instance's memory, then the shared DynamoDB cache, then the model.
   const key = normalizeRequest(input.rawInput);
-  const cachedParse = PARSE_CACHE.get(key);
+  const sharedKey = cacheKey(key, CACHE_VERSION);
+  let cacheSource: "memory" | "shared" | undefined;
+  let cachedParse = PARSE_CACHE.get(key);
+  if (cachedParse) cacheSource = "memory";
+  else {
+    cachedParse = await getShared<ModelParse>(sharedKey);
+    if (cachedParse) {
+      cacheSource = "shared";
+      remember(key, cachedParse);
+    }
+  }
   const { parsed, usage } = cachedParse
     ? { parsed: cachedParse, usage: undefined }
     : await parseWithModel(apiKey, input.rawInput);
-  if (!cachedParse) remember(key, parsed);
+  if (!cachedParse) {
+    remember(key, parsed);
+    await putShared(sharedKey, parsed);
+  }
 
   const output: Intent = {
     requestId: input.requestId,
@@ -241,7 +258,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       input,
       output,
       usage,
-      reasoning: `${cachedParse ? "Reused the cached parse of an identical request. " : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
+      reasoning: `${cacheSource ? `Reused the cached parse of an identical request (${cacheSource} cache). ` : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,

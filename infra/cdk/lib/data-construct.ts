@@ -10,6 +10,7 @@ import { RemovalPolicy } from "aws-cdk-lib";
  */
 export class DataConstruct extends Construct {
   public readonly auditTable: dynamodb.Table;
+  public readonly intentCacheTable: dynamodb.Table;
   public readonly escalationTopic: sns.Topic;
 
   constructor(scope: Construct, id: string) {
@@ -24,6 +25,16 @@ export class DataConstruct extends Construct {
       sortKey: { name: "timestamp", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY, // demo project, not production data
+    });
+
+    // Shared Intent cache: same request, same parse, across all Lambda instances.
+    // Items expire through DynamoDB TTL on expiresAt (free; on-demand billing).
+    this.intentCacheTable = new dynamodb.Table(this, "IntentCacheTable", {
+      tableName: "intent_cache",
+      partitionKey: { name: "cacheKey", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: "expiresAt",
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     this.escalationTopic = new sns.Topic(this, "EscalationTopic", {

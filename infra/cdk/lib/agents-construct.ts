@@ -11,6 +11,8 @@ export interface AgentsConstructProps {
   escalationTopic: sns.ITopic;
   /** agent_decisions audit-trail table -- every agent writes its own AuditRecord here. */
   auditTable: dynamodb.ITable;
+  /** Shared Intent parse cache (TTL). */
+  intentCacheTable: dynamodb.ITable;
 }
 
 /**
@@ -97,9 +99,11 @@ export class AgentsConstruct extends Construct {
       // at runtime from SSM by the agent's own code (see src/index.ts).
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        INTENT_CACHE_TABLE_NAME: props.intentCacheTable.tableName,
       },
     });
     this.intentFn.addToRolePolicy(groqSsmPolicy);
+    props.intentCacheTable.grant(this.intentFn, "dynamodb:GetItem", "dynamodb:PutItem");
     this.intentFn.addToRolePolicy(ssmKmsDecryptPolicy);
     props.auditTable.grant(this.intentFn, "dynamodb:PutItem");
 

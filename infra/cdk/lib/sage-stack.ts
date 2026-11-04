@@ -15,6 +15,7 @@ export class SageStack extends Stack {
     const agents = new AgentsConstruct(this, "Agents", {
       escalationTopic: data.escalationTopic,
       auditTable: data.auditTable,
+      intentCacheTable: data.intentCacheTable,
     });
 
     const conductor = new ConductorConstruct(this, "Conductor", {

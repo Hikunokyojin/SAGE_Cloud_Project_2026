@@ -157,4 +157,17 @@ describe("SageStack", () => {
     );
     expect(statement.Resource).not.toBe("*");
   });
+
+  it("gives Intent a shared cache table with TTL", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      TableName: "intent_cache",
+      TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+      BillingMode: "PAY_PER_REQUEST",
+    });
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      FunctionName: "sage-intent",
+      Environment: { Variables: Match.objectLike({ INTENT_CACHE_TABLE_NAME: Match.anyValue() }) },
+    });
+  });
 });

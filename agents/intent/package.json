@@ -12,7 +12,8 @@
   "dependencies": {
     "@sage/audit": "*",
     "@sage/secrets": "*",
-    "@sage/shared-types": "*"
+    "@sage/shared-types": "*",
+    "@aws-sdk/client-dynamodb": "^3.600.0"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
