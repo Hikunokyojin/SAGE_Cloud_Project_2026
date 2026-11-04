@@ -10,6 +10,9 @@ export interface IntentConstraints {
 // each request onto one of these so Negotiator and Reviewer can reject candidates from
 // the wrong category -- semantic retrieval alone returns near neighbours across
 // categories. Must be updated when the dataset gains a new category.
+export { CATALOGUE_REFERENCES } from "./catalogueReferences";
+export type { CategoryReferences, Range } from "./catalogueReferences";
+
 export const SERVICE_CATEGORIES = [
   "image-resizing", "video-transcoding", "speech-transcription", "object-storage",
   "content-delivery", "email-delivery", "messaging", "authentication", "payment-processing",
@@ -285,6 +288,11 @@ export interface ScoreBreakdown {
   totalScore: number;
   constraintStatus: "pass" | "fail"; // self-reported by the negotiation agent
   violatedConstraints: string[];
+  // True when only one candidate survived the hard filters, so there was no real choice.
+  soleSurvivor?: boolean;
+  // How the dimensions were scored: against fixed catalogue references for the category
+  // (comparable across requests), or relative to the other candidates (fallback only).
+  basis?: "catalogue-references" | "relative-to-candidates";
 }
 
 // ── Composition (S6.4) ────────────────────────────────────────────────────
