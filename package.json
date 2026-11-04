@@ -16,7 +16,10 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "experiment": "npm run experiment --workspace=evaluation",
-    "security-report": "npm run security-report --workspace=agents/input-guard"
+    "security-report": "npm run security-report --workspace=agents/input-guard",
+    "backend:status": "node scripts/backend.mjs status",
+    "backend:pause": "node scripts/backend.mjs pause",
+    "backend:resume": "node scripts/backend.mjs resume"
   },
   "workspaces": [
     "apps/*",
