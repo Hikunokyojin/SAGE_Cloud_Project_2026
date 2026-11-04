@@ -8,6 +8,7 @@ import type {
   ScoreBreakdown,
   ScoreDimensions,
 } from "@sage/shared-types";
+import { CATALOGUE_REFERENCES } from "@sage/shared-types";
 import { recordDecision } from "@sage/audit";
 
 // Deterministic scoring algorithm. Still
@@ -60,6 +61,20 @@ function normalizedDimension(value: number, allValues: number[], higherIsBetter:
   if (max === min) return 1;
   const raw = (value - min) / (max - min);
   return higherIsBetter ? raw : 1 - raw;
+}
+
+// Absolute score in [0, 1] for one dimension, comparable across requests: how far the value
+// is from the bound towards the best value in the whole catalogue category. The bound is
+// the user's own mandatory limit when they gave one, otherwise the category's worst value.
+function absoluteDimension(value: number, best: number, bound: number, lowerIsBetter: boolean): number {
+  if (best === bound) return 1;
+  const raw = lowerIsBetter ? (bound - value) / (bound - best) : (value - bound) / (best - bound);
+  return Math.min(1, Math.max(0, raw));
+}
+
+function mandatoryLimit(constraints: Constraint[], field: "price" | "uptime" | "latencyMs"): number | undefined {
+  const limit = constraints.find((c) => c.mandatory && c.field === field);
+  return typeof limit?.value === "number" ? limit.value : undefined;
 }
 
 function resolveWeight(field: "price" | "uptime" | "latencyMs", constraints: Constraint[]): number {
@@ -116,14 +131,48 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   };
   const weightSum = priceWeight + uptimeWeight + latencyWeight + CAPABILITY_WEIGHT;
 
+  // Absolute scoring against fixed catalogue references when the category is known, so a
+  // score does not depend on which other candidates are present and a lone survivor does
+  // not score 1.000 automatically. Scoring relative to the candidates remains only as a
+  // fallback for categories without references.
+  const references = input.requiredCategory ? CATALOGUE_REFERENCES[input.requiredCategory] : undefined;
+  const basis = references ? "catalogue-references" : "relative-to-candidates";
+
   function scoreOf(candidate: ServiceCandidateWithEvidence): { dimensions: ScoreDimensions; total: number } {
-    const dimensions: ScoreDimensions = {
-      price: normalizedDimension(candidate.price, priceValues, false),
-      uptime: normalizedDimension(candidate.uptime, uptimeValues, true),
-      capability: normalizedDimension(candidate.similarityScore ?? 0, capabilityValues, true),
-    };
-    if (latencyDimensionPresent) {
-      dimensions.latency = normalizedDimension(candidate.latencyMs as number, latencyValues, false);
+    let dimensions: ScoreDimensions;
+    if (references) {
+      dimensions = {
+        price: absoluteDimension(
+          candidate.price,
+          references.price.min,
+          mandatoryLimit(input.constraints, "price") ?? references.price.max,
+          true
+        ),
+        uptime: absoluteDimension(
+          candidate.uptime,
+          references.uptime.max,
+          mandatoryLimit(input.constraints, "uptime") ?? references.uptime.min,
+          false
+        ),
+        capability: Math.min(1, Math.max(0, candidate.similarityScore ?? 0)),
+      };
+      if (latencyDimensionPresent) {
+        dimensions.latency = absoluteDimension(
+          candidate.latencyMs as number,
+          references.latencyMs.min,
+          mandatoryLimit(input.constraints, "latencyMs") ?? references.latencyMs.max,
+          true
+        );
+      }
+    } else {
+      dimensions = {
+        price: normalizedDimension(candidate.price, priceValues, false),
+        uptime: normalizedDimension(candidate.uptime, uptimeValues, true),
+        capability: normalizedDimension(candidate.similarityScore ?? 0, capabilityValues, true),
+      };
+      if (latencyDimensionPresent) {
+        dimensions.latency = normalizedDimension(candidate.latencyMs as number, latencyValues, false);
+      }
     }
     const total =
       (dimensions.price * priceWeight +
@@ -166,6 +215,8 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
     totalScore: best.total,
     constraintStatus: "pass",
     violatedConstraints: [],
+    soleSurvivor: eligible.length === 1,
+    basis,
   };
 
   const output: Composition = {

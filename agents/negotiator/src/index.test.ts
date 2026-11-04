@@ -170,3 +170,60 @@ describe("Negotiator Agent handler", () => {
     expect(result.iteration).toBe(2);
   });
 });
+
+describe("absolute scoring against catalogue references", () => {
+  // Real image-resizing references from data/services.json: price 0.005 to 0.045,
+  // uptime 97.5 to 99.9, latency 45 to 650 ms.
+  const turbo = candidate({
+    serviceId: "svc-turboresize",
+    price: 0.045,
+    uptime: 99.7,
+    latencyMs: 45,
+    similarityScore: 0.41,
+    capability: "image-resizing",
+  });
+  const limits: Constraint[] = [
+    { field: "price", operator: "lt", value: 0.05, mandatory: true },
+    { field: "uptime", operator: "gte", value: 99.5, mandatory: true },
+    { field: "latencyMs", operator: "lt", value: 100, mandatory: true },
+  ];
+
+  it("does not give a lone survivor a perfect score, and flags it as the sole survivor", async () => {
+    const r = await handler(baseInput({ candidates: [turbo], constraints: limits, requiredCategory: "image-resizing" }));
+
+    expect(r.scoreBreakdown.soleSurvivor).toBe(true);
+    expect(r.scoreBreakdown.basis).toBe("catalogue-references");
+    expect(r.chosen.score).toBeLessThan(1);
+    // Headroom under each limit, relative to the best value in the category:
+    // price (0.05 - 0.045) / (0.05 - 0.005) = 0.111; uptime (99.7 - 99.5) / (99.9 - 99.5) = 0.5;
+    // latency (100 - 45) / (100 - 45) = 1; capability is the raw similarity.
+    expect(r.scoreBreakdown.dimensions.price).toBeCloseTo(0.111, 3);
+    expect(r.scoreBreakdown.dimensions.uptime).toBeCloseTo(0.5, 3);
+    expect(r.scoreBreakdown.dimensions.latency).toBeCloseTo(1, 3);
+    expect(r.scoreBreakdown.dimensions.capability).toBeCloseTo(0.41, 3);
+  });
+
+  it("gives a candidate the same score whether or not other candidates are present", async () => {
+    const alone = await handler(baseInput({ candidates: [turbo], requiredCategory: "image-resizing" }));
+    const crowd = await handler(
+      baseInput({
+        candidates: [
+          turbo,
+          candidate({ serviceId: "svc-fastresize", price: 0.02, uptime: 99.9, latencyMs: 180, similarityScore: 0.42, capability: "image-resizing" }),
+        ],
+        requiredCategory: "image-resizing",
+      })
+    );
+
+    const turboInCrowd = [crowd.chosen, ...crowd.alternatives].find((c) => c.service.serviceId === "svc-turboresize");
+    expect(turboInCrowd?.score).toBeCloseTo(alone.chosen.score, 10);
+    expect(crowd.scoreBreakdown.soleSurvivor).toBe(false);
+  });
+
+  it("falls back to scoring relative to the candidates when the category has no references", async () => {
+    const r = await handler(
+      baseInput({ candidates: [candidate({ serviceId: "x", capability: "not-a-category" })], requiredCategory: "not-a-category" })
+    );
+    expect(r.scoreBreakdown.basis).toBe("relative-to-candidates");
+  });
+});

@@ -22,7 +22,8 @@
     "backend:status": "node scripts/backend.mjs status",
     "backend:pause": "node scripts/backend.mjs pause",
     "backend:resume": "node scripts/backend.mjs resume",
-    "build:dashboard-api": "npm run build:api --workspace=apps/dashboard"
+    "build:dashboard-api": "npm run build:api --workspace=apps/dashboard",
+    "catalogue:refs": "node scripts/catalogue-references.mjs"
   },
   "workspaces": [
     "apps/*",
