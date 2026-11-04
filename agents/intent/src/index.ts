@@ -112,10 +112,60 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
   return out;
 }
 
-export async function handler(input: IntentAgentInput): Promise<Intent> {
-  const startedAt = Date.now();
-  const apiKey = await getApiKey();
 
+const GROQ_SEED = 42;
+
+const INTENT_JSON_SCHEMA = {
+  name: "intent",
+  schema: {
+    type: "object",
+    properties: {
+      capability: { type: "string" },
+      category: { type: "string", enum: [...SERVICE_CATEGORIES, "unknown"] },
+      constraints: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            field: { type: "string", enum: ["price", "uptime", "latencyMs"] },
+            operator: { type: "string", enum: ["lt", "lte", "gt", "gte", "eq"] },
+            value: { type: "number" },
+            mandatory: { type: "boolean" },
+            priority: { type: "number" },
+          },
+          required: ["field", "operator", "value", "mandatory"],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["capability", "category", "constraints"],
+    additionalProperties: false,
+  },
+};
+
+type ModelParse = { capability: string; category?: unknown; constraints: unknown };
+
+// Same request (ignoring case and spacing) gives the same parse for as long as this
+// process (a warm Lambda) lives. Bounded so memory stays flat.
+const PARSE_CACHE = new Map<string, ModelParse>();
+const PARSE_CACHE_LIMIT = 500;
+
+export function normalizeRequest(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function remember(key: string, parsed: ModelParse): void {
+  if (PARSE_CACHE.size >= PARSE_CACHE_LIMIT) {
+    const oldest = PARSE_CACHE.keys().next().value;
+    if (oldest !== undefined) PARSE_CACHE.delete(oldest);
+  }
+  PARSE_CACHE.set(key, parsed);
+}
+
+async function parseWithModel(
+  apiKey: string,
+  rawInput: string
+): Promise<{ parsed: ModelParse; usage: ReturnType<typeof toLlmUsage> }> {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -129,10 +179,15 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       // budget and the JSON answer came back empty (3/6 valid in a direct probe;
       // 6/6 with these settings).
       reasoning_effort: "low",
+      // Reproducibility (T1.6): no sampling randomness, a fixed seed, and output forced
+      // to match the Intent schema.
+      temperature: 0,
+      seed: GROQ_SEED,
+      response_format: { type: "json_schema", json_schema: INTENT_JSON_SCHEMA },
       max_tokens: 1024,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: input.rawInput },
+        { role: "user", content: rawInput },
       ],
     }),
   });
@@ -146,12 +201,26 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const modelText: string = responseBody.choices[0].message.content;
   const usage = toLlmUsage(responseBody.usage);
 
-  let parsed: { capability: string; category?: unknown; constraints: unknown };
+  let parsed: ModelParse;
   try {
     parsed = JSON.parse(modelText);
   } catch {
     throw new Error(`Intent Agent: model returned non-JSON output: ${modelText}`);
   }
+
+  return { parsed, usage };
+}
+
+export async function handler(input: IntentAgentInput): Promise<Intent> {
+  const startedAt = Date.now();
+  const apiKey = await getApiKey();
+
+  const key = normalizeRequest(input.rawInput);
+  const cachedParse = PARSE_CACHE.get(key);
+  const { parsed, usage } = cachedParse
+    ? { parsed: cachedParse, usage: undefined }
+    : await parseWithModel(apiKey, input.rawInput);
+  if (!cachedParse) remember(key, parsed);
 
   const output: Intent = {
     requestId: input.requestId,
@@ -172,7 +241,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       input,
       output,
       usage,
-      reasoning: `Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
+      reasoning: `${cachedParse ? "Reused the cached parse of an identical request. " : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,

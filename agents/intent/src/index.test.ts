@@ -187,3 +187,44 @@ describe("Intent preferences in the handler output", () => {
     expect(out.preferences).toEqual({ latencyMs: 2 });
   });
 });
+
+describe("Intent reproducibility", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "email delivery", category: "email-delivery", constraints: [] })));
+  });
+
+  it("asks the model for deterministic, schema-constrained output", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.temperature).toBe(0);
+    expect(typeof body.seed).toBe("number");
+    expect(body.response_format.type).toBe("json_schema");
+    expect(body.response_format.json_schema.schema.required).toEqual(["capability", "category", "constraints"]);
+  });
+
+  it("reuses the parse for the same request, ignoring case and spacing", async () => {
+    const { handler } = await import("./index");
+    const a = await handler({ requestId: "r1", rawInput: "Send  emails" } as IntentAgentInput);
+    const b = await handler({ requestId: "r2", rawInput: " send emails " } as IntentAgentInput);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(b.requestId).toBe("r2");
+    expect(b.rawInput).toBe(" send emails ");
+    expect(b.capability).toBe(a.capability);
+    expect(recordDecisionMock.mock.calls[1][0].reasoning).toMatch(/cache/i);
+  });
+
+  it("calls the model again for a different request", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    await handler({ requestId: "r2", rawInput: "resize images" } as IntentAgentInput);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
