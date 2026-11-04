@@ -172,6 +172,12 @@ describe("runPipeline", () => {
     expect(explainerCall.parentDecisionId).toBe(reviewerCall.decisionId);
   });
 
+  it("passes Intent's category to the Broker so the vector search is filtered", async () => {
+    const invoker = makeInvoker();
+    await runPipeline("req-1", "resize my images", invoker);
+    expect(vi.mocked(invoker.broker).mock.calls[0][0].category).toBe("image-resizing");
+  });
+
   it("passes Intent's soft preferences to the Negotiator", async () => {
     const invoker = makeInvoker({
       intent: vi.fn(async (input) => ({

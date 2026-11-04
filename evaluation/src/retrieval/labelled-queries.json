@@ -1,0 +1,225 @@
+{
+  "in": [
+    [
+      "image-resizing",
+      "image resizing service"
+    ],
+    [
+      "image-resizing",
+      "resize and convert images"
+    ],
+    [
+      "image-resizing",
+      "thumbnail generation for photos"
+    ],
+    [
+      "video-transcoding",
+      "video transcoding"
+    ],
+    [
+      "video-transcoding",
+      "convert videos to H.265"
+    ],
+    [
+      "video-transcoding",
+      "encode video files"
+    ],
+    [
+      "speech-transcription",
+      "speech to text transcription"
+    ],
+    [
+      "speech-transcription",
+      "transcribe audio recordings"
+    ],
+    [
+      "speech-transcription",
+      "voice transcription API"
+    ],
+    [
+      "object-storage",
+      "object storage"
+    ],
+    [
+      "object-storage",
+      "store files durably"
+    ],
+    [
+      "object-storage",
+      "archive storage for backups"
+    ],
+    [
+      "content-delivery",
+      "content delivery network"
+    ],
+    [
+      "content-delivery",
+      "CDN with edge caching"
+    ],
+    [
+      "content-delivery",
+      "serve static assets globally"
+    ],
+    [
+      "email-delivery",
+      "email delivery service"
+    ],
+    [
+      "email-delivery",
+      "send transactional emails"
+    ],
+    [
+      "email-delivery",
+      "email API with bounce tracking"
+    ],
+    [
+      "messaging",
+      "SMS messaging"
+    ],
+    [
+      "messaging",
+      "send WhatsApp messages"
+    ],
+    [
+      "messaging",
+      "text message API"
+    ],
+    [
+      "authentication",
+      "user authentication"
+    ],
+    [
+      "authentication",
+      "single sign-on and OAuth"
+    ],
+    [
+      "authentication",
+      "identity and login service"
+    ],
+    [
+      "payment-processing",
+      "payment processing"
+    ],
+    [
+      "payment-processing",
+      "accept card payments"
+    ],
+    [
+      "payment-processing",
+      "payment gateway"
+    ],
+    [
+      "ml-inference",
+      "machine learning model inference"
+    ],
+    [
+      "ml-inference",
+      "host ML models for predictions"
+    ],
+    [
+      "ml-inference",
+      "model serving with autoscaling"
+    ],
+    [
+      "embedding-generation",
+      "text embedding generation"
+    ],
+    [
+      "embedding-generation",
+      "vector embeddings for semantic search"
+    ],
+    [
+      "embedding-generation",
+      "generate image embeddings"
+    ],
+    [
+      "product-analytics",
+      "product analytics"
+    ],
+    [
+      "product-analytics",
+      "event analytics dashboard"
+    ],
+    [
+      "product-analytics",
+      "track user events"
+    ],
+    [
+      "message-queue",
+      "message queue"
+    ],
+    [
+      "message-queue",
+      "queue with dead-letter handling"
+    ],
+    [
+      "message-queue",
+      "asynchronous job queue"
+    ],
+    [
+      "full-text-search",
+      "full-text search"
+    ],
+    [
+      "full-text-search",
+      "search index with typo tolerance"
+    ],
+    [
+      "full-text-search",
+      "text search engine"
+    ],
+    [
+      "document-generation",
+      "PDF generation"
+    ],
+    [
+      "document-generation",
+      "generate documents from HTML templates"
+    ],
+    [
+      "document-generation",
+      "create invoices as PDF"
+    ],
+    [
+      "compute",
+      "compute instances"
+    ],
+    [
+      "compute",
+      "virtual machines for batch jobs"
+    ],
+    [
+      "compute",
+      "cloud servers"
+    ],
+    [
+      "geolocation",
+      "IP geolocation"
+    ],
+    [
+      "geolocation",
+      "reverse geocoding addresses"
+    ],
+    [
+      "geolocation",
+      "location lookup API"
+    ]
+  ],
+  "out": [
+    "relational database",
+    "managed PostgreSQL",
+    "DNS hosting",
+    "domain registration",
+    "container orchestration",
+    "secrets management",
+    "translation between languages",
+    "weather forecast data",
+    "code repository hosting",
+    "load balancer",
+    "web application firewall",
+    "calendar scheduling",
+    "chat bot builder",
+    "time series database",
+    "logging and log search"
+  ]
+}

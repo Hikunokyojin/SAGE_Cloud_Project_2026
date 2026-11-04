@@ -8,7 +8,8 @@
   "scripts": {
     "experiment": "tsx src/run-experiments.ts",
     "typecheck": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "calibrate:retrieval": "tsx src/retrieval/calibrate.ts"
   },
   "dependencies": {
     "@sage/shared-types": "*",
@@ -20,7 +21,8 @@
     "@sage/agent-reviewer": "*",
     "@sage/agent-explainer": "*",
     "@sage/conductor": "*",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "@huggingface/transformers": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

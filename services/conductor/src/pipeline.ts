@@ -39,6 +39,7 @@ export interface AgentInvoker {
     requestId: string;
     capability: string;
     constraints: Constraint[];
+    category?: string;
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<ServiceCandidateWithEvidence[]>;
@@ -170,6 +171,7 @@ async function runStages(
     requestId,
     capability: intent.capability,
     constraints: intent.constraints,
+    category: intent.category,
     decisionId: brokerDecisionId,
     parentDecisionId: intentDecisionId,
   });

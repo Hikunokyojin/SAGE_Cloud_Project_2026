@@ -80,6 +80,9 @@ async function main() {
     vectors: { size: VECTOR_SIZE, distance: "Cosine" },
   });
 
+  // Keyword index so the category filter is exact and fast.
+  await qdrant.createPayloadIndex(COLLECTION_NAME, { field_name: "capability", field_schema: "keyword", wait: true });
+
   console.log("Embedding and upserting each service...");
   for (const service of services) {
     const text = `${service.name}: ${service.description}`;
@@ -91,7 +94,8 @@ async function main() {
     // back from there (see src/index.ts, with_payload: true).
     await qdrant.upsert(COLLECTION_NAME, {
       wait: true,
-      points: [{ id: randomUUID(), vector, payload: { serviceId: service.serviceId } }],
+      // capability is the category; Broker filters on it (see src/index.ts).
+      points: [{ id: randomUUID(), vector, payload: { serviceId: service.serviceId, capability: service.capability } }],
     });
     console.log(`  upserted ${service.serviceId} (${service.name})`);
   }
