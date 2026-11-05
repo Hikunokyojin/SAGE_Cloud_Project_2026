@@ -87,6 +87,21 @@ Four further corrections were made for this run:
 3. **Every condition got the same LLM settings.** The harness's baselines and LLM-based ablations had their own, smaller token budgets (100 for ablation D). All conditions now match the deployed agents.
 4. **Results are checkpointed after each condition** instead of only at the end of a roughly one-hour run.
 
+## Retrieval cut-off calibration (2026-11-05)
+
+The Broker's similarity cut-off was a hand-picked 0.35. It is now chosen from labelled data by `evaluation/src/retrieval/calibrate.ts` (51 requests the catalogue can serve, 15 it cannot), using the same local embedding model as the Broker. Output: `results/retrieval-calibration.json`.
+
+| Cut-off | Recall@5, in-catalogue | Out-of-catalogue refused |
+|---|---|---|
+| 0.35 (old) | 0.98 | 0.93 (1 of 15 got through) |
+| **0.38 (now)** | **0.96** | **1.00** |
+
+Two in-catalogue phrasings still miss at 0.38 ("serve static assets globally", 0.228; "cloud servers", 0.365); richer service descriptions would fix them. The margin is thin (the highest out-of-catalogue score is 0.371) and the set is small, so the cut-off must be recalibrated when the catalogue grows.
+
+## Live T01 correction (2026-11-05)
+
+The original live T01 ("highly reliable database ... under USD 2") was recorded as a pass, but it returned an unrelated service: the catalogue has no database service, and the Broker searched every category. It is now a **fail, fixed**. Such a request escalates to a human (T1.1), and the live re-test returned HTTP 202 `paused_for_review` (requestId `44e98e58-22e9-4cca-96b8-560426a934af`). That re-test also exposed an SNS subject over 100 characters, which is fixed and covered by a regression test.
+
 ## Limitations
 
 1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
