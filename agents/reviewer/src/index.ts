@@ -106,7 +106,7 @@ async function escalate(input: ReviewerAgentInput, violations: Violation[]): Pro
   await getSnsClient().send(
     new PublishCommand({
       TopicArn: topicArn,
-      Subject: `SAGE: request ${input.requestId} needs human review`,
+      Subject: snsSubject(`SAGE: request ${input.requestId} needs human review`),
       Message: `Request ${input.requestId} failed Reviewer Agent validation after ${input.composition.iteration} attempt(s).\nChosen service: ${service.name} (${service.serviceId}), price=${service.price}, uptime=${service.uptime}%${service.latencyMs !== undefined ? `, latency=${service.latencyMs}ms` : ""}\nViolations: ${JSON.stringify(violations)}`,
     })
   );
@@ -138,6 +138,13 @@ async function finish(
     console.error("Reviewer Agent: failed to write audit record", err);
   }
   return output;
+}
+
+// SNS rejects a Subject over 100 characters ("Invalid parameter: Subject"), which would
+// turn an escalation into a failed request, so every subject is clamped.
+const SNS_SUBJECT_LIMIT = 100;
+export function snsSubject(text: string): string {
+  return text.length <= SNS_SUBJECT_LIMIT ? text : text.slice(0, SNS_SUBJECT_LIMIT - 3) + "...";
 }
 
 export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult> {
@@ -223,10 +230,11 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
   await getSnsClient().send(
     new PublishCommand({
       TopicArn: topicArn,
-      Subject:
+      Subject: snsSubject(
         input.kind === "capability_not_in_catalogue"
-          ? `SAGE: request ${input.requestId} needs human review (service type not in the catalogue)`
-          : `SAGE: request ${input.requestId} needs human review (no valid candidate)`,
+          ? `SAGE review: ${input.requestId} (not in the catalogue)`
+          : `SAGE review: ${input.requestId} (no valid candidate)`
+      ),
       Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}`,
     })
   );

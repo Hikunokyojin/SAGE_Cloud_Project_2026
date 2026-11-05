@@ -64,6 +64,18 @@ describe("Reviewer category check", () => {
     expect(sendMock.mock.calls[0][0].input.Subject).toContain("not in the catalogue");
   });
 
+  it("keeps every SNS subject within SNS's 100-character limit for a real UUID request id", async () => {
+    const { escalateUnsatisfiable } = await import("./index");
+    const requestId = "2d3556f1-8f3a-49e4-b494-ab4360024daa";
+    for (const kind of ["capability_not_in_catalogue", undefined] as const) {
+      sendMock.mockClear();
+      await escalateUnsatisfiable({ requestId, constraints: [], reason: "x", kind });
+      const subject = sendMock.mock.calls[0][0].input.Subject as string;
+      expect(subject.length).toBeLessThanOrEqual(100);
+      expect(subject).toContain(requestId);
+    }
+  });
+
   it("lists the constraints when an escalation had some", async () => {
     const { escalateUnsatisfiable } = await import("./index");
     const out = await escalateUnsatisfiable({
