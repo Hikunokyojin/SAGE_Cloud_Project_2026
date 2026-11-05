@@ -1,9 +1,10 @@
 import { Construct } from "constructs";
-import { RemovalPolicy, Stack } from "aws-cdk-lib";
+import { Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
@@ -33,6 +34,8 @@ export class ConductorConstruct extends Construct {
   public readonly instance: ec2.Instance;
   public readonly eip: ec2.CfnEIP;
   public readonly api: apigateway.RestApi;
+  public readonly userPool: cognito.UserPool;
+  public readonly userPoolClient: cognito.UserPoolClient;
   public readonly deployBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ConductorConstructProps) {
@@ -104,9 +107,31 @@ export class ConductorConstruct extends Construct {
     // API Gateway's HTTP_PROXY integration below is configured against this fixed IP.
     this.eip = new ec2.CfnEIP(this, "ConductorEip", { instanceId: this.instance.instanceId });
 
+    // Stage-wide throttling (T2.1): bursts get a clean HTTP 429 from API Gateway before
+    // they reach the single Conductor or burn the Groq free-tier quota. Free.
     this.api = new apigateway.RestApi(this, "ConductorApi", {
       restApiName: "sage-conductor-api",
-      deployOptions: { stageName: "prod" },
+      deployOptions: { stageName: "prod", throttlingRateLimit: 5, throttlingBurstLimit: 10 },
+    });
+
+    // Pilot users (T2.1): a Cognito user pool, free tier. No self sign-up; pilot accounts
+    // are created by the operator. The dashboard signs in with USER_PASSWORD_AUTH.
+    this.userPool = new cognito.UserPool(this, "PilotUserPool", {
+      userPoolName: "sage-pilot-users",
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      passwordPolicy: { minLength: 12, requireSymbols: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    this.userPoolClient = this.userPool.addClient("DashboardClient", {
+      userPoolClientName: "sage-dashboard",
+      generateSecret: false,
+      authFlows: { userPassword: true },
+      idTokenValidity: Duration.hours(1),
+    });
+    const pilotAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, "PilotAuthorizer", {
+      cognitoUserPools: [this.userPool],
     });
     const proxyIntegration = new apigateway.HttpIntegration(
       `http://${this.eip.ref}:3001/{proxy}`,
@@ -121,6 +146,15 @@ export class ConductorConstruct extends Construct {
     const proxyResource = this.api.root.addResource("{proxy+}");
     proxyResource.addMethod("ANY", proxyIntegration, {
       requestParameters: { "method.request.path.proxy": true },
+    });
+
+    // /pilot/<path> is the same Conductor route, but only with a valid Cognito ID token
+    // in the Authorization header; API Gateway refuses anything else with 401.
+    const pilotProxy = this.api.root.addResource("pilot").addResource("{proxy+}");
+    pilotProxy.addMethod("ANY", proxyIntegration, {
+      requestParameters: { "method.request.path.proxy": true },
+      authorizer: pilotAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
     });
 
     // {proxy+} never matches the bare stage root, so the dashboard's index.html at

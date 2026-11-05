@@ -170,4 +170,35 @@ describe("SageStack", () => {
       Environment: { Variables: Match.objectLike({ INTENT_CACHE_TABLE_NAME: Match.anyValue() }) },
     });
   });
+
+  it("throttles the whole API stage so bursts get HTTP 429 instead of exhausting the Groq quota", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::ApiGateway::Stage", {
+      StageName: "prod",
+      MethodSettings: Match.arrayWith([
+        Match.objectLike({ HttpMethod: "*", ResourcePath: "/*", ThrottlingRateLimit: 5, ThrottlingBurstLimit: 10 }),
+      ]),
+    });
+  });
+
+  it("creates a Cognito user pool for pilot users with self sign-up disabled", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::Cognito::UserPool", {
+      AdminCreateUserConfig: { AllowAdminCreateUserOnly: true },
+    });
+    template.hasResourceProperties("AWS::Cognito::UserPoolClient", {
+      GenerateSecret: false,
+      ExplicitAuthFlows: Match.arrayWith(["ALLOW_USER_PASSWORD_AUTH"]),
+    });
+  });
+
+  it("protects /pilot/* with the Cognito authorizer and leaves the public demo routes open", () => {
+    const template = synth();
+    template.resourceCountIs("AWS::ApiGateway::Authorizer", 1);
+    template.hasResourceProperties("AWS::ApiGateway::Authorizer", { Type: "COGNITO_USER_POOLS" });
+    const methods = template.findResources("AWS::ApiGateway::Method");
+    const auth = Object.values(methods).map((m: any) => m.Properties.AuthorizationType ?? "NONE");
+    expect(auth.filter((a) => a === "COGNITO_USER_POOLS")).toHaveLength(1);
+    expect(auth.filter((a) => a === "NONE").length).toBeGreaterThanOrEqual(2);
+  });
 });

@@ -37,6 +37,8 @@ export class SageStack extends Stack {
     new CfnOutput(this, "AuditTableName", { value: data.auditTable.tableName });
     new CfnOutput(this, "EscalationTopicArn", { value: data.escalationTopic.topicArn });
     new CfnOutput(this, "ConductorDeployBucketName", { value: conductor.deployBucket.bucketName });
+    new CfnOutput(this, "PilotUserPoolId", { value: conductor.userPool.userPoolId });
+    new CfnOutput(this, "PilotUserPoolClientId", { value: conductor.userPoolClient.userPoolClientId });
 
     const audit = new CloudTrailConstruct(this, "Audit");
     new CfnOutput(this, "CloudTrailName", { value: audit.trail.trailArn });

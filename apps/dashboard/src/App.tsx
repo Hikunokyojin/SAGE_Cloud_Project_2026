@@ -1,5 +1,58 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import {
+  initiateAuthRequest, parseAuthResponse, isValid, requestUrl, requestHeaders,
+  loadSession, saveSession, type Session,
+} from "./auth";
+
+// Set at build time (VITE_COGNITO_CLIENT_ID); without it the pilot sign-in is hidden.
+const COGNITO = {
+  region: (import.meta.env.VITE_COGNITO_REGION as string | undefined) ?? "ap-south-1",
+  clientId: import.meta.env.VITE_COGNITO_CLIENT_ID as string | undefined,
+};
+
+function PilotSignIn({ session, onChange }: { session: Session | null; onChange: (s: Session | null) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!COGNITO.clientId) return null;
+
+  if (isValid(session)) {
+    return (
+      <div className="pilot-signin">
+        Signed in as <strong>{session.email}</strong> (pilot route).{" "}
+        <button type="button" onClick={() => onChange(null)}>Sign out</button>
+      </div>
+    );
+  }
+
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const { url, init } = initiateAuthRequest({ region: COGNITO.region, clientId: COGNITO.clientId! }, email, password);
+      const res = await fetch(url, init);
+      onChange(parseAuthResponse(res.status, await res.json(), email));
+      setPassword("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="pilot-signin" onSubmit={signIn}>
+      <span>Pilot users:</span>
+      <input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <button type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
+      {error && <span className="error">{error}</span>}
+    </form>
+  );
+}
 
 interface AuditStep {
   agent: string;
@@ -118,6 +171,11 @@ function StatusBanner({ status, recheck }: { status: BackendStatus; recheck: () 
 export function App() {
   const [apiBase, setApiBase] = useState(loadApiBase);
   const { status: backendStatus, recheck } = useBackendStatus(apiBase);
+  const [session, setSessionState] = useState<Session | null>(loadSession);
+  const setSession = (s: Session | null) => {
+    saveSession(s);
+    setSessionState(s);
+  };
   const [requestText, setRequestText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pipelineResult, setPipelineResult] = useState<PipelineResponse | null>(null);
@@ -161,11 +219,16 @@ export function App() {
     setSubmitError(null);
     setPipelineResult(null);
     try {
-      const res = await fetch(`${apiBase.replace(/\/$/, "")}/request`, {
+      const res = await fetch(requestUrl(apiBase, session), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: requestHeaders(session),
         body: JSON.stringify({ text: requestText }),
       });
+      if (res.status === 429) throw new Error("Too many requests right now; wait a few seconds and try again.");
+      if (res.status === 401) {
+        setSession(null);
+        throw new Error("Your pilot sign-in has expired; sign in again.");
+      }
       const data: PipelineResponse = await res.json();
       setPipelineResult(data);
       await loadTrace(data.requestId);
@@ -196,6 +259,7 @@ export function App() {
           <input value={apiBase} onChange={(e) => persistApiBase(e.target.value)} />
         </label>
         <StatusBanner status={backendStatus} recheck={recheck} />
+        <PilotSignIn session={session} onChange={setSession} />
       </header>
 
       <section className="panel">
