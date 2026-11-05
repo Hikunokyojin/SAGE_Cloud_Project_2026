@@ -205,3 +205,17 @@ button:disabled {
   cursor: pointer;
   font: inherit;
 }
+
+.pilot-signin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+.pilot-signin input {
+  min-width: 0;
+}
+.pilot-signin .error {
+  color: #c0392b;
+}
