@@ -201,4 +201,12 @@ describe("SageStack", () => {
     expect(auth.filter((a) => a === "COGNITO_USER_POOLS")).toHaveLength(1);
     expect(auth.filter((a) => a === "NONE").length).toBeGreaterThanOrEqual(2);
   });
+
+  it("lets browser CORS preflights (OPTIONS) through /pilot/* without a token", () => {
+    const template = synth();
+    const methods = Object.values(template.findResources("AWS::ApiGateway::Method")) as any[];
+    const options = methods.filter((m) => m.Properties.HttpMethod === "OPTIONS");
+    expect(options).toHaveLength(1);
+    expect(options[0].Properties.AuthorizationType ?? "NONE").toBe("NONE");
+  });
 });
