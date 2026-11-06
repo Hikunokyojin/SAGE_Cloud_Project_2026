@@ -209,4 +209,25 @@ describe("SageStack", () => {
     expect(options).toHaveLength(1);
     expect(options[0].Properties.AuthorizationType ?? "NONE").toBe("NONE");
   });
+
+  it("recovers the Conductor instance automatically on a host failure and reboots it on an OS failure", () => {
+    const template = synth();
+    const alarms = Object.values(template.findResources("AWS::CloudWatch::Alarm")) as any[];
+    const byMetric = (name: string) => alarms.find((a) => a.Properties.MetricName === name)?.Properties;
+
+    const system = byMetric("StatusCheckFailed_System");
+    expect(system).toBeDefined();
+    expect(JSON.stringify(system.AlarmActions)).toContain("ec2:recover");
+    expect(system.TreatMissingData).toBe("notBreaching");
+
+    const instance = byMetric("StatusCheckFailed_Instance");
+    expect(instance).toBeDefined();
+    expect(JSON.stringify(instance.AlarmActions)).toContain("ec2:reboot");
+    expect(instance.TreatMissingData).toBe("notBreaching");
+
+    // both also notify the operator through the existing alert topic
+    for (const a of [system, instance]) {
+      expect(JSON.stringify(a.AlarmActions)).toContain("EscalationTopic");
+    }
+  });
 });

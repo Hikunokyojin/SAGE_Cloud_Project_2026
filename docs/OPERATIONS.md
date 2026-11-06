@@ -63,3 +63,27 @@ Free MongoDB Atlas and Qdrant Cloud clusters can go dormant, or be deleted, afte
 2. Review the limits above; raise `DAILY_REQUEST_LIMIT` only if you have a paid model quota.
 3. Add authentication (for example an API key or Cognito) before inviting the public, since the request limits are a safety net, not access control.
 4. Consider the upgrades in [ARCHITECTURE.md](ARCHITECTURE.md#known-limitations): a second availability zone and a stateless Conductor.
+
+## Automatic recovery of the Conductor (T2.2)
+
+The Conductor is a single EC2 instance (a documented design choice). It recovers on its own at three levels, all free:
+
+| Failure | What notices it | What happens | Typical time |
+|---|---|---|---|
+| The Node process crashes | systemd (`Restart=always`, 3 s) | `conductor.service` restarts | about 5 s |
+| The operating system hangs (instance status check fails) | CloudWatch alarm `sage-conductor-instance-check-reboot` (3 minutes) | instance reboots; systemd starts the service at boot | about 4 to 5 min |
+| The AWS host fails (system status check fails) | CloudWatch alarm `sage-conductor-system-check-recover` (2 minutes) | EC2 auto-recovery moves the instance to healthy hardware, keeping its ID, private IP and Elastic IP, so API Gateway needs no change | about 5 to 8 min |
+
+Both alarms also email the operator through the `sage-hitl-escalation` topic when they fire and when they clear.
+
+A deliberate pause (`npm run backend:pause`) never triggers recovery: a stopped instance sends no status metrics, and the alarms treat missing data as healthy. Recovery also does not start a stopped instance; use `npm run backend:resume`.
+
+### Recovery drill
+
+Run these after any change to the instance or the alarms. Record the timings in `docs/EVALUATION.md`.
+
+1. **Process crash:** on the instance (through Session Manager), run `sudo systemctl kill -s KILL conductor.service`. Then poll `GET /health` until it answers; it should take under 10 s.
+2. **Reboot path:** run `aws ec2 reboot-instances --region ap-south-1 --instance-ids <id>`. Then poll `GET /health`; it should answer within 2 minutes, with no manual step (RT5).
+3. **Alarm wiring:** run `aws cloudwatch set-alarm-state --region ap-south-1 --alarm-name sage-conductor-instance-check-reboot --state-value ALARM --state-reason drill`. Check that the alert email arrives. This really reboots the instance, so it also tests step 2.
+
+The host-failure path cannot be triggered on purpose; AWS documents the recover action, and the alarm wiring is covered by the CDK test.
