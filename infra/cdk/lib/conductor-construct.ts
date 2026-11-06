@@ -156,6 +156,12 @@ export class ConductorConstruct extends Construct {
       authorizer: pilotAuthorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
     });
+    // Browsers send a CORS preflight (OPTIONS, never with a token) before a cross-site call
+    // that carries Authorization, e.g. from the GitHub Pages dashboard. It must not hit the
+    // authorizer; the Conductor's cors() middleware answers it.
+    pilotProxy.addMethod("OPTIONS", proxyIntegration, {
+      requestParameters: { "method.request.path.proxy": true },
+    });
 
     // {proxy+} never matches the bare stage root, so the dashboard's index.html at
     // /prod/ needs its own method.

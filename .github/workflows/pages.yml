@@ -28,6 +28,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build --workspace=apps/dashboard
+        env:
+          # Public identifiers (not secrets): they turn on the pilot sign-in box.
+          # From the SageStack outputs PilotUserPoolClientId.
+          VITE_COGNITO_REGION: ap-south-1
+          VITE_COGNITO_CLIENT_ID: 5e0mg5u93tp1qrg8mb7hqs1qvc
       - uses: actions/upload-pages-artifact@v4
         with:
           path: apps/dashboard/dist
