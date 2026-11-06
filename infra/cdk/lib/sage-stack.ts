@@ -5,6 +5,7 @@ import { AgentsConstruct } from "./agents-construct";
 import { ConductorConstruct } from "./conductor-construct";
 import { CloudTrailConstruct } from "./cloudtrail-construct";
 import { BudgetConstruct } from "./budget-construct";
+import { RecoveryConstruct } from "./recovery-construct";
 
 export class SageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -31,6 +32,8 @@ export class SageStack extends Stack {
       ],
       auditTable: data.auditTable,
     });
+
+    new RecoveryConstruct(this, "Recovery", { instance: conductor.instance, alertTopic: data.escalationTopic });
 
     new CfnOutput(this, "ConductorApiUrl", { value: conductor.api.url });
     new CfnOutput(this, "ConductorPublicIp", { value: conductor.eip.ref });
