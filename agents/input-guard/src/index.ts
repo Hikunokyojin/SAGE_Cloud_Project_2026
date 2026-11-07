@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { InputGuardAgentInput, InputGuardAgentOutput } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
+import { isWarmup, WARMED } from "@sage/shared-types";
 
 // Rule-based (not Bedrock-backed) prompt-injection screen: fast, free, deterministic,
 // and runs before any LLM-facing agent sees the request. On a match, the offending
@@ -47,6 +48,10 @@ const CATEGORIES: PatternCategory[] = [
 ];
 
 export async function handler(input: InputGuardAgentInput): Promise<InputGuardAgentOutput> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   let sanitized = input.rawInput;
   const detected: string[] = [];

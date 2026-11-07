@@ -7,8 +7,8 @@ import type {
   EscalationExplanation,
   LlmUsage,
 } from "@sage/shared-types";
-import { toLlmUsage } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
+import { recordDecision, warmUp } from "@sage/audit";
 import { checkClaims, type ExplanationFacts } from "./claimCheck";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
@@ -124,6 +124,10 @@ function addUsage(a: LlmUsage | undefined, b: LlmUsage | undefined): LlmUsage | 
 }
 
 export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   const { composition } = input;
   const facts = buildFacts(input);
@@ -188,6 +192,10 @@ percentage, or broadening the request). Return ONLY the explanation text, no mar
 formatting, no preamble.`;
 
 export async function explainEscalation(input: EscalationExplainerInput): Promise<EscalationExplanation> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   const { attempts, constraints } = input;
 

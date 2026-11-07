@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
-import { SERVICE_CATEGORIES, toLlmUsage } from "@sage/shared-types";
+import { SERVICE_CATEGORIES, toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
 import { cacheKey, getShared, putShared } from "./sharedCache";
 
 const VALID_FIELDS = new Set(["price", "uptime", "latencyMs"]);
@@ -215,6 +215,10 @@ async function parseWithModel(
 }
 
 export async function handler(input: IntentAgentInput): Promise<Intent> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   const apiKey = await getApiKey();
 

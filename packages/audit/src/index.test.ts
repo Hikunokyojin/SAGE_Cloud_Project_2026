@@ -190,3 +190,14 @@ describe("tamper-evident chain", () => {
     expect(put.ConditionExpression).toBe("attribute_not_exists(requestId)");
   });
 });
+
+describe("warmUp", () => {
+  it("opens the DynamoDB connection with one cheap read and never throws", async () => {
+    sendMock.mockReset();
+    sendMock.mockRejectedValue(new Error("network"));
+    process.env.AUDIT_TABLE_NAME = "agent_decisions";
+    const { warmUp } = await import("./index");
+    await expect(warmUp()).resolves.toBeUndefined();
+    expect(sendMock.mock.calls[0][0].input).toMatchObject({ TableName: "agent_decisions", Limit: 1 });
+  });
+});

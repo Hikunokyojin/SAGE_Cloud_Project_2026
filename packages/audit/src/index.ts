@@ -105,3 +105,22 @@ async function writeChained(tableName: string, item: Item): Promise<void> {
     }
   }
 }
+
+// Keep-warm support (T2.6): one cheap read so the DynamoDB connection (TLS, credentials)
+// is open before the first real request. Never throws.
+export async function warmUp(): Promise<void> {
+  const tableName = process.env.AUDIT_TABLE_NAME;
+  if (!tableName) return;
+  try {
+    await getClient().send(
+      new QueryCommand({
+        TableName: tableName,
+        KeyConditionExpression: "requestId = :r",
+        ExpressionAttributeValues: { ":r": { S: "__warmup__" } },
+        Limit: 1,
+      })
+    );
+  } catch {
+    // best-effort
+  }
+}

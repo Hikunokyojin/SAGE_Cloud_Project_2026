@@ -8,7 +8,8 @@ import type {
   UnsatisfiableEscalationInput,
   EscalationExplanation,
 } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
+import { isWarmup, WARMED } from "@sage/shared-types";
 
 // Hard circuit breaker: once iteration reaches this, we escalate to a human
 // instead of letting the pipeline retry indefinitely.
@@ -148,6 +149,10 @@ export function snsSubject(text: string): string {
 }
 
 export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   const iteration = input.composition.iteration;
   const violations = findViolations(input);
@@ -217,6 +222,10 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
 // for that specific case too, reusing the same SNS topic and Human-in-the-Loop
 // channel as a circuit-breaker escalation.
 export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   const topicArn = process.env.SNS_TOPIC_ARN;
   if (!topicArn) {

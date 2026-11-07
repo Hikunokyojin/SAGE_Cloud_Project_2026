@@ -7,6 +7,8 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as sns from "aws-cdk-lib/aws-sns";
+import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
 
 export interface ObservabilityConstructProps {
   /** All 8 agent Lambdas. */
@@ -46,6 +48,18 @@ export class ObservabilityConstruct extends Construct {
       new logs.LogRetention(this, `Retention-${fn.node.id}`, {
         logGroupName: `/aws/lambda/${fnName(fn)}`,
         retention: logs.RetentionDays.ONE_MONTH,
+      });
+    }
+
+    // Keep-warm (T2.6): every agent is pinged every 5 minutes so a real request rarely
+    // meets a cold container. About 70k invocations a month, inside the 1M free tier. A
+    // rule takes at most 5 targets, so the agents are split over two rules.
+    const warmEvent = events.RuleTargetInput.fromObject({ warmup: true });
+    for (let i = 0; i < props.functions.length; i += 5) {
+      new events.Rule(this, `KeepWarm${i / 5 + 1}`, {
+        description: "SAGE keep-warm ping (T2.6)",
+        schedule: events.Schedule.rate(Duration.minutes(5)),
+        targets: props.functions.slice(i, i + 5).map((fn) => new targets.LambdaFunction(fn, { event: warmEvent, retryAttempts: 0 })),
       });
     }
 

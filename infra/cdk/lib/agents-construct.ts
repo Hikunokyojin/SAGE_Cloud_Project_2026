@@ -92,7 +92,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("input-guard")),
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       // Rule-based, no external calls -- the only extra permission needed beyond the
       // default CloudWatch Logs grant is dynamodb:PutItem for its own audit record.
       environment: {
@@ -107,7 +107,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("intent")),
       timeout: Duration.seconds(15),
-      memorySize: 256,
+      memorySize: 512,
       // AWS_REGION is injected automatically by the Lambda runtime -- setting it here
       // is rejected by CDK ("reserved environment variable"). GROQ_API_KEY is fetched
       // at runtime from SSM by the agent's own code (see src/index.ts).
@@ -130,7 +130,7 @@ export class AgentsConstruct extends Construct {
       // The local embedding model (onnxruntime-node running all-MiniLM-L6-v2) needs real
       // memory and CPU headroom to load and run -- 256MB (enough for a thin API-calling
       // function) is not enough for in-process ML inference.
-      memorySize: 1024,
+      memorySize: 1769,
       // MONGO_URI / QDRANT_URL / QDRANT_API_KEY are SSM SecureString parameters, fetched
       // at runtime by the agent's own code (see agents/broker/src/index.ts) --
       // Lambda's Environment.Variables cannot hold an ssm-secure dynamic reference
@@ -160,7 +160,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("negotiator")),
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       // Pure deterministic computation -- no external calls beyond its own audit write.
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
@@ -174,7 +174,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("reviewer")),
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
         AUDIT_TABLE_NAME: props.auditTable.tableName,
@@ -194,7 +194,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.escalateUnsatisfiable",
       code: reviewerAsset,
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
         AUDIT_TABLE_NAME: props.auditTable.tableName,
@@ -211,7 +211,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: explainerAsset,
       timeout: Duration.seconds(20),
-      memorySize: 256,
+      memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
@@ -226,7 +226,7 @@ export class AgentsConstruct extends Construct {
       handler: "index.explainEscalation",
       code: explainerAsset,
       timeout: Duration.seconds(20),
-      memorySize: 256,
+      memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
