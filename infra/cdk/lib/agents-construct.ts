@@ -67,7 +67,11 @@ export class AgentsConstruct extends Construct {
 
     const groqSsmPolicy = new iam.PolicyStatement({
       actions: ["ssm:GetParameter"],
-      resources: [`arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`],
+      // T2.7: the fallback provider's key sits next to Groq's.
+      resources: [
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`,
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/CEREBRAS_API_KEY`,
+      ],
     });
 
     // Audit writers (T2.4): append-only. PutItem to add a record, Query to read the request's

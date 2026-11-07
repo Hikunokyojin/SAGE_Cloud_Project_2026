@@ -199,11 +199,13 @@ describe("Explainer Agent handler", () => {
     expect(userMessage).toContain("uptime was 97.5, required 99");
   });
 
-  it("throws when Groq's API returns a non-OK response", async () => {
+  it("uses the deterministic fact sheet when no language model answers (T2.7), instead of failing", async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 500, text: async () => "server error" });
 
     const { handler } = await import("./index");
-    await expect(handler({ requestId: "req-1", composition: composition() })).rejects.toThrow(/Groq API error/);
+    const out = await handler({ requestId: "req-1", composition: composition() });
+    expect(out.explanationSource).toBe("facts");
+    expect(out.explanation.length).toBeGreaterThan(0);
   });
 });
 

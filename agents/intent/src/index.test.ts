@@ -144,7 +144,7 @@ describe("Intent Agent handler", () => {
 
     const { handler } = await import("./index");
     await expect(handler({ requestId: "req-3", rawInput: "anything" })).rejects.toThrow(
-      "Intent Agent: model returned non-JSON output"
+      "returned non-JSON output"
     );
   });
 

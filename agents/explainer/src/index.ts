@@ -9,6 +9,7 @@ import type {
 } from "@sage/shared-types";
 import { toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
 import { recordDecision, warmUp } from "@sage/audit";
+import { chat } from "@sage/llm";
 import { checkClaims, type ExplanationFacts } from "./claimCheck";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
@@ -30,39 +31,10 @@ async function getApiKey(): Promise<string> {
   return cachedApiKey;
 }
 
-async function callGroq(
-  systemPrompt: string,
-  userPrompt: string,
-  maxTokens: number
-): Promise<{ text: string; usage: LlmUsage | undefined }> {
-  const apiKey = await getApiKey();
-
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      // Reasoning tokens count against max_tokens on gpt-oss-20b; see the same
-      // setting in intent/src/index.ts for the measured failure this prevents.
-      reasoning_effort: "low",
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Explainer Agent: Groq API error (${response.status}): ${errorText}`);
-  }
-
-  const responseBody = await response.json();
-  return { text: responseBody.choices[0].message.content, usage: toLlmUsage(responseBody.usage) };
+// Through @sage/llm (T2.7): Groq first, Cerebras if Groq fails or is rate-limited.
+async function callModel(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<{ text: string; usage: LlmUsage | undefined }> {
+  const reply = await chat({ system: systemPrompt, user: userPrompt, maxTokens, timeoutMs: 5000 });
+  return { text: reply.text, usage: reply.usage };
 }
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
@@ -139,7 +111,14 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
   let usage: LlmUsage | undefined;
   let lastProblems: string[] = [];
   for (let attempt = 1; attempt <= MAX_WORDING_ATTEMPTS; attempt++) {
-    const reply = await callGroq(SYSTEM_PROMPT, facts.text, 1024);
+    let reply: { text: string; usage: LlmUsage | undefined };
+    try {
+      reply = await callModel(SYSTEM_PROMPT, facts.text, 1024);
+    } catch (err) {
+      // No model answered: the deterministic fact sheet is a complete, faithful explanation.
+      lastProblems = [`no language model answered (${err instanceof Error ? err.message : String(err)})`];
+      break;
+    }
     usage = addUsage(usage, reply.usage);
     const candidateText = reply.text.trim();
     lastProblems = checkClaims(candidateText, facts);
@@ -213,7 +192,16 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  const { text: explanation, usage } = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
+  let explanation: string;
+  let usage: LlmUsage | undefined;
+  try {
+    ({ text: explanation, usage } = await callModel(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024));
+  } catch {
+    // No model answered: a plain fallback still tells the user what happened.
+    explanation =
+      "No option met all of your requirements, so the request has been passed to a human reviewer. " +
+      "Relaxing a limit such as price or uptime may let the marketplace find a match.";
+  }
 
   const output: EscalationExplanation = {
     requestId: input.requestId,
