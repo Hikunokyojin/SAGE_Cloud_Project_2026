@@ -22,3 +22,18 @@ describe("review link", () => {
     expect(JSON.parse(r.init.body as string)).toEqual({ token: "1.a", action: "reject", reviewer: "D", note: "n" });
   });
 });
+
+describe("relaxed requirement values", () => {
+  it("applies what the reviewer typed, including decimals", async () => {
+    const { applyDrafts } = await import("./review");
+    const base = [{ field: "price" as const, operator: "lt" as const, value: 0.00001, mandatory: true }];
+    expect(applyDrafts(base, ["0.05"])).toEqual([{ ...base[0], value: 0.05 }]);
+  });
+
+  it("refuses an empty or non-numeric value instead of sending a wrong number", async () => {
+    const { applyDrafts } = await import("./review");
+    const base = [{ field: "price" as const, operator: "lt" as const, value: 1, mandatory: true }];
+    expect(() => applyDrafts(base, [""])).toThrow(/number/);
+    expect(() => applyDrafts(base, ["0.0.5"])).toThrow(/number/);
+  });
+});
