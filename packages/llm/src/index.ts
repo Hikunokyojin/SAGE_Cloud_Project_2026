@@ -1,7 +1,7 @@
 // Language-model calls for SAGE agents (T2.7).
 //
 // One chat() for every agent that needs a model. Providers are tried in order
-// (LLM_PROVIDERS, default "groq,cerebras"); each call has a timeout, and a provider that
+// (LLM_PROVIDERS, default "groq,openrouter"); each call has a timeout, and a provider that
 // fails 3 times in a row is skipped for 60 s (circuit breaker), so a Groq outage or a used-up
 // free quota falls back to the next provider instead of failing the request. Bedrock is
 // implemented but off by default: this AWS account cannot call Bedrock models yet
@@ -44,6 +44,7 @@ interface OpenAiStyleProvider {
   // "schema": strict json_schema; "object": json_object (the prompt describes the shape).
   jsonMode: "schema" | "object";
   extra?: Record<string, unknown>;
+  headers?: Record<string, string>;
 }
 interface BedrockProvider {
   kind: "bedrock";
@@ -66,6 +67,20 @@ const PROVIDERS: Record<string, Provider> = {
     // gpt-oss is a reasoning model; reasoning tokens count against max_tokens.
     extra: { reasoning_effort: "low" },
   },
+  // Free fallback without a payment method (chosen 2026-11-07 after Cerebras asked for a
+  // card). Free models are capped at a low daily request count, which suits a backup.
+  openrouter: {
+    kind: "openai",
+    name: "openrouter",
+    label: "OpenRouter",
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    model: process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free",
+    keyEnv: "OPENROUTER_API_KEY",
+    keyParam: "/sage/shared/OPENROUTER_API_KEY",
+    jsonMode: "object",
+    headers: { "X-Title": "SAGE" },
+  },
+  // Opt-in only (its key now needs a payment method).
   cerebras: {
     kind: "openai",
     name: "cerebras",
@@ -85,7 +100,7 @@ const PROVIDERS: Record<string, Provider> = {
 };
 
 function order(): Provider[] {
-  return (process.env.LLM_PROVIDERS || "groq,cerebras")
+  return (process.env.LLM_PROVIDERS || "groq,openrouter")
     .split(",")
     .map((s) => s.trim())
     .filter((s) => PROVIDERS[s])
@@ -147,7 +162,7 @@ async function callOpenAiStyle(p: OpenAiStyleProvider, req: ChatRequest, signal:
   const res = await fetch(p.url, {
     method: "POST",
     signal,
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}`, ...(p.headers ?? {}) },
     body: JSON.stringify({
       model: p.model,
       max_tokens: req.maxTokens,

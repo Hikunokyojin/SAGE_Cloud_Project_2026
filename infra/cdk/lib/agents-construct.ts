@@ -70,6 +70,7 @@ export class AgentsConstruct extends Construct {
       // T2.7: the fallback provider's key sits next to Groq's.
       resources: [
         `arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`,
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/OPENROUTER_API_KEY`,
         `arn:aws:ssm:${region}:${account}:parameter/sage/shared/CEREBRAS_API_KEY`,
       ],
     });
