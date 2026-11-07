@@ -65,3 +65,14 @@ export function resolveRequest(apiBase: string, link: ReviewLink, body: ResolveB
     },
   };
 }
+
+// The page keeps what the reviewer types as text (converting on every keystroke turned
+// "0." into 0 and lost the value), and converts once, here, when the form is sent.
+export function applyDrafts(constraints: Constraint[], drafts: string[]): Constraint[] {
+  return constraints.map((c, i) => {
+    const text = (drafts[i] ?? String(c.value)).trim();
+    const value = /^-?\d*\.?\d+(e-?\d+)?$/i.test(text) ? Number(text) : NaN;
+    if (!Number.isFinite(value)) throw new Error(`"${text}" is not a number; enter a value like 0.05.`);
+    return { ...c, value };
+  });
+}

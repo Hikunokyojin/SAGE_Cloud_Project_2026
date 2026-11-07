@@ -92,6 +92,12 @@ export type PipelineResult = (
   timings?: StageTiming[];
 };
 
+// Lambda errors arrive wrapped as "lambdaInvoker: <fn> returned an error: <message>";
+// the reviewer only needs the agent's own message.
+export function plainReason(message: string): string {
+  return message.replace(/^lambdaInvoker: \S+ returned an error: /, "");
+}
+
 // What a human reviewer needs to resume a paused request (T2.3). The Conductor stores it.
 export interface ReviewContext {
   reason: string;
@@ -287,7 +293,7 @@ async function fromIntent(
       // Reviewer-driven circuit-breaker trip.
       const reason = err instanceof Error ? err.message : "Negotiator Agent failed to produce a composition.";
       const parent = lastDecisionId;
-      return paused(reason, candidates, (decisionId) =>
+      return paused(plainReason(reason), candidates, (decisionId) =>
         invoker.escalateUnsatisfiable({
           requestId,
           constraints: intent.constraints,

@@ -87,3 +87,23 @@ Run these after any change to the instance or the alarms. Record the timings in 
 3. **Alarm wiring:** run `aws cloudwatch set-alarm-state --region ap-south-1 --alarm-name sage-conductor-instance-check-reboot --state-value ALARM --state-reason drill`. Check that the alert email arrives. This really reboots the instance, so it also tests step 2.
 
 The host-failure path cannot be triggered on purpose; AWS documents the recover action, and the alarm wiring is covered by the CDK test.
+
+## Deploying the dashboard copy on the Conductor
+
+Always copy `index.html` explicitly after syncing the assets. `aws s3 sync` decides by size and timestamp. A rebuilt `index.html` usually has the same size (it only names new hashed asset files), so sync can skip it, while `--delete` removes the old assets it points to. The page then loads blank. This happened on 2026-11-07.
+
+```
+aws s3 sync apps/dashboard/dist s3://<bucket>/conductor/dashboard --delete
+aws s3 cp apps/dashboard/dist/index.html s3://<bucket>/conductor/dashboard/index.html
+# on the instance:
+aws s3 sync s3://<bucket>/conductor/dashboard /opt/conductor/dashboard --delete
+aws s3 cp s3://<bucket>/conductor/dashboard/index.html /opt/conductor/dashboard/index.html
+```
+
+## Alert email subscription
+
+The alert topic `sage-hitl-escalation` delivers to email subscribers only. Its subscriber was added by hand on 2026-11-07 (until then alerts were published but reached nobody). It is not managed by CDK, so a CDK-created duplicate cannot conflict with it. Check it with:
+
+```
+aws sns list-subscriptions-by-topic --region ap-south-1 --topic-arn <EscalationTopicArn>
+```

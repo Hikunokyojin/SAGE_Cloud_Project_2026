@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  applyDrafts,
   resolveRequest,
   viewRequest,
   type Constraint,
@@ -25,6 +26,7 @@ export function ReviewPage({ apiBase, link }: { apiBase: string; link: ReviewLin
   const [note, setNote] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [constraints, setConstraints] = useState<Constraint[]>([]);
+  const [drafts, setDrafts] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<unknown>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export function ReviewPage({ apiBase, link }: { apiBase: string; link: ReviewLin
         if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
         setPaused(body);
         setConstraints(body.intent.constraints);
+        setDrafts(body.intent.constraints.map((c: Constraint) => String(c.value)));
         setServiceId(body.candidates[0]?.serviceId ?? "");
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Could not load the request."));
@@ -125,18 +128,26 @@ export function ReviewPage({ apiBase, link }: { apiBase: string; link: ReviewLin
               <label key={`${c.field}-${i}`} className="option">
                 {FIELD_LABEL[c.field]} {OPERATOR_WORDS[c.operator]}
                 <input
-                  type="number"
-                  step="any"
-                  value={c.value}
+                  inputMode="decimal"
+                  value={drafts[i] ?? ""}
                   onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setConstraints((all) => all.map((k, j) => (j === i ? { ...k, value } : k)));
+                    const text = e.target.value;
+                    setDrafts((all) => all.map((d, j) => (j === i ? text : d)));
                   }}
                 />
                 {c.mandatory ? "(must)" : "(preferred)"}
               </label>
             ))}
-            <button disabled={busy} onClick={() => submit({ action: "relax", constraints })}>
+            <button
+              disabled={busy}
+              onClick={() => {
+                try {
+                  submit({ action: "relax", constraints: applyDrafts(constraints, drafts) });
+                } catch (err) {
+                  setActionError(err instanceof Error ? err.message : "Invalid value.");
+                }
+              }}
+            >
               Re-run with these requirements
             </button>
           </fieldset>

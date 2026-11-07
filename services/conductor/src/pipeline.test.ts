@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { runPipeline, resumePipeline, type AgentInvoker } from "./pipeline";
+import { runPipeline, resumePipeline, plainReason, type AgentInvoker } from "./pipeline";
 import type {
   ServiceCandidateWithEvidence,
   CompositionChoice,
@@ -395,5 +395,14 @@ describe("human-in-the-loop support", () => {
     const out = await resumePipeline("req-1", { requestId: "req-1", capability: "database", constraints: [], rawInput: "db" }, invoker, "h1");
     expect(out.status).toBe("paused_for_review");
     expect(invoker.broker).not.toHaveBeenCalled();
+  });
+});
+
+describe("plainReason", () => {
+  it("drops the Lambda plumbing so the reviewer sees only the agent's own words", () => {
+    expect(plainReason("lambdaInvoker: sage-negotiator returned an error: Negotiator Agent: no candidate satisfies x")).toBe(
+      "Negotiator Agent: no candidate satisfies x"
+    );
+    expect(plainReason("already plain")).toBe("already plain");
   });
 });
