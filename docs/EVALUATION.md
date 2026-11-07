@@ -128,6 +128,21 @@ Deletion, insertion, reordering and an edit whose hash was recomputed afterwards
 
 Three forced escalations, each resolved from the link in the alert email: approve (BudgetResize, status `approved`), reject (status `rejected`), and relax the price limit to 0.05 (status `rerun`; the re-run chose CloudVault, score 0.821, Reviewer approved). Each human decision is a `HumanInTheLoop` audit record linked to the escalation it answers. The live test found three defects, all fixed: no email subscriber on the alert topic, a stale dashboard `index.html` after deploy, and the relax form losing typed decimals.
 
+## Start-up time (T2.6, RT12, 2026-11-07)
+
+Measured from the Lambda logs (`REPORT` lines) and from outside the API. "Cold call" is load time plus the first call's duration.
+
+| | Before (7 days to 2026-11-07) | After keep-warm and memory change |
+|---|---|---|
+| Warm request, end to end | about 4 s | 5 requests: 1.19 to 1.97 s, median 1.40 s (**RT12 warm p95 under 3 s: pass**) |
+| Share of calls that were cold | most (5 or 6 of 7 to 14 per agent) | 1 per agent (the first call after deploy), then all warm |
+| Broker cold call | about 4.8 s | 2.5 s (783 ms load + 1,752 ms first call, model included) |
+| Negotiator cold call | about 1.5 s (128 MB) | 0.57 s (512 MB) |
+| Explainer cold call | about 2.6 s | 1.0 s |
+| Fully cold request (sum of cold calls) | about 15 s (one trace: 14.4 s) | about 6 s, estimated, at the RT12 limit |
+
+With the 5-minute pings, a fully cold request now happens essentially only right after a deploy. The four warm-request samples with about 30 ms Intent times were cache hits (repeated wording); a new wording adds the Groq call, about 0.3 to 0.6 s, which still fits under 3 s. Provisioned concurrency (paid) was not needed.
+
 ## Limitations
 
 1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
