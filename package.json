@@ -23,7 +23,8 @@
     "backend:pause": "node scripts/backend.mjs pause",
     "backend:resume": "node scripts/backend.mjs resume",
     "build:dashboard-api": "npm run build:api --workspace=apps/dashboard",
-    "catalogue:refs": "node scripts/catalogue-references.mjs"
+    "catalogue:refs": "node scripts/catalogue-references.mjs",
+    "audit:verify": "tsx packages/audit/scripts/verify.ts"
   },
   "workspaces": [
     "apps/*",

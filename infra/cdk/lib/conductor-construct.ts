@@ -74,6 +74,13 @@ export class ConductorConstruct extends Construct {
     // T2.3: the Conductor writes the human reviewer's decision to the audit trail, keeps
     // paused requests (no delete: they expire through TTL), and reads the review-link key.
     props.auditTable.grant(role, "dynamodb:PutItem");
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.DENY,
+        actions: ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"],
+        resources: [props.auditTable.tableArn],
+      })
+    );
     props.pausedRequestsTable.grant(role, "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem");
     role.addToPolicy(
       new iam.PolicyStatement({

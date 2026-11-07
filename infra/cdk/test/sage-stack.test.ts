@@ -244,6 +244,26 @@ describe("SageStack", () => {
     const text = JSON.stringify(conductorPolicy);
     expect(text).toContain("dynamodb:UpdateItem");
     expect(text).toContain("dynamodb:PutItem");
-    expect(text).not.toContain("dynamodb:DeleteItem");
+    const allows = (conductorPolicy![1] as any).Properties.PolicyDocument.Statement.filter((st: any) => st.Effect === "Allow");
+    expect(JSON.stringify(allows)).not.toContain("dynamodb:DeleteItem");
+  });
+
+  it("explicitly denies update and delete on the audit table to every role that can write it", () => {
+    const template = synth();
+    const policies = Object.entries(template.findResources("AWS::IAM::Policy")) as [string, any][];
+    const writers = policies.filter(([, p]) =>
+      JSON.stringify(p.Properties.PolicyDocument.Statement).includes("dynamodb:PutItem") &&
+      JSON.stringify(p.Properties.PolicyDocument.Statement).includes("AgentDecisionsTable")
+    );
+    expect(writers.length).toBeGreaterThanOrEqual(9); // 8 agent Lambdas + the Conductor
+    for (const [id, p] of writers) {
+      const deny = p.Properties.PolicyDocument.Statement.find((st: any) => st.Effect === "Deny");
+      expect(deny, id).toBeDefined();
+      for (const action of ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"]) {
+        expect(deny.Action, id).toContain(action);
+      }
+      // writers read the latest record to link the chain
+      expect(JSON.stringify(p.Properties.PolicyDocument.Statement), id).toContain("dynamodb:Query");
+    }
   });
 });

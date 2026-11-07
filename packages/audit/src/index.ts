@@ -1,4 +1,6 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, PutItemCommand, QueryCommand, ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
+import { GENESIS, hashItem, type Item } from "./chain";
+export { verifyChain, hashItem, GENESIS } from "./chain";
 import type { AuditRecord, DecisionProvenance } from "@sage/shared-types";
 
 // Immutable audit trail writer (extended for decision
@@ -41,31 +43,65 @@ export async function recordDecision(record: AuditRecord | DecisionProvenance): 
   const provenance = record as Partial<DecisionProvenance>;
   const coldStart = provenance.coldStart ?? takeColdStart();
 
-  await getClient().send(
-    new PutItemCommand({
-      TableName: tableName,
-      Item: {
-        requestId: { S: record.requestId },
-        timestamp: { S: record.timestamp },
-        agent: { S: record.agent },
-        input: { S: JSON.stringify(record.input) },
-        output: { S: JSON.stringify(record.output) },
-        ...(record.reasoning !== undefined ? { reasoning: { S: record.reasoning } } : {}),
-        ...(provenance.decisionId !== undefined ? { decisionId: { S: provenance.decisionId } } : {}),
-        ...(provenance.parentDecisionId !== undefined
-          ? { parentDecisionId: { S: provenance.parentDecisionId } }
-          : {}),
-        ...(provenance.iteration !== undefined ? { iteration: { N: String(provenance.iteration) } } : {}),
-        ...(provenance.status !== undefined ? { status: { S: provenance.status } } : {}),
-        ...(provenance.constraintStatus !== undefined
-          ? { constraintStatus: { S: provenance.constraintStatus } }
-          : {}),
-        ...(provenance.score !== undefined ? { score: { S: JSON.stringify(provenance.score) } } : {}),
-        ...(provenance.evidence !== undefined ? { evidence: { S: JSON.stringify(provenance.evidence) } } : {}),
-        ...(provenance.durationMs !== undefined ? { durationMs: { N: String(provenance.durationMs) } } : {}),
-        ...(provenance.usage !== undefined ? { usage: { S: JSON.stringify(provenance.usage) } } : {}),
-        coldStart: { BOOL: coldStart },
-      },
-    })
-  );
+  const item: Item = {
+    requestId: { S: record.requestId },
+    timestamp: { S: record.timestamp },
+    agent: { S: record.agent },
+    input: { S: JSON.stringify(record.input) },
+    output: { S: JSON.stringify(record.output) },
+    ...(record.reasoning !== undefined ? { reasoning: { S: record.reasoning } } : {}),
+    ...(provenance.decisionId !== undefined ? { decisionId: { S: provenance.decisionId } } : {}),
+    ...(provenance.parentDecisionId !== undefined
+      ? { parentDecisionId: { S: provenance.parentDecisionId } }
+      : {}),
+    ...(provenance.iteration !== undefined ? { iteration: { N: String(provenance.iteration) } } : {}),
+    ...(provenance.status !== undefined ? { status: { S: provenance.status } } : {}),
+    ...(provenance.constraintStatus !== undefined
+      ? { constraintStatus: { S: provenance.constraintStatus } }
+      : {}),
+    ...(provenance.score !== undefined ? { score: { S: JSON.stringify(provenance.score) } } : {}),
+    ...(provenance.evidence !== undefined ? { evidence: { S: JSON.stringify(provenance.evidence) } } : {}),
+    ...(provenance.durationMs !== undefined ? { durationMs: { N: String(provenance.durationMs) } } : {}),
+    ...(provenance.usage !== undefined ? { usage: { S: JSON.stringify(provenance.usage) } } : {}),
+    coldStart: { BOOL: coldStart },
+  };
+  await writeChained(tableName, item);
+}
+
+// Tamper evidence (T2.4): link the record to the request's latest one and store its hash.
+// The write is conditional, so an existing record can never be overwritten; on a clash
+// (two records in the same millisecond) the timestamp moves on by 1 ms and the link is
+// re-read. A request's agents run one after another, so the chain stays linear.
+async function writeChained(tableName: string, item: Item): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const latest = await getClient().send(
+      new QueryCommand({
+        TableName: tableName,
+        KeyConditionExpression: "requestId = :r",
+        ExpressionAttributeValues: { ":r": { S: item.requestId.S! } },
+        ProjectionExpression: "#h",
+        ExpressionAttributeNames: { "#h": "hash" },
+        ScanIndexForward: false,
+        Limit: 1,
+        ConsistentRead: true,
+      })
+    );
+    const prevHash = latest?.Items?.[0]?.hash?.S ?? GENESIS;
+    const chained: Item = { ...item, prevHash: { S: prevHash } };
+    delete chained.hash;
+    chained.hash = { S: hashItem(chained) };
+    try {
+      await getClient().send(
+        new PutItemCommand({
+          TableName: tableName,
+          Item: chained as Record<string, any>,
+          ConditionExpression: "attribute_not_exists(requestId)",
+        })
+      );
+      return;
+    } catch (err) {
+      if (!(err instanceof ConditionalCheckFailedException) || attempt === 2) throw err;
+      item = { ...item, timestamp: { S: new Date(Date.parse(item.timestamp.S!) + 1).toISOString() } };
+    }
+  }
 }
