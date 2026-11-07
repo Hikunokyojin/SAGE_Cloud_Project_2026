@@ -13,8 +13,20 @@ vi.mock("@aws-sdk/client-dynamodb", () => {
       this.input = input;
     }
   }
-  return { DynamoDBClient, PutItemCommand };
+  class QueryCommand {
+    input: unknown;
+    constructor(input: unknown) {
+      this.input = input;
+    }
+  }
+  class ConditionalCheckFailedException extends Error {}
+  return { DynamoDBClient, PutItemCommand, QueryCommand, ConditionalCheckFailedException };
 });
+
+// The writer first reads the request's latest hash (Query), then writes (PutItem).
+function puts(): any[] {
+  return sendMock.mock.calls.map((c) => c[0]).filter((cmd) => cmd.input && "Item" in cmd.input);
+}
 
 function record(overrides: Partial<AuditRecord> = {}): AuditRecord {
   return {
@@ -39,8 +51,8 @@ describe("recordDecision", () => {
 
     await recordDecision(record());
 
-    expect(sendMock).toHaveBeenCalledTimes(1);
-    const putCommand = sendMock.mock.calls[0][0];
+    expect(puts()).toHaveLength(1);
+    const putCommand = puts()[0];
     expect(putCommand.input.TableName).toBe("agent_decisions");
     expect(putCommand.input.Item.requestId).toEqual({ S: "req-1" });
     expect(putCommand.input.Item.timestamp).toEqual({ S: "2026-09-15T00:00:00.000Z" });
@@ -53,11 +65,11 @@ describe("recordDecision", () => {
     const { recordDecision } = await import("./index");
 
     await recordDecision(record({ reasoning: "Chosen because it fit best." }));
-    expect(sendMock.mock.calls[0][0].input.Item.reasoning).toEqual({ S: "Chosen because it fit best." });
+    expect(puts()[0].input.Item.reasoning).toEqual({ S: "Chosen because it fit best." });
 
     sendMock.mockClear();
     await recordDecision(record());
-    expect(sendMock.mock.calls[0][0].input.Item.reasoning).toBeUndefined();
+    expect(puts()[0].input.Item.reasoning).toBeUndefined();
   });
 
   it("writes decisionId/parentDecisionId/iteration/status/constraintStatus/score/evidence when provided ", async () => {
@@ -83,7 +95,7 @@ describe("recordDecision", () => {
       } as Partial<AuditRecord>)
     );
 
-    const item = sendMock.mock.calls[0][0].input.Item;
+    const item = puts()[0].input.Item;
     expect(item.decisionId).toEqual({ S: "dec-2" });
     expect(item.parentDecisionId).toEqual({ S: "dec-1" });
     expect(item.iteration).toEqual({ N: "1" });
@@ -102,7 +114,7 @@ describe("recordDecision", () => {
 
     await recordDecision(record());
 
-    const item = sendMock.mock.calls[0][0].input.Item;
+    const item = puts()[0].input.Item;
     expect(item.decisionId).toBeUndefined();
     expect(item.parentDecisionId).toBeUndefined();
     expect(item.iteration).toBeUndefined();
@@ -132,7 +144,7 @@ describe("recordDecision", () => {
       durationMs: 1234,
     });
 
-    const item = sendMock.mock.calls[0][0].input.Item;
+    const item = puts()[0].input.Item;
     expect(JSON.parse(item.usage.S)).toEqual({ promptTokens: 120, completionTokens: 80, totalTokens: 200 });
     expect(item.durationMs).toEqual({ N: "1234" });
   });
@@ -144,7 +156,37 @@ describe("recordDecision", () => {
     await recordDecision(record());
     await recordDecision(record());
 
-    expect(sendMock.mock.calls[0][0].input.Item.coldStart).toEqual({ BOOL: true });
-    expect(sendMock.mock.calls[1][0].input.Item.coldStart).toEqual({ BOOL: false });
+    expect(puts()[0].input.Item.coldStart).toEqual({ BOOL: true });
+    expect(puts()[1].input.Item.coldStart).toEqual({ BOOL: false });
+  });
+});
+
+describe("tamper-evident chain", () => {
+  beforeEach(() => {
+    sendMock.mockReset();
+    process.env.AUDIT_TABLE_NAME = "agent_decisions";
+  });
+
+  it("starts a request's chain at GENESIS and stores a hash that matches the stored item", async () => {
+    sendMock.mockResolvedValue({});
+    const { recordDecision } = await import("./index");
+    const { hashItem } = await import("./chain");
+    await recordDecision(record());
+    const put = puts()[0].input;
+    expect(put.Item.prevHash).toEqual({ S: "GENESIS" });
+    expect(put.Item.hash.S).toBe(hashItem(put.Item));
+  });
+
+  it("links to the request's latest record and refuses to overwrite an existing one", async () => {
+    sendMock.mockImplementation(async (cmd: any) =>
+      cmd.input.KeyConditionExpression ? { Items: [{ hash: { S: "abc123" } }] } : {}
+    );
+    const { recordDecision } = await import("./index");
+    await recordDecision(record());
+    const query = sendMock.mock.calls[0][0].input;
+    expect(query).toMatchObject({ ScanIndexForward: false, Limit: 1, ConsistentRead: true });
+    const put = puts()[0].input;
+    expect(put.Item.prevHash).toEqual({ S: "abc123" });
+    expect(put.ConditionExpression).toBe("attribute_not_exists(requestId)");
   });
 });

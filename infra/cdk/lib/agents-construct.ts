@@ -70,6 +70,20 @@ export class AgentsConstruct extends Construct {
       resources: [`arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`],
     });
 
+    // Audit writers (T2.4): append-only. PutItem to add a record, Query to read the request's
+    // latest hash for the chain, and an explicit Deny on changing or removing records, so
+    // no later grant can quietly allow it.
+    const grantAuditWrite = (fn: lambda.Function) => {
+      props.auditTable.grant(fn, "dynamodb:PutItem", "dynamodb:Query");
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.DENY,
+          actions: ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"],
+          resources: [props.auditTable.tableArn],
+        })
+      );
+    };
+
     const agentDir = (name: string) => path.join(__dirname, "..", "..", "..", "agents", name, "dist");
 
     this.inputGuardFn = new lambda.Function(this, "InputGuardFunction", {
@@ -85,7 +99,7 @@ export class AgentsConstruct extends Construct {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
-    props.auditTable.grant(this.inputGuardFn, "dynamodb:PutItem");
+    grantAuditWrite(this.inputGuardFn);
 
     this.intentFn = new lambda.Function(this, "IntentFunction", {
       functionName: "sage-intent",
@@ -105,7 +119,7 @@ export class AgentsConstruct extends Construct {
     this.intentFn.addToRolePolicy(groqSsmPolicy);
     props.intentCacheTable.grant(this.intentFn, "dynamodb:GetItem", "dynamodb:PutItem");
     this.intentFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.intentFn, "dynamodb:PutItem");
+    grantAuditWrite(this.intentFn);
 
     this.brokerFn = new lambda.Function(this, "BrokerFunction", {
       functionName: "sage-broker",
@@ -138,7 +152,7 @@ export class AgentsConstruct extends Construct {
       })
     );
     this.brokerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.brokerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.brokerFn);
 
     this.negotiatorFn = new lambda.Function(this, "NegotiatorFunction", {
       functionName: "sage-negotiator",
@@ -152,7 +166,7 @@ export class AgentsConstruct extends Construct {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
-    props.auditTable.grant(this.negotiatorFn, "dynamodb:PutItem");
+    grantAuditWrite(this.negotiatorFn);
 
     this.reviewerFn = new lambda.Function(this, "ReviewerFunction", {
       functionName: "sage-reviewer",
@@ -167,7 +181,7 @@ export class AgentsConstruct extends Construct {
       },
     });
     props.escalationTopic.grantPublish(this.reviewerFn);
-    props.auditTable.grant(this.reviewerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.reviewerFn);
 
     // Shares Reviewer's dist bundle (same two-functions-from-one-asset pattern as
     // Explainer/EscalationExplainer below) -- Conductor calls this when Negotiator
@@ -187,7 +201,7 @@ export class AgentsConstruct extends Construct {
       },
     });
     props.escalationTopic.grantPublish(this.unsatisfiableEscalationFn);
-    props.auditTable.grant(this.unsatisfiableEscalationFn, "dynamodb:PutItem");
+    grantAuditWrite(this.unsatisfiableEscalationFn);
 
     const explainerAsset = lambda.Code.fromAsset(agentDir("explainer"));
 
@@ -204,7 +218,7 @@ export class AgentsConstruct extends Construct {
     });
     this.explainerFn.addToRolePolicy(groqSsmPolicy);
     this.explainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.explainerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.explainerFn);
 
     this.escalationExplainerFn = new lambda.Function(this, "EscalationExplainerFunction", {
       functionName: "sage-escalation-explainer",
@@ -219,6 +233,6 @@ export class AgentsConstruct extends Construct {
     });
     this.escalationExplainerFn.addToRolePolicy(groqSsmPolicy);
     this.escalationExplainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.escalationExplainerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.escalationExplainerFn);
   }
 }
