@@ -167,7 +167,7 @@ function remember(key: string, parsed: ModelParse): void {
 }
 
 async function parseWithModel(rawInput: string): Promise<{ parsed: ModelParse; usage: LlmUsage | undefined }> {
-  // Through @sage/llm (T2.7): Groq first, Cerebras if Groq fails or is rate-limited.
+  // Through @sage/llm (T2.7): Groq first, OpenRouter if Groq fails or is rate-limited.
   // Reproducibility (T1.6): no sampling randomness, a fixed seed, JSON forced to the Intent
   // schema where the provider supports it (the prompt describes the same shape).
   const reply = await chat({

@@ -37,6 +37,7 @@ describe("chat with fallback", () => {
     bedrockSend.mockReset();
     keys.GROQ_API_KEY = "g";
     keys.CEREBRAS_API_KEY = "c";
+    keys.OPENROUTER_API_KEY = "o";
     delete process.env.LLM_PROVIDERS;
     llm = await import("./index");
   });
@@ -49,12 +50,13 @@ describe("chat with fallback", () => {
     expect(body(0)).toMatchObject({ temperature: 0, seed: 42, reasoning_effort: "low", response_format: { type: "json_schema" } });
   });
 
-  it("falls back to Cerebras on a Groq 429 and still logs the Groq error for the quota alarm", async () => {
+  it("falls back to OpenRouter on a Groq 429 and still logs the Groq error for the quota alarm", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    fetchMock.mockResolvedValueOnce(fail(429)).mockResolvedValueOnce(ok("from cerebras"));
+    fetchMock.mockResolvedValueOnce(fail(429)).mockResolvedValueOnce(ok("from openrouter"));
     const out = await llm.chat({ ...req, jsonSchema: { name: "x", schema: { type: "object" } } });
-    expect(out).toMatchObject({ text: "from cerebras", provider: "cerebras", fallbackFrom: ["groq"] });
-    expect(url(1)).toContain("api.cerebras.ai");
+    expect(out).toMatchObject({ text: "from openrouter", provider: "openrouter", model: "google/gemma-4-31b-it:free", fallbackFrom: ["groq"] });
+    expect(url(1)).toBe("https://openrouter.ai/api/v1/chat/completions");
+    expect(fetchMock.mock.calls[1][1].headers["X-Title"]).toBe("SAGE");
     expect(body(1).response_format).toEqual({ type: "json_object" });
     expect(body(1).reasoning_effort).toBeUndefined();
     expect(warn.mock.calls.flat().join(" ")).toContain("Groq API error (429)");
@@ -66,7 +68,7 @@ describe("chat with fallback", () => {
     );
     fetchMock.mockResolvedValueOnce(ok("fast"));
     const out = await llm.chat(req);
-    expect(out.provider).toBe("cerebras");
+    expect(out.provider).toBe("openrouter");
   });
 
   it("opens the circuit after 3 failures in a row and skips that provider until it cools down", async () => {
@@ -84,9 +86,9 @@ describe("chat with fallback", () => {
   });
 
   it("skips a provider with no key, and fails with every reason when nothing answers", async () => {
-    keys.CEREBRAS_API_KEY = undefined;
+    keys.OPENROUTER_API_KEY = undefined;
     fetchMock.mockResolvedValue(fail(500, "boom"));
-    await expect(llm.chat(req)).rejects.toThrow(/groq: .*500.*cerebras: .*no CEREBRAS_API_KEY/s);
+    await expect(llm.chat(req)).rejects.toThrow(/groq: .*500.*openrouter: .*no OPENROUTER_API_KEY/s);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -98,5 +100,19 @@ describe("chat with fallback", () => {
     const out = await llm.chat(req);
     expect(out).toMatchObject({ text: "from bedrock", provider: "bedrock", usage: { promptTokens: 3, completionTokens: 2, totalTokens: 5 } });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("Cerebras stays available as an opt-in provider", () => {
+  it("is used when listed in LLM_PROVIDERS", async () => {
+    vi.resetModules();
+    fetchMock.mockReset();
+    keys.CEREBRAS_API_KEY = "c";
+    process.env.LLM_PROVIDERS = "cerebras";
+    const llm = await import("./index");
+    fetchMock.mockResolvedValue(ok("c"));
+    expect((await llm.chat(req)).provider).toBe("cerebras");
+    expect(url(0)).toContain("api.cerebras.ai");
+    delete process.env.LLM_PROVIDERS;
   });
 });

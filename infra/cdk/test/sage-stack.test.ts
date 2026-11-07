@@ -71,7 +71,7 @@ describe("SageStack", () => {
           Statement: Match.arrayWith([
             Match.objectLike({
               Action: "ssm:GetParameter",
-              Resource: Match.arrayWith([Match.stringLikeRegexp(".*GROQ_API_KEY.*"), Match.stringLikeRegexp(".*CEREBRAS_API_KEY.*")]),
+              Resource: Match.arrayWith([Match.stringLikeRegexp(".*GROQ_API_KEY.*"), Match.stringLikeRegexp(".*OPENROUTER_API_KEY.*")]),
             }),
           ]),
         },
