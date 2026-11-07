@@ -1,6 +1,12 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+  // Tests load @sage/llm from source: its compiled CommonJS require() of @sage/secrets would
+  // bypass a test's vi.mock() and could reach real SSM from a unit test.
+  resolve: {
+    alias: { "@sage/llm": fileURLToPath(new URL("./packages/llm/src/index.ts", import.meta.url)) },
+  },
   test: {
     include: ["**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**", "**/cdk.out/**"],
