@@ -11,6 +11,7 @@ import { RemovalPolicy } from "aws-cdk-lib";
 export class DataConstruct extends Construct {
   public readonly auditTable: dynamodb.Table;
   public readonly intentCacheTable: dynamodb.Table;
+  public readonly pausedRequestsTable: dynamodb.Table;
   public readonly escalationTopic: sns.Topic;
 
   constructor(scope: Construct, id: string) {
@@ -32,6 +33,15 @@ export class DataConstruct extends Construct {
     this.intentCacheTable = new dynamodb.Table(this, "IntentCacheTable", {
       tableName: "intent_cache",
       partitionKey: { name: "cacheKey", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: "expiresAt",
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    // Paused requests awaiting a human decision (T2.3). Items expire after 30 days.
+    this.pausedRequestsTable = new dynamodb.Table(this, "PausedRequestsTable", {
+      tableName: "paused_requests",
+      partitionKey: { name: "requestId", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       timeToLiveAttribute: "expiresAt",
       removalPolicy: RemovalPolicy.DESTROY,

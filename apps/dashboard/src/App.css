@@ -219,3 +219,30 @@ button:disabled {
 .pilot-signin .error {
   color: #c0392b;
 }
+
+.review {
+  border: 2px solid #e0a100;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.review label {
+  display: block;
+  margin: 0.4rem 0;
+}
+.review .option {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.review fieldset {
+  margin: 0.75rem 0;
+}
+.review .resolved {
+  color: #1e7e34;
+}
+.review pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

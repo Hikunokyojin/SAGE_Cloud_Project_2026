@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { runPipeline, type AgentInvoker } from "./pipeline";
+import { runPipeline, resumePipeline, type AgentInvoker } from "./pipeline";
 import type {
   ServiceCandidateWithEvidence,
   CompositionChoice,
@@ -344,5 +344,56 @@ describe("runPipeline", () => {
     const escalationCall = (invoker.explainEscalation as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(escalationCall.attempts).toHaveLength(3);
     expect(escalationCall.attempts[0].reviewerResult.violations[0].constraint).toBe("price");
+  });
+});
+
+describe("human-in-the-loop support", () => {
+  it("a paused result carries what a reviewer needs: intent, offered services and the escalation decision", async () => {
+    const invoker = makeInvoker({
+      negotiator: vi.fn(async () => {
+        throw new Error("no candidate satisfies the mandatory constraints");
+      }),
+    });
+    const out = await runPipeline("req-1", "cheap resizer", invoker, { reviewUrl: "https://x/#review=req-1&token=t" });
+    expect(out.status).toBe("paused_for_review");
+    if (out.status !== "paused_for_review") return;
+    expect(out.review?.intent.category).toBe("image-resizing");
+    expect(out.review?.candidates.map((c) => c.serviceId)).toEqual(["svc-1"]);
+    expect(out.review?.reason).toMatch(/no candidate/);
+    const escalateCall = vi.mocked(invoker.escalateUnsatisfiable).mock.calls[0][0];
+    expect(out.review?.escalationDecisionId).toBe(escalateCall.decisionId);
+    expect(escalateCall.reviewUrl).toBe("https://x/#review=req-1&token=t");
+  });
+
+  it("passes the review link to the Reviewer so its circuit-breaker email carries it too", async () => {
+    const invoker = makeInvoker();
+    await runPipeline("req-1", "resize", invoker, { reviewUrl: "https://x/#review" });
+    expect(vi.mocked(invoker.reviewer).mock.calls[0][0].reviewUrl).toBe("https://x/#review");
+  });
+
+  it("resumes from the Broker with a human-edited intent, linked to the human decision", async () => {
+    const invoker = makeInvoker();
+    const intent = {
+      requestId: "req-1",
+      capability: "image resizing",
+      category: "image-resizing",
+      constraints: [{ field: "price", operator: "lte", value: 0.5, mandatory: true }] as Constraint[],
+      rawInput: "cheap resizer",
+    };
+    const out = await resumePipeline("req-1", intent, invoker, "human-decision-1");
+    expect(out.status).toBe("completed");
+    expect(invoker.inputGuard).not.toHaveBeenCalled();
+    expect(invoker.intent).not.toHaveBeenCalled();
+    const brokerCall = vi.mocked(invoker.broker).mock.calls[0][0];
+    expect(brokerCall.parentDecisionId).toBe("human-decision-1");
+    expect(vi.mocked(invoker.negotiator).mock.calls[0][0].constraints[0].value).toBe(0.5);
+    expect(out.timings?.map((t) => t.stage)[0]).toBe("broker");
+  });
+
+  it("a resumed intent with no catalogue category still escalates instead of searching everything", async () => {
+    const invoker = makeInvoker();
+    const out = await resumePipeline("req-1", { requestId: "req-1", capability: "database", constraints: [], rawInput: "db" }, invoker, "h1");
+    expect(out.status).toBe("paused_for_review");
+    expect(invoker.broker).not.toHaveBeenCalled();
   });
 });

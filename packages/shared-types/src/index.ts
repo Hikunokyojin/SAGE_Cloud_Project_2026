@@ -158,6 +158,8 @@ export interface ReviewerAgentInput {
   constraints: Constraint[];
   // Re-verified independently of Negotiator's own category filter.
   requiredCategory?: string;
+  // Signed link to the human review page; included in the escalation email (T2.3).
+  reviewUrl?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -202,6 +204,8 @@ export interface UnsatisfiableEscalationInput {
   constraints: Constraint[];
   reason: string;
   kind?: UnsatisfiableEscalationKind;
+  // Signed link to the human review page; included in the escalation email (T2.3).
+  reviewUrl?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }

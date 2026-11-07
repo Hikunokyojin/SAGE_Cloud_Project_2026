@@ -20,7 +20,9 @@
     "@sage/agent-broker": "*",
     "@sage/agent-negotiator": "*",
     "@sage/agent-reviewer": "*",
-    "@sage/agent-explainer": "*"
+    "@sage/agent-explainer": "*",
+    "@sage/secrets": "*",
+    "@sage/audit": "*"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

@@ -102,6 +102,18 @@ Two in-catalogue phrasings still miss at 0.38 ("serve static assets globally", 0
 
 The original live T01 ("highly reliable database ... under USD 2") was recorded as a pass, but it returned an unrelated service: the catalogue has no database service, and the Broker searched every category. It is now a **fail, fixed**. Such a request escalates to a human (T1.1), and the live re-test returned HTTP 202 `paused_for_review` (requestId `44e98e58-22e9-4cca-96b8-560426a934af`). That re-test also exposed an SNS subject over 100 characters, which is fixed and covered by a regression test.
 
+## Recovery drill (T2.2, 2026-11-06)
+
+Run against the live Conductor, following `docs/OPERATIONS.md`.
+
+| Step | What was done | Result |
+|---|---|---|
+| Process crash | `systemctl kill -s KILL conductor.service` | systemd restarted it with a new PID; `/health` answered after **3.7 s** |
+| Reboot path (RT5) | alarm `sage-conductor-instance-check-reboot` forced to ALARM | public `/health` down at 3 s, back at **24 s**, no manual step (target under 2 minutes) |
+| Alarm wiring | alarm history | "Reboot EC2 Instance ... completed successfully"; both SNS notifications executed |
+
+The host-failure (recover) path cannot be triggered on purpose; its wiring is covered by the CDK test.
+
 ## Limitations
 
 1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.

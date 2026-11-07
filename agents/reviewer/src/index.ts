@@ -107,7 +107,7 @@ async function escalate(input: ReviewerAgentInput, violations: Violation[]): Pro
     new PublishCommand({
       TopicArn: topicArn,
       Subject: snsSubject(`SAGE: request ${input.requestId} needs human review`),
-      Message: `Request ${input.requestId} failed Reviewer Agent validation after ${input.composition.iteration} attempt(s).\nChosen service: ${service.name} (${service.serviceId}), price=${service.price}, uptime=${service.uptime}%${service.latencyMs !== undefined ? `, latency=${service.latencyMs}ms` : ""}\nViolations: ${JSON.stringify(violations)}`,
+      Message: `Request ${input.requestId} failed Reviewer Agent validation after ${input.composition.iteration} attempt(s).\nChosen service: ${service.name} (${service.serviceId}), price=${service.price}, uptime=${service.uptime}%${service.latencyMs !== undefined ? `, latency=${service.latencyMs}ms` : ""}\nViolations: ${JSON.stringify(violations)}${input.reviewUrl ? `\n\nReview and resolve: ${input.reviewUrl}` : ""}`,
     })
   );
 }
@@ -235,7 +235,7 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
           ? `SAGE review: ${input.requestId} (not in the catalogue)`
           : `SAGE review: ${input.requestId} (no valid candidate)`
       ),
-      Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}`,
+      Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}${input.reviewUrl ? `\n\nReview and resolve: ${input.reviewUrl}` : ""}`,
     })
   );
 

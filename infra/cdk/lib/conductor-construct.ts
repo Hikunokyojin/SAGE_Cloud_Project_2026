@@ -13,6 +13,8 @@ export interface ConductorConstructProps {
   invokableFunctions: lambda.IFunction[];
   /** agent_decisions table -- Conductor's GET /audit/:requestId route reads (never writes) from here. */
   auditTable: dynamodb.ITable;
+  /** paused_requests table -- Conductor stores and resolves paused requests (T2.3). */
+  pausedRequestsTable: dynamodb.ITable;
 }
 
 /**
@@ -69,6 +71,23 @@ export class ConductorConstruct extends Construct {
       })
     );
     props.auditTable.grantReadData(role);
+    // T2.3: the Conductor writes the human reviewer's decision to the audit trail, keeps
+    // paused requests (no delete: they expire through TTL), and reads the review-link key.
+    props.auditTable.grant(role, "dynamodb:PutItem");
+    props.pausedRequestsTable.grant(role, "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem");
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [`arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/HITL_SIGNING_KEY`],
+      })
+    );
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["kms:Decrypt"],
+        resources: ["*"],
+        conditions: { StringEquals: { "kms:ViaService": `ssm.${Stack.of(this).region}.amazonaws.com` } },
+      })
+    );
 
     // The EC2 instance has no way to receive Conductor's built application code other
     // than pulling it from somewhere -- SSM Session Manager has no built-in file

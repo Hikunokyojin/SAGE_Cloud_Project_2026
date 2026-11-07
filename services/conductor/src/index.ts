@@ -5,7 +5,11 @@ import { randomUUID } from "crypto";
 import { existsSync } from "fs";
 import path from "path";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { runPipeline } from "./pipeline";
+import { runPipeline, resumePipeline } from "./pipeline";
+import { resolveSecret } from "@sage/secrets";
+import { recordDecision } from "@sage/audit";
+import { createReviewService, ResolveError } from "./hitl/service";
+import { savePaused, getPaused, markResolved } from "./hitl/store";
 import type { AgentInvoker } from "./pipeline";
 import { createRateLimiter } from "./rateLimit";
 
@@ -30,6 +34,8 @@ const PORT = process.env.PORT || 3001;
 // redeploy from needing to touch the EC2 systemd unit's env vars every time --
 // AUDIT_TABLE_NAME still overrides it if ever pointed at a different table.
 const AUDIT_TABLE_NAME = process.env.AUDIT_TABLE_NAME || "agent_decisions";
+// @sage/audit reads the table name from the environment.
+process.env.AUDIT_TABLE_NAME ??= AUDIT_TABLE_NAME;
 const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-south-1" });
 
 // AGENT_INVOKE_MODE selects how Conductor talks to the agents: "local" (default) calls
@@ -51,6 +57,57 @@ function getInvoker(): Promise<AgentInvoker> {
   return invokerPromise;
 }
 
+// Human-in-the-loop (T2.3). The HMAC key for review links lives in SSM; if it is missing
+// the pipeline still pauses and alerts, just without a link, and the review routes
+// answer 503. A failed lookup is retried after a minute rather than on every request.
+let signingKey: { value?: string; at: number } | undefined;
+async function getSigningKey(): Promise<string | undefined> {
+  if (signingKey && (signingKey.value || Date.now() - signingKey.at < 60_000)) return signingKey.value;
+  try {
+    signingKey = { value: await resolveSecret("HITL_SIGNING_KEY", "/sage/conductor/HITL_SIGNING_KEY"), at: Date.now() };
+  } catch {
+    signingKey = { value: undefined, at: Date.now() };
+  }
+  return signingKey.value;
+}
+
+const review = createReviewService({
+  signingKey: getSigningKey,
+  dashboardUrl: process.env.DASHBOARD_URL || "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod/",
+  save: savePaused,
+  get: getPaused,
+  markResolved,
+  record: recordDecision,
+  rerun: async (requestId, intent, parent) => {
+    const invoker = await getInvoker();
+    const result = await resumePipeline(requestId, intent, invoker, parent, { reviewUrl: await review.reviewUrl(requestId) });
+    if (result.status === "paused_for_review") await review.onPaused(result);
+    return result;
+  },
+});
+
+function sendReviewError(res: express.Response, err: unknown) {
+  if (err instanceof ResolveError) return res.status(err.httpStatus).json({ error: err.message });
+  console.error("review route failed", err);
+  return res.status(500).json({ error: err instanceof Error ? err.message : "Unknown error" });
+}
+
+app.get("/requests/:requestId", async (req, res) => {
+  try {
+    res.status(200).json(await review.view(req.params.requestId, String(req.query.token ?? "")));
+  } catch (err) {
+    sendReviewError(res, err);
+  }
+});
+
+app.post("/requests/:requestId/resolve", async (req, res) => {
+  try {
+    res.status(200).json(await review.resolve(req.params.requestId, req.body));
+  } catch (err) {
+    sendReviewError(res, err);
+  }
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "sage-conductor" });
 });
@@ -61,11 +118,13 @@ app.post("/request", requestLimiter, async (req, res) => {
 
   try {
     const invoker = await getInvoker();
-    const result = await runPipeline(requestId, rawInput, invoker);
+    const result = await runPipeline(requestId, rawInput, invoker, { reviewUrl: await review.reviewUrl(requestId) });
 
     if (result.status === "completed") {
       res.status(200).json(result);
     } else if (result.status === "paused_for_review") {
+      // Stored so a human can resume it; a storage failure must not hide the pause.
+      await review.onPaused(result).catch((err) => console.error("could not store paused request", err));
       res.status(202).json(result);
     } else {
       res.status(422).json(result);

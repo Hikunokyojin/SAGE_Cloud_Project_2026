@@ -31,6 +31,7 @@ export class SageStack extends Stack {
         agents.escalationExplainerFn,
       ],
       auditTable: data.auditTable,
+      pausedRequestsTable: data.pausedRequestsTable,
     });
 
     new RecoveryConstruct(this, "Recovery", { instance: conductor.instance, alertTopic: data.escalationTopic });

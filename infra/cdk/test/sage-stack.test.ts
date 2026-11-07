@@ -230,4 +230,20 @@ describe("SageStack", () => {
       expect(JSON.stringify(a.AlarmActions)).toContain("EscalationTopic");
     }
   });
+
+  it("stores paused requests in their own table and lets only the Conductor use it and the review key", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      TableName: "paused_requests",
+      KeySchema: [{ AttributeName: "requestId", KeyType: "HASH" }],
+      TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+    });
+    const policies = JSON.stringify(template.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("parameter/sage/conductor/HITL_SIGNING_KEY");
+    const conductorPolicy = Object.entries(template.findResources("AWS::IAM::Policy")).find(([id]) => id.includes("ConductorInstanceRole"));
+    const text = JSON.stringify(conductorPolicy);
+    expect(text).toContain("dynamodb:UpdateItem");
+    expect(text).toContain("dynamodb:PutItem");
+    expect(text).not.toContain("dynamodb:DeleteItem");
+  });
 });
