@@ -424,3 +424,13 @@ export interface DecisionProvenance extends AuditRecord {
   evidence?: Evidence[];
   status: "success" | "failure" | "escalated";
 }
+
+// Keep-warm ping (T2.6): a scheduled rule invokes every agent with { warmup: true }; each
+// answers { warmed: true } after opening its connections, and does no real work.
+export interface WarmupEvent {
+  warmup: true;
+}
+export const WARMED = { warmed: true } as const;
+export function isWarmup(event: unknown): event is WarmupEvent {
+  return typeof event === "object" && event !== null && (event as { warmup?: unknown }).warmup === true;
+}

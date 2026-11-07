@@ -4,7 +4,8 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
 import type { BrokerAgentInput, ServiceCandidateWithEvidence } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
+import { isWarmup, WARMED } from "@sage/shared-types";
 
 // Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
 // (pre-downloaded at build time -- see scripts/download-model.js) and must never attempt a
@@ -86,6 +87,19 @@ async function embedText(text: string): Promise<number[]> {
   return Array.from(output.data as Float32Array);
 }
 
+// Keep-warm (T2.6): the slow parts of a cold Broker are loading the embedding model and
+// opening Qdrant and MongoDB, so a warm-up ping does exactly those (one tiny embedding runs
+// the model once) and nothing else.
+async function warm() {
+  await Promise.all([
+    embedText("warm up"),
+    getQdrantClient(),
+    getMongoClient().then((m) => m.connect()),
+    warmUp(),
+  ]);
+  return WARMED;
+}
+
 const TOP_N = 5;
 // The cut-off is chosen from labelled data, not by hand: see
 // evaluation/src/retrieval/calibrate.ts and results/retrieval-calibration.json.
@@ -99,6 +113,7 @@ const TOP_N = 5;
 const MIN_SIMILARITY = 0.38;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
+  if (isWarmup(input)) return (await warm()) as never;
   const startedAt = Date.now();
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();

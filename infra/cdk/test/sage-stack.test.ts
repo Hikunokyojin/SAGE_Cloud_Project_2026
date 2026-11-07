@@ -315,4 +315,24 @@ describe("SageStack", () => {
       synth().resourceCountIs("AWS::CloudWatch::Dashboard", 1);
     });
   });
+
+  describe("cold start (T2.6)", () => {
+    it("pings every agent every 5 minutes with a warm-up event", () => {
+      const template = synth();
+      const rules = Object.values(template.findResources("AWS::Events::Rule")) as any[];
+      const warm = rules.filter((r) => r.Properties.ScheduleExpression === "rate(5 minutes)");
+      const targets = warm.flatMap((r) => r.Properties.Targets);
+      expect(targets).toHaveLength(8);
+      for (const t of targets) expect(JSON.parse(t.Input)).toEqual({ warmup: true });
+    });
+
+    it("gives every agent at least 512 MB (Lambda CPU scales with memory) and the Broker a full vCPU", () => {
+      const template = synth();
+      const fns = (Object.values(template.findResources("AWS::Lambda::Function")) as any[]).filter((f) =>
+        String(f.Properties.FunctionName ?? "").startsWith("sage-")
+      );
+      for (const f of fns) expect(f.Properties.MemorySize, f.Properties.FunctionName).toBeGreaterThanOrEqual(512);
+      expect(fns.find((f) => f.Properties.FunctionName === "sage-broker").Properties.MemorySize).toBeGreaterThanOrEqual(1769);
+    });
+  });
 });

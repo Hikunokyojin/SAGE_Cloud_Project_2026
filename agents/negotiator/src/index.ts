@@ -9,8 +9,8 @@ import type {
   ScoreDimensions,
   RejectedCandidate,
 } from "@sage/shared-types";
-import { CATALOGUE_REFERENCES } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { CATALOGUE_REFERENCES, isWarmup, WARMED } from "@sage/shared-types";
+import { recordDecision, warmUp } from "@sage/audit";
 
 // Deterministic scoring algorithm. Still
 // no LLM call anywhere in this file -- the same candidates, constraints, and prior
@@ -87,6 +87,10 @@ function resolveWeight(
 }
 
 export async function handler(input: NegotiatorAgentInput): Promise<Composition> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
   const startedAt = Date.now();
   if (input.candidates.length === 0) {
     throw new Error("Negotiator Agent: no candidates to score");
