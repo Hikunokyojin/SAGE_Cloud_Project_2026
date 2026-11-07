@@ -114,6 +114,20 @@ Run against the live Conductor, following `docs/OPERATIONS.md`.
 
 The host-failure (recover) path cannot be triggered on purpose; its wiring is covered by the CDK test.
 
+## Audit tamper test (T2.4, 2026-11-07)
+
+On the live system, request `5f8162e7-36ba-4821-900f-5ceb438b5463` wrote 6 chained records. `npm run audit:verify` reported `INTACT: 6 chained record(s)`. The Broker record's `reasoning` was then edited directly in DynamoDB (with an operator account; the system's own roles are explicitly denied updates). The check reported:
+
+```
+TAMPERED: record 3 of 6 (BrokerAgent, 2026-11-07T06:58:32.455Z): content does not match its hash: the record was edited.
+```
+
+Deletion, insertion, reordering and an edit whose hash was recomputed afterwards are covered by unit tests (`packages/audit/src/chain.test.ts`).
+
+## Human-in-the-loop resume (T2.3, 2026-11-07)
+
+Three forced escalations, each resolved from the link in the alert email: approve (BudgetResize, status `approved`), reject (status `rejected`), and relax the price limit to 0.05 (status `rerun`; the re-run chose CloudVault, score 0.821, Reviewer approved). Each human decision is a `HumanInTheLoop` audit record linked to the escalation it answers. The live test found three defects, all fixed: no email subscriber on the alert topic, a stale dashboard `index.html` after deploy, and the relax form losing typed decimals.
+
 ## Limitations
 
 1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.

@@ -266,4 +266,53 @@ describe("SageStack", () => {
       expect(JSON.stringify(p.Properties.PolicyDocument.Statement), id).toContain("dynamodb:Query");
     }
   });
+
+  describe("observability (T2.5)", () => {
+    it("alarms on agent errors, API 5XX, slow responses, escalation rate and Groq 429s, all to the alert topic", () => {
+      const template = synth();
+      const alarms = Object.values(template.findResources("AWS::CloudWatch::Alarm")) as any[];
+      const names = alarms.map((a) => a.Properties.AlarmName);
+      for (const n of [
+        "sage-agent-errors",
+        "sage-api-5xx",
+        "sage-api-latency-p95",
+        "sage-escalation-rate",
+        "sage-groq-rate-limited",
+      ]) {
+        const alarm = alarms.find((a) => a.Properties.AlarmName === n);
+        expect(alarm, n).toBeDefined();
+        expect(JSON.stringify(alarm.Properties.AlarmActions), n).toContain("EscalationTopic");
+        expect(alarm.Properties.TreatMissingData, n).toBe("notBreaching");
+      }
+      // stays inside the 10 free CloudWatch alarms
+      expect(names.length).toBeLessThanOrEqual(10);
+    });
+
+    it("counts Groq 429s from the Intent and Explainer logs", () => {
+      const template = synth();
+      const filters = Object.values(template.findResources("AWS::Logs::MetricFilter")) as any[];
+      expect(filters.length).toBeGreaterThanOrEqual(2);
+      for (const f of filters) expect(f.Properties.FilterPattern).toContain("Groq API error (429)");
+    });
+
+    it("traces every agent with X-Ray and the API stage too", () => {
+      const template = synth();
+      const fns = Object.values(template.findResources("AWS::Lambda::Function")) as any[];
+      const agents = fns.filter((f) => String(f.Properties.FunctionName ?? "").startsWith("sage-"));
+      expect(agents).toHaveLength(8);
+      for (const f of agents) expect(f.Properties.TracingConfig, f.Properties.FunctionName).toEqual({ Mode: "Active" });
+      template.hasResourceProperties("AWS::ApiGateway::Stage", { TracingEnabled: true });
+    });
+
+    it("keeps agent logs for 30 days instead of forever", () => {
+      const template = synth();
+      const retention = Object.values(template.findResources("Custom::LogRetention")) as any[];
+      expect(retention.length).toBe(8);
+      for (const r of retention) expect(r.Properties.RetentionInDays).toBe(30);
+    });
+
+    it("has one CloudWatch dashboard", () => {
+      synth().resourceCountIs("AWS::CloudWatch::Dashboard", 1);
+    });
+  });
 });

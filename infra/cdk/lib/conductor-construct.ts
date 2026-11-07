@@ -137,7 +137,7 @@ export class ConductorConstruct extends Construct {
     // they reach the single Conductor or burn the Groq free-tier quota. Free.
     this.api = new apigateway.RestApi(this, "ConductorApi", {
       restApiName: "sage-conductor-api",
-      deployOptions: { stageName: "prod", throttlingRateLimit: 5, throttlingBurstLimit: 10 },
+      deployOptions: { stageName: "prod", throttlingRateLimit: 5, throttlingBurstLimit: 10, tracingEnabled: true },
     });
 
     // Pilot users (T2.1): a Cognito user pool, free tier. No self sign-up; pilot accounts
