@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import { ReviewPage } from "./ReviewPage";
+import { parseReviewHash } from "./review";
 import {
   initiateAuthRequest, parseAuthResponse, isValid, requestUrl, requestHeaders,
   loadSession, saveSession, type Session,
@@ -171,6 +173,8 @@ function StatusBanner({ status, recheck }: { status: BackendStatus; recheck: () 
 export function App() {
   const [apiBase, setApiBase] = useState(loadApiBase);
   const { status: backendStatus, recheck } = useBackendStatus(apiBase);
+  // A review link from an alert email opens the human review page above the dashboard.
+  const [reviewLink] = useState(() => parseReviewHash(window.location.hash));
   const [session, setSessionState] = useState<Session | null>(loadSession);
   const setSession = (s: Session | null) => {
     saveSession(s);
@@ -261,6 +265,7 @@ export function App() {
         <StatusBanner status={backendStatus} recheck={recheck} />
         <PilotSignIn session={session} onChange={setSession} />
       </header>
+      {reviewLink && <ReviewPage apiBase={apiBase} link={reviewLink} />}
 
       <section className="panel">
         <h2>Submit a request</h2>
