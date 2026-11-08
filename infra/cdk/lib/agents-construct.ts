@@ -111,7 +111,7 @@ export class AgentsConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("intent")),
-      timeout: Duration.seconds(15),
+      timeout: Duration.seconds(25),
       memorySize: 512,
       // AWS_REGION is injected automatically by the Lambda runtime -- setting it here
       // is rejected by CDK ("reserved environment variable"). GROQ_API_KEY is fetched
@@ -215,7 +215,7 @@ export class AgentsConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: explainerAsset,
-      timeout: Duration.seconds(20),
+      timeout: Duration.seconds(30),
       memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
@@ -230,7 +230,7 @@ export class AgentsConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.explainEscalation",
       code: explainerAsset,
-      timeout: Duration.seconds(20),
+      timeout: Duration.seconds(30),
       memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,

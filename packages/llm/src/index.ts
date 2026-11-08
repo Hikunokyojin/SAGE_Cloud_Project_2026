@@ -20,8 +20,12 @@ export interface ChatRequest {
   seed?: number;
   // Asks for JSON matching this schema (strictly where the provider supports it).
   jsonSchema?: { name: string; schema: object };
-  // Per provider; default 8 s.
+  // Time limit for the first provider tried; default 8 s.
   timeoutMs?: number;
+  // Time limit for any later (fallback) provider; defaults to timeoutMs. Free fallback
+  // models answer more slowly (measured live 2026-11-08: often over 6 s), so callers give
+  // them longer while a broken primary still fails fast.
+  fallbackTimeoutMs?: number;
 }
 
 export interface ChatResult {
@@ -74,7 +78,9 @@ const PROVIDERS: Record<string, Provider> = {
     name: "openrouter",
     label: "OpenRouter",
     url: "https://openrouter.ai/api/v1/chat/completions",
-    model: process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free",
+    // openrouter/free routes to whichever free model is available: in the live test a
+    // single free model (gemma-4-31b) was rate-limited upstream (429) while the router answered.
+    model: process.env.OPENROUTER_MODEL || "openrouter/free",
     keyEnv: "OPENROUTER_API_KEY",
     keyParam: "/sage/shared/OPENROUTER_API_KEY",
     jsonMode: "object",
@@ -211,20 +217,23 @@ async function callBedrock(p: BedrockProvider, req: ChatRequest, signal: AbortSi
 export async function chat(req: ChatRequest): Promise<ChatResult> {
   const failed: string[] = [];
   const reasons: string[] = [];
+  let attempted = 0;
   for (const p of order()) {
     if (isOpen(p.name)) {
       reasons.push(`${p.name}: skipped, circuit open after repeated failures`);
       continue;
     }
+    const limit = attempted === 0 ? (req.timeoutMs ?? 8000) : (req.fallbackTimeoutMs ?? req.timeoutMs ?? 8000);
+    attempted++;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), req.timeoutMs ?? 8000);
+    const timer = setTimeout(() => controller.abort(), limit);
     try {
       const out = p.kind === "openai" ? await callOpenAiStyle(p, req, controller.signal) : await callBedrock(p, req, controller.signal);
       recordSuccess(p.name);
       return { ...out, provider: p.name, model: p.model, ...(failed.length ? { fallbackFrom: failed } : {}) };
     } catch (err) {
       const message = controller.signal.aborted
-        ? `${p.label} timed out after ${req.timeoutMs ?? 8000} ms`
+        ? `${p.label} timed out after ${limit} ms`
         : err instanceof Error
           ? err.message
           : String(err);

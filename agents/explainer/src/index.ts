@@ -33,7 +33,7 @@ async function getApiKey(): Promise<string> {
 
 // Through @sage/llm (T2.7): Groq first, OpenRouter if Groq fails or is rate-limited.
 async function callModel(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<{ text: string; usage: LlmUsage | undefined }> {
-  const reply = await chat({ system: systemPrompt, user: userPrompt, maxTokens, timeoutMs: 5000 });
+  const reply = await chat({ system: systemPrompt, user: userPrompt, maxTokens, timeoutMs: 5000, fallbackTimeoutMs: 8000 });
   return { text: reply.text, usage: reply.usage };
 }
 

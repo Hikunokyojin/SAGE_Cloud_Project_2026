@@ -54,7 +54,7 @@ describe("chat with fallback", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     fetchMock.mockResolvedValueOnce(fail(429)).mockResolvedValueOnce(ok("from openrouter"));
     const out = await llm.chat({ ...req, jsonSchema: { name: "x", schema: { type: "object" } } });
-    expect(out).toMatchObject({ text: "from openrouter", provider: "openrouter", model: "google/gemma-4-31b-it:free", fallbackFrom: ["groq"] });
+    expect(out).toMatchObject({ text: "from openrouter", provider: "openrouter", model: "openrouter/free", fallbackFrom: ["groq"] });
     expect(url(1)).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(fetchMock.mock.calls[1][1].headers["X-Title"]).toBe("SAGE");
     expect(body(1).response_format).toEqual({ type: "json_object" });
@@ -114,5 +114,29 @@ describe("Cerebras stays available as an opt-in provider", () => {
     expect((await llm.chat(req)).provider).toBe("cerebras");
     expect(url(0)).toContain("api.cerebras.ai");
     delete process.env.LLM_PROVIDERS;
+  });
+});
+
+describe("fallback time limit", () => {
+  it("gives the fallback provider its own, longer time limit (free models answer slowly)", async () => {
+    vi.resetModules();
+    fetchMock.mockReset();
+    keys.GROQ_API_KEY = "g";
+    keys.OPENROUTER_API_KEY = "o";
+    const llm = await import("./index");
+    fetchMock.mockResolvedValueOnce(fail(503, "down"));
+    // OpenRouter answers after 80 ms: beyond the 50 ms primary limit, inside the 200 ms fallback limit.
+    fetchMock.mockImplementationOnce(
+      (_u: string, init: RequestInit) =>
+        new Promise((resolve, reject) => {
+          const t = setTimeout(() => resolve(ok("slow but fine")), 80);
+          init.signal!.addEventListener("abort", () => {
+            clearTimeout(t);
+            reject(new Error("aborted"));
+          });
+        })
+    );
+    const out = await llm.chat({ ...req, timeoutMs: 50, fallbackTimeoutMs: 200 });
+    expect(out).toMatchObject({ provider: "openrouter", text: "slow but fine" });
   });
 });
