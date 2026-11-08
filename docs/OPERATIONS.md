@@ -110,12 +110,12 @@ aws sns list-subscriptions-by-topic --region ap-south-1 --topic-arn <EscalationT
 
 ## Language-model providers (T2.7)
 
-Intent and the Explainer call models through `packages/llm`. Providers are tried in the order of `LLM_PROVIDERS` (default `groq,openrouter`). Each call has a timeout (Intent 6 s, Explainer 5 s per provider). A provider that fails 3 times in a row is skipped for 60 s. If no model answers, the Explainer uses its deterministic fact sheet, and Intent fails the request with every provider's reason.
+Intent and the Explainer call models through `packages/llm`. Providers are tried in the order of `LLM_PROVIDERS` (default `groq,openrouter`). Each call has a time limit: Groq 6 s (Intent) or 5 s (Explainer), the fallback 15 s (Intent) or 8 s (Explainer), because free fallback models answer more slowly. A provider that fails 3 times in a row is skipped for 60 s. If no model answers, the Explainer uses its deterministic fact sheet, and Intent fails the request with every provider's reason.
 
 | Provider | Key (SSM SecureString) | Notes |
 |---|---|---|
 | Groq | `/sage/shared/GROQ_API_KEY` | primary, `openai/gpt-oss-20b`, strict JSON schema |
-| OpenRouter | `/sage/shared/OPENROUTER_API_KEY` | fallback, free model `OPENROUTER_MODEL` (default `google/gemma-4-31b-it:free`), JSON mode; free models have a low daily request cap |
+| OpenRouter | `/sage/shared/OPENROUTER_API_KEY` | fallback, free models via `OPENROUTER_MODEL` (default `openrouter/free`, which routes to any available free model; a single free model was rate-limited upstream in the live test), JSON mode; free models have a low daily request cap |
 | Cerebras | `/sage/shared/CEREBRAS_API_KEY` | opt-in only (its key needs a payment method), `CEREBRAS_MODEL` (default `gpt-oss-120b`) |
 | Bedrock | none (IAM) | implemented, off: this account gets "Operation not allowed" (checked 2026-11-07). When AWS unblocks it, set `LLM_PROVIDERS=bedrock,groq,cerebras` and grant `bedrock:InvokeModel` |
 

@@ -178,6 +178,7 @@ async function parseWithModel(rawInput: string): Promise<{ parsed: ModelParse; u
     seed: GROQ_SEED,
     jsonSchema: INTENT_JSON_SCHEMA,
     timeoutMs: 6000,
+    fallbackTimeoutMs: 15000,
   });
 
   let parsed: ModelParse;
