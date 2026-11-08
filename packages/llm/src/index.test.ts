@@ -140,3 +140,29 @@ describe("fallback time limit", () => {
     expect(out).toMatchObject({ provider: "openrouter", text: "slow but fine" });
   });
 });
+
+describe("fallback time limit when the primary is skipped", () => {
+  it("still gives the fallback its longer limit when the primary's circuit is open", async () => {
+    vi.resetModules();
+    fetchMock.mockReset();
+    keys.GROQ_API_KEY = "g";
+    keys.OPENROUTER_API_KEY = "o";
+    const llm = await import("./index");
+    const slowOk = (_u: string, init: RequestInit) =>
+      new Promise((resolve, reject) => {
+        const t = setTimeout(() => resolve(ok("slow but fine")), 80);
+        init.signal!.addEventListener("abort", () => {
+          clearTimeout(t);
+          reject(new Error("aborted"));
+        });
+      });
+    // Open Groq's circuit with 3 failures (OpenRouter answers quickly meanwhile).
+    fetchMock.mockImplementation(async (u: string) => (u.includes("groq") ? fail(503, "down") : ok("fast")));
+    for (let i = 0; i < 3; i++) await llm.chat({ ...req, timeoutMs: 50, fallbackTimeoutMs: 200 });
+    // Groq is now skipped; OpenRouter is slow (80 ms) but within its 200 ms fallback limit.
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(slowOk as any);
+    const out = await llm.chat({ ...req, timeoutMs: 50, fallbackTimeoutMs: 200 });
+    expect(out.provider).toBe("openrouter");
+  });
+});

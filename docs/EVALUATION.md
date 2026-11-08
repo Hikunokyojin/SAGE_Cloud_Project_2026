@@ -143,6 +143,18 @@ Measured from the Lambda logs (`REPORT` lines) and from outside the API. "Cold c
 
 With the 5-minute pings, a fully cold request now happens essentially only right after a deploy. The four warm-request samples with about 30 ms Intent times were cache hits (repeated wording); a new wording adds the Groq call, about 0.3 to 0.6 s, which still fits under 3 s. Provisioned concurrency (paid) was not needed.
 
+## Language-model fallback drill (T2.7, 2026-11-08)
+
+Groq was forced to fail (an invalid model name on the Intent and Explainer Lambdas), five requests were sent, and Groq was restored afterwards.
+
+| Round | Backup setting | Completed | What failed |
+|---|---|---|---|
+| 1 | `google/gemma-4-31b-it:free`, 6 s | 0 of 1 | the free model was rate-limited upstream (429) |
+| 2 | `openrouter/free`, 6 s | 2 of 5 | the free router often needed more than 6 s |
+| 3 | `openrouter/free`, 15 s fallback limit | 3 of 5 | once over 15 s; once the fallback got the primary's 6 s limit because the primary's circuit was open (a bug, fixed with a test) |
+
+In every round the switch-over happened on each request, and the circuit breaker skipped Groq after three failures. Completed requests took 8 to 14 s, with model-written explanations. The free fallback keeps the system answering through a Groq outage most of the time, but a free model has no guaranteed speed, so it is a best-effort backup, not a guarantee.
+
 ## Limitations
 
 1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.

@@ -217,14 +217,15 @@ async function callBedrock(p: BedrockProvider, req: ChatRequest, signal: AbortSi
 export async function chat(req: ChatRequest): Promise<ChatResult> {
   const failed: string[] = [];
   const reasons: string[] = [];
-  let attempted = 0;
-  for (const p of order()) {
+  const providers = order();
+  for (const [index, p] of providers.entries()) {
     if (isOpen(p.name)) {
       reasons.push(`${p.name}: skipped, circuit open after repeated failures`);
       continue;
     }
-    const limit = attempted === 0 ? (req.timeoutMs ?? 8000) : (req.fallbackTimeoutMs ?? req.timeoutMs ?? 8000);
-    attempted++;
+    // By position in the configured order, not by attempt count: when the primary is
+    // skipped (circuit open), the fallback still gets its longer limit (found in the drill).
+    const limit = index === 0 ? (req.timeoutMs ?? 8000) : (req.fallbackTimeoutMs ?? req.timeoutMs ?? 8000);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), limit);
     try {
