@@ -66,6 +66,72 @@
     }
   },
   {
+    "serviceId": "svc-google-api-gateway",
+    "name": "Google API Gateway",
+    "provider": "Google",
+    "description": "Managed gateway for serverless back ends.",
+    "capability": "api-gateway",
+    "endpoint": "https://apigateway.googleapis.com",
+    "pricing": {
+      "amount": 3,
+      "unit": "per 1000000 calls",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $3.00 per million calls after free tier; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/api-gateway/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-kong-konnect",
+    "name": "Kong Konnect",
+    "provider": "Kong Inc.",
+    "description": "Managed API gateway and developer portal.",
+    "capability": "api-gateway",
+    "endpoint": "https://us.api.konghq.com",
+    "pricing": {
+      "amount": 25,
+      "unit": "per month (starting)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: From $25/month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://konghq.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-zuplo",
+    "name": "Zuplo",
+    "provider": "Zuplo",
+    "description": "Programmable edge API gateway.",
+    "capability": "api-gateway",
+    "endpoint": "https://dev.zuplo.com",
+    "pricing": {
+      "amount": 25,
+      "unit": "per month (Builder)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $25/mo; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://zuplo.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-auth0",
     "name": "Auth0",
     "provider": "Okta",
@@ -173,6 +239,28 @@
     },
     "source": {
       "url": "https://clerk.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-firebase-auth",
+    "name": "Firebase Authentication",
+    "provider": "Google",
+    "description": "Authentication for apps with email phone and social providers.",
+    "capability": "authentication",
+    "endpoint": "https://identitytoolkit.googleapis.com",
+    "pricing": {
+      "amount": 0.0055,
+      "unit": "per monthly active user (after free tier)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Price per MAU $0.0055 tier after free; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloud.google.com/identity-platform/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -536,6 +624,28 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-cloudflare-cdn",
+    "name": "Cloudflare CDN",
+    "provider": "Cloudflare",
+    "description": "Global CDN with DDoS protection and caching.",
+    "capability": "content-delivery",
+    "endpoint": "https://api.cloudflare.com/client/v4",
+    "pricing": {
+      "amount": 20,
+      "unit": "per month (Pro, billed annually)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $20/mo billed annually, or $25/mo billed monthly; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 100
+    },
+    "source": {
+      "url": "https://www.cloudflare.com/plans/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-keycdn",
     "name": "KeyCDN",
     "provider": "proinity",
@@ -822,6 +932,50 @@
     }
   },
   {
+    "serviceId": "svc-cockroachdb",
+    "name": "CockroachDB Cloud",
+    "provider": "Cockroach Labs",
+    "description": "Distributed SQL database.",
+    "capability": "database",
+    "endpoint": "https://cockroachlabs.cloud/api/v1",
+    "pricing": {
+      "amount": 0.092,
+      "unit": "per vCPU-hour",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.092 per vCPU-hour; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://www.cockroachlabs.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-firestore",
+    "name": "Google Cloud Firestore",
+    "provider": "Google",
+    "description": "Serverless NoSQL document database.",
+    "capability": "database",
+    "endpoint": "https://firestore.googleapis.com",
+    "pricing": {
+      "amount": 0.09,
+      "unit": "per 100000 document writes",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Document Writes $0.09 per 100K (multi-region column); no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://cloud.google.com/firestore/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-mongodb-atlas",
     "name": "MongoDB Atlas Flex",
     "provider": "MongoDB",
@@ -866,6 +1020,28 @@
     }
   },
   {
+    "serviceId": "svc-planetscale",
+    "name": "PlanetScale",
+    "provider": "PlanetScale",
+    "description": "Managed MySQL and Postgres with branching.",
+    "capability": "database",
+    "endpoint": "https://api.planetscale.com/v1",
+    "pricing": {
+      "amount": 5,
+      "unit": "per month (single node, starting)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Single node, starting at $5/month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://planetscale.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-supabase-db",
     "name": "Supabase Database",
     "provider": "Supabase",
@@ -883,6 +1059,28 @@
     },
     "source": {
       "url": "https://supabase.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-turso",
+    "name": "Turso",
+    "provider": "Turso",
+    "description": "Edge-replicated SQLite database.",
+    "capability": "database",
+    "endpoint": "https://api.turso.tech/v1",
+    "pricing": {
+      "amount": 4.99,
+      "unit": "per month (Developer)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $4.99/month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://turso.tech/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -1242,6 +1440,28 @@
     }
   },
   {
+    "serviceId": "svc-google-document-ai",
+    "name": "Google Document AI OCR",
+    "provider": "Google",
+    "description": "OCR and form parsing for documents.",
+    "capability": "document-ocr",
+    "endpoint": "https://documentai.googleapis.com",
+    "pricing": {
+      "amount": 1.5,
+      "unit": "per 1000 pages (Enterprise OCR)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Enterprise Document OCR Processor $1.50; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/document-ai/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-mindee",
     "name": "Mindee",
     "provider": "Mindee",
@@ -1259,6 +1479,50 @@
     },
     "source": {
       "url": "https://www.mindee.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-ocr-space",
+    "name": "OCR.space",
+    "provider": "a9t9",
+    "description": "Simple OCR API for images and PDFs.",
+    "capability": "document-ocr",
+    "endpoint": "https://api.ocr.space/parse",
+    "pricing": {
+      "amount": 30,
+      "unit": "per month (PRO)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $30/month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.5
+    },
+    "source": {
+      "url": "https://ocr.space/ocrapi",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-veryfi",
+    "name": "Veryfi",
+    "provider": "Veryfi",
+    "description": "Real-time OCR for receipts and invoices.",
+    "capability": "document-ocr",
+    "endpoint": "https://api.veryfi.com/api/v8",
+    "pricing": {
+      "amount": 0.16,
+      "unit": "per invoice ($500/mo minimum)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.16 per invoice; $500/mo minimum commitment; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.veryfi.com/pricing/",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -1283,6 +1547,28 @@
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonSES/current/us-east-1/index.json",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://aws.amazon.com/ses/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-brevo",
+    "name": "Brevo Transactional Email",
+    "provider": "Brevo",
+    "description": "Transactional email and SMTP relay with marketing automation.",
+    "capability": "email-delivery",
+    "endpoint": "https://api.brevo.com/v3",
+    "pricing": {
+      "amount": 625,
+      "unit": "per month (Starter, 5,000 emails)",
+      "currency": "INR",
+      "notes": "page checked in browser 2026-11-12: Starter from 5,000 emails per month, Rs 625/month (India locale); no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.brevo.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -1349,6 +1635,28 @@
     },
     "source": {
       "url": "https://www.mailjet.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-postmark",
+    "name": "Postmark",
+    "provider": "ActiveCampaign",
+    "description": "Transactional email delivery focused on speed and inbox placement.",
+    "capability": "email-delivery",
+    "endpoint": "https://api.postmarkapp.com",
+    "pricing": {
+      "amount": 1.8,
+      "unit": "per 1000 emails (Basic overage)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Basic $15/mo; Extra emails @ $1.80 / 1,000; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://postmarkapp.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -1485,6 +1793,28 @@
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Storage'%20and%20productName%20eq%20'Files%20v2'%20and%20skuName%20eq%20'Standard%20ZRS'%20and%20meterName%20eq%20'ZRS%20Data%20Stored'",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-google-filestore",
+    "name": "Google Filestore",
+    "provider": "Google",
+    "description": "Managed NFS file storage.",
+    "capability": "file-storage",
+    "endpoint": "https://file.googleapis.com",
+    "pricing": {
+      "amount": 0.16,
+      "unit": "per GiB-month (Basic HDD)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Basic HDD $0.000219178 / GiB hour (x730); no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/filestore/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -1795,6 +2125,50 @@
     },
     "source": {
       "url": "https://ipinfo.io/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-maxmind-geoip",
+    "name": "MaxMind GeoIP2 Precision",
+    "provider": "MaxMind",
+    "description": "IP geolocation web service.",
+    "capability": "geolocation",
+    "endpoint": "https://geoip.maxmind.com/geoip/v2.1",
+    "pricing": {
+      "amount": 0.1,
+      "unit": "per 1000 queries",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.0001 per query; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://www.maxmind.com/en/geoip2-precision-services",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-opencage",
+    "name": "OpenCage Geocoding",
+    "provider": "OpenCage",
+    "description": "Geocoding built on open data.",
+    "capability": "geolocation",
+    "endpoint": "https://api.opencagedata.com/geocode/v1",
+    "pricing": {
+      "amount": 45,
+      "unit": "per month (X-Small)",
+      "currency": "EUR",
+      "notes": "page checked in browser 2026-11-12: EUR 45/MO, about EUR 0.15 per 1,000; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://opencagedata.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -2446,6 +2820,28 @@
     }
   },
   {
+    "serviceId": "svc-plivo-sms",
+    "name": "Plivo SMS",
+    "provider": "Plivo",
+    "description": "SMS API for transactional and two-factor messages.",
+    "capability": "messaging",
+    "endpoint": "https://api.plivo.com/v1",
+    "pricing": {
+      "amount": 0.0077,
+      "unit": "per SMS (US long code, excl. carrier fees)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.0077/sms; carrier surcharge fees apply; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://www.plivo.com/sms/pricing/us/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-pusher-channels",
     "name": "Pusher Channels",
     "provider": "Pusher",
@@ -2492,6 +2888,28 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-telnyx-sms",
+    "name": "Telnyx Messaging",
+    "provider": "Telnyx",
+    "description": "SMS and MMS over a private global network.",
+    "capability": "messaging",
+    "endpoint": "https://api.telnyx.com/v2",
+    "pricing": {
+      "amount": 0.004,
+      "unit": "per SMS part (US, excl. carrier fees)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.004 a part. Then the carrier, at cost; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.999
+    },
+    "source": {
+      "url": "https://telnyx.com/pricing/messaging",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-twilio-sms",
     "name": "Twilio Programmable SMS",
     "provider": "Twilio",
@@ -2509,6 +2927,28 @@
     },
     "source": {
       "url": "https://www.twilio.com/en-us/sms/pricing/us",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-anthropic-haiku",
+    "name": "Claude Haiku 5.5",
+    "provider": "Anthropic",
+    "description": "Fast compact Claude model for high-volume tasks.",
+    "capability": "ml-inference",
+    "endpoint": "https://api.anthropic.com/v1",
+    "pricing": {
+      "amount": 0.1,
+      "unit": "per 1000000 input tokens (Haiku 5.5)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Haiku 5.5 Input, prompts up to 100K tokens, $0.10 / MTok; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.anthropic.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -2736,6 +3176,28 @@
     }
   },
   {
+    "serviceId": "svc-datadog",
+    "name": "Datadog Infrastructure",
+    "provider": "Datadog",
+    "description": "Monitoring for hosts metrics logs and traces.",
+    "capability": "monitoring",
+    "endpoint": "https://api.datadoghq.com/api/v1",
+    "pricing": {
+      "amount": 18,
+      "unit": "per host-month (Pro, on-demand)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Billed annually or $18 on-demand; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.datadoghq.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-gcp-logging",
     "name": "Google Cloud Logging",
     "provider": "Google Cloud",
@@ -2755,6 +3217,72 @@
       "url": "https://cloudbilling.googleapis.com/v1/services/5490-F7B7-8DF6/skus?currencyCode=USD",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-grafana-cloud",
+    "name": "Grafana Cloud",
+    "provider": "Grafana Labs",
+    "description": "Hosted metrics logs and traces.",
+    "capability": "monitoring",
+    "endpoint": "https://grafana.com/api",
+    "pricing": {
+      "amount": 19,
+      "unit": "per month (Pro platform fee)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Platform fee of $19 per month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.5
+    },
+    "source": {
+      "url": "https://grafana.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-honeycomb",
+    "name": "Honeycomb",
+    "provider": "Hound Technology",
+    "description": "Observability for distributed systems.",
+    "capability": "monitoring",
+    "endpoint": "https://api.honeycomb.io/1",
+    "pricing": {
+      "amount": 150,
+      "unit": "per month (Pro, 50M events)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Pro: Starting at $150 / 50M events; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.honeycomb.io/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-new-relic",
+    "name": "New Relic",
+    "provider": "New Relic",
+    "description": "Observability platform billed by data ingested.",
+    "capability": "monitoring",
+    "endpoint": "https://api.newrelic.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per GB ingested (after 100 GB free)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: 100 GB free then $0.40/GB ingested; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://newrelic.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -2982,6 +3510,28 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-wasabi",
+    "name": "Wasabi Hot Cloud Storage",
+    "provider": "Wasabi",
+    "description": "Flat-priced S3-compatible storage without egress fees.",
+    "capability": "object-storage",
+    "endpoint": "https://s3.wasabisys.com",
+    "pricing": {
+      "amount": 0.00799,
+      "unit": "per GB-month",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: starting at $7.99 per TB per month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://wasabi.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-mollie",
     "name": "Mollie",
     "provider": "Mollie B.V.",
@@ -3050,6 +3600,50 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-paypal-checkout",
+    "name": "PayPal Checkout",
+    "provider": "PayPal",
+    "description": "Accept PayPal wallets cards and pay-later options.",
+    "capability": "payment-processing",
+    "endpoint": "https://api-m.paypal.com",
+    "pricing": {
+      "amount": 3.49,
+      "unit": "percent + fixed fee per transaction",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: PayPal Checkout 3.49% + fixed fee; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.paypal.com/us/business/paypal-business-fees",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-razorpay",
+    "name": "Razorpay",
+    "provider": "Razorpay",
+    "description": "Payment gateway for India with UPI cards and netbanking.",
+    "capability": "payment-processing",
+    "endpoint": "https://api.razorpay.com/v1",
+    "pricing": {
+      "amount": 2,
+      "unit": "percent per transaction",
+      "currency": "INR",
+      "notes": "page checked in browser 2026-11-12: Standard plan 2%; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://razorpay.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-analytics",
     "name": "MetricPulse",
     "provider": "Synthetic (project-original)",
@@ -3091,6 +3685,28 @@
     },
     "source": {
       "url": "https://plausible.io/#pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-posthog",
+    "name": "PostHog",
+    "provider": "PostHog",
+    "description": "Open-source product analytics session replay and flags.",
+    "capability": "product-analytics",
+    "endpoint": "https://us.i.posthog.com",
+    "pricing": {
+      "amount": 0.05,
+      "unit": "per 1000 events (after 1M free)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $0.00005 each after the first 1M; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://posthog.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -3250,6 +3866,28 @@
     }
   },
   {
+    "serviceId": "svc-doppler",
+    "name": "Doppler",
+    "provider": "Doppler",
+    "description": "Secrets manager syncing env vars to every environment.",
+    "capability": "secrets-management",
+    "endpoint": "https://api.doppler.com/v3",
+    "pricing": {
+      "amount": 21,
+      "unit": "per user-month (Team)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $21/mo per user; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://www.doppler.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-gcp-secret-manager",
     "name": "Google Secret Manager",
     "provider": "Google Cloud",
@@ -3359,6 +3997,28 @@
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Speech'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Speech%20To%20Text'%20and%20armRegionName%20eq%20'eastus'",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-deepgram",
+    "name": "Deepgram Nova",
+    "provider": "Deepgram",
+    "description": "Fast speech-to-text API for pre-recorded and streaming audio.",
+    "capability": "speech-transcription",
+    "endpoint": "https://api.deepgram.com/v1",
+    "pricing": {
+      "amount": 0.0077,
+      "unit": "per audio minute (Nova-3, pay as you go)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Nova-3 Monolingual $0.0077 / min; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://deepgram.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -3516,6 +4176,28 @@
     }
   },
   {
+    "serviceId": "svc-google-natural-language",
+    "name": "Google Cloud Natural Language",
+    "provider": "Google",
+    "description": "Sentiment entity and syntax analysis.",
+    "capability": "text-analysis",
+    "endpoint": "https://language.googleapis.com",
+    "pricing": {
+      "amount": 1,
+      "unit": "per 1000 units",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Sentiment Analysis $1.00 per 1000 units; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/natural-language/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-openai-moderation",
     "name": "OpenAI Moderation",
     "provider": "OpenAI",
@@ -3604,6 +4286,28 @@
     }
   },
   {
+    "serviceId": "svc-cartesia",
+    "name": "Cartesia Sonic",
+    "provider": "Cartesia",
+    "description": "Low-latency streaming text-to-speech.",
+    "capability": "text-to-speech",
+    "endpoint": "https://api.cartesia.ai",
+    "pricing": {
+      "amount": 5,
+      "unit": "per month (Pro, 100K credits)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $5, 100K credits / month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cartesia.ai/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-elevenlabs",
     "name": "ElevenLabs Text to Speech",
     "provider": "ElevenLabs",
@@ -3689,6 +4393,28 @@
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Translator%20Text'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Characters'%20and%20armRegionName%20eq%20'eastus'",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-google-translate",
+    "name": "Google Cloud Translation",
+    "provider": "Google",
+    "description": "Neural machine translation for 100+ languages.",
+    "capability": "translation",
+    "endpoint": "https://translation.googleapis.com",
+    "pricing": {
+      "amount": 20,
+      "unit": "per 1000000 characters",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: NMT $20.00 per million characters; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/translate/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -3892,6 +4618,28 @@
     }
   },
   {
+    "serviceId": "svc-fly-io",
+    "name": "Fly.io",
+    "provider": "Fly.io",
+    "description": "Run app containers close to users worldwide.",
+    "capability": "web-hosting",
+    "endpoint": "https://api.machines.dev/v1",
+    "pricing": {
+      "amount": 2.19,
+      "unit": "per month (shared-cpu-1x 256MB)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: shared-cpu-1x with 256MB RAM $2.19/month; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://fly.io/docs/about/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-netlify",
     "name": "Netlify",
     "provider": "Netlify",
@@ -3909,6 +4657,28 @@
     },
     "source": {
       "url": "https://www.netlify.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-render",
+    "name": "Render",
+    "provider": "Render",
+    "description": "Cloud hosting for web services and databases.",
+    "capability": "web-hosting",
+    "endpoint": "https://api.render.com/v1",
+    "pricing": {
+      "amount": 7,
+      "unit": "per month (Starter, 512 MB)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: Less than 1 CPU $7/month 512 MB RAM; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://render.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -4021,6 +4791,28 @@
       "url": "https://cloudbilling.googleapis.com/v1/services/E722-8436-A7EB/skus?currencyCode=USD",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-inngest",
+    "name": "Inngest",
+    "provider": "Inngest",
+    "description": "Durable functions and background jobs.",
+    "capability": "workflow-orchestration",
+    "endpoint": "https://api.inngest.com",
+    "pricing": {
+      "amount": 99,
+      "unit": "per month (Pro)",
+      "currency": "USD",
+      "notes": "page checked in browser 2026-11-12: $99 plan; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.inngest.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   }
 ]
