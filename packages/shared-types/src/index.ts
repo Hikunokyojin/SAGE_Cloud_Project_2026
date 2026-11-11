@@ -21,6 +21,8 @@ export const SERVICE_CATEGORIES = [
   // Added with the real catalogue (T3.2).
   "database", "dns", "data-streaming", "secrets-management", "text-to-speech",
   "translation", "document-ocr", "image-analysis",
+  "api-gateway", "workflow-orchestration", "monitoring", "text-analysis", "recommendations",
+  "fraud-detection", "file-storage", "container-registry", "web-hosting", "data-query",
 ] as const;
 
 export interface Intent {
