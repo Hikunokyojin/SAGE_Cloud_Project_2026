@@ -28,10 +28,12 @@ SHEET = ROOT / "data" / "sources" / "third-party-to-verify.csv"
 OUT = ROOT / "data" / "catalogue.xlsx"
 
 STATUS_LIVE = "Live price (imported)"
+STATUS_CHECKED = "Checked on pricing page"
 STATUS_VERIFY = "To verify"
 STATUS_SYNTH = "Synthetic (made up)"
 FILL = {
     STATUS_LIVE: PatternFill("solid", fgColor="E2F0D9"),
+    STATUS_CHECKED: PatternFill("solid", fgColor="DDEBF7"),
     STATUS_VERIFY: PatternFill("solid", fgColor="FFF2CC"),
     STATUS_SYNTH: PatternFill("solid", fgColor="D9D9D9"),
 }
@@ -62,10 +64,13 @@ def num(v):
 
 def rows():
     out = []
-    for s in json.loads(CATALOGUE.read_text(encoding="utf-8")):
+    catalogue = json.loads(CATALOGUE.read_text(encoding="utf-8"))
+    in_catalogue = {s["serviceId"] for s in catalogue}
+    for s in catalogue:
         synth = bool(s.get("synthetic"))
+        fed = "official public price feed" in s["source"].get("terms", "")
         out.append({
-            "Status": STATUS_SYNTH if synth else STATUS_LIVE,
+            "Status": STATUS_SYNTH if synth else STATUS_LIVE if fed else STATUS_CHECKED,
             "Topic": s["capability"],
             "Provider group": provider_group(s["provider"], synth),
             "Provider": s["provider"],
@@ -82,6 +87,8 @@ def rows():
         })
     with SHEET.open(encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
+            if r["serviceId"] in in_catalogue:
+                continue  # already verified and ingested; shown from the catalogue
             out.append({
                 "Status": STATUS_VERIFY,
                 "Topic": r["capability"],
@@ -156,7 +163,8 @@ def main():
     for line in [
         ["Colour", "Status", "Meaning"],
         ["green", STATUS_LIVE, "Price read today from the provider's official price feed (AWS, Azure, Google)."],
-        ["yellow", STATUS_VERIFY, "Pre-filled from memory; check against Source, fill retrievedAt, then ingest."],
+        ["blue", STATUS_CHECKED, "Price read from the provider's pricing page on the Retrieved date."],
+        ["yellow", STATUS_VERIFY, "Pre-filled from memory; the page could not be read automatically. Check against Source, fill retrievedAt, then ingest."],
         ["grey", STATUS_SYNTH, "The original invented services (example.com endpoints), kept for tests only."],
         [],
         ["Uptime is the provider's advertised SLA until measured probes (T3.3) replace it."],
@@ -164,7 +172,7 @@ def main():
         ["To feed edits back: edit the 'To verify' sheet, save it as CSV over data/sources/third-party-to-verify.csv."],
     ]:
         ws.append(line)
-    for c, s in zip(ws["A"][1:4], [STATUS_LIVE, STATUS_VERIFY, STATUS_SYNTH]):
+    for c, s in zip(ws["A"][1:5], [STATUS_LIVE, STATUS_CHECKED, STATUS_VERIFY, STATUS_SYNTH]):
         c.fill = FILL[s]
     ws["A1"].font = ws["B1"].font = ws["C1"].font = Font(bold=True)
     ws.column_dimensions["A"].width, ws.column_dimensions["B"].width, ws.column_dimensions["C"].width = 10, 24, 90
