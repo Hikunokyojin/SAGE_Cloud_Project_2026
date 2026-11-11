@@ -266,3 +266,23 @@ describe("shared Intent cache", () => {
     expect(recordDecisionMock.mock.calls[1][0].reasoning).toMatch(/shared cache/);
   });
 });
+
+describe("stub mode never touches the shared Intent cache", () => {
+  it("neither reads nor writes the cache when LLM_MODE=stub", async () => {
+    vi.resetModules();
+    sharedStore.clear();
+    fetchMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    process.env.LLM_MODE = "stub";
+    sharedStore.set("anything", { capability: "poisoned", constraints: [] });
+    const { handler } = await import("./index");
+    const cache = await import("./sharedCache");
+    vi.mocked(cache.getShared).mockClear();
+    const out = await handler({ requestId: "r", rawInput: "send emails" } as IntentAgentInput);
+    expect(out.category).toBe("email-delivery");
+    expect(sharedStore.size).toBe(1); // nothing written
+    const { getShared } = await import("./sharedCache");
+    expect(getShared).not.toHaveBeenCalled();
+    delete process.env.LLM_MODE;
+  });
+});

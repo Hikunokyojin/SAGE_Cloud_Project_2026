@@ -24,7 +24,8 @@
     "backend:resume": "node scripts/backend.mjs resume",
     "build:dashboard-api": "npm run build:api --workspace=apps/dashboard",
     "catalogue:refs": "node scripts/catalogue-references.mjs",
-    "audit:verify": "tsx packages/audit/scripts/verify.ts"
+    "audit:verify": "tsx packages/audit/scripts/verify.ts",
+    "load-test": "node scripts/load-test.mjs"
   },
   "workspaces": [
     "apps/*",

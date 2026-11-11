@@ -120,3 +120,16 @@ Intent and the Explainer call models through `packages/llm`. Providers are tried
 | Bedrock | none (IAM) | implemented, off: this account gets "Operation not allowed" (checked 2026-11-07). When AWS unblocks it, set `LLM_PROVIDERS=bedrock,groq,cerebras` and grant `bedrock:InvokeModel` |
 
 A provider without a key is skipped silently, so the fallback is inactive until its key exists. Every failure is logged; Groq's keep the wording `Groq API error (<status>)` that the `sage-groq-rate-limited` alarm counts, even when the fallback then answers.
+
+## Load testing without using any quota (T2.8)
+
+`LLM_MODE=stub` makes `packages/llm` answer instantly without calling any provider. Intent gets valid JSON with a keyword-guessed category; the Explainer gets its fact sheet back. In stub mode, Intent neither reads nor writes the memory or shared (`intent_cache`) cache, so stub answers can never reach real requests. `LLM_STUB_DELAY_MS` adds an artificial delay if wanted.
+
+Run a local Conductor in stub mode with the per-visitor and daily caps raised, then the load test:
+
+```
+LLM_MODE=stub AGENT_INVOKE_MODE=local DAILY_REQUEST_LIMIT=100000 CLIENT_HOURLY_LIMIT=100000 npm run dev --workspace=services/conductor
+npm run load-test -- --url http://localhost:3001 --rps 25 --seconds 20
+```
+
+The local Broker still queries Qdrant Cloud and MongoDB Atlas (free tiers), so keep tests short. Do not load-test the production API: the stage is throttled to 5 requests per second, so most requests would return 429. A separate staging stack (planned in T2.8) needs every resource name made configurable first (`sage-intent`, `agent_decisions` and others are fixed today), and is left as follow-up work.

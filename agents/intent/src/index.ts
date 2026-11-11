@@ -3,7 +3,7 @@ import { resolveSecret } from "@sage/secrets";
 import { SERVICE_CATEGORIES, toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
 import type { IntentAgentInput, Intent, Constraint, ConstraintOperator, LlmUsage } from "@sage/shared-types";
 import { recordDecision, warmUp } from "@sage/audit";
-import { chat } from "@sage/llm";
+import { chat, isStubMode } from "@sage/llm";
 import { cacheKey, getShared, putShared } from "./sharedCache";
 
 const VALID_FIELDS = new Set(["price", "uptime", "latencyMs"]);
@@ -201,9 +201,11 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const key = normalizeRequest(input.rawInput);
   const sharedKey = cacheKey(key, CACHE_VERSION);
   let cacheSource: "memory" | "shared" | undefined;
-  let cachedParse = PARSE_CACHE.get(key);
+  // Stub answers (load tests, T2.8) must never be stored where real requests would reuse them.
+  const stub = isStubMode();
+  let cachedParse = stub ? undefined : PARSE_CACHE.get(key);
   if (cachedParse) cacheSource = "memory";
-  else {
+  else if (!stub) {
     cachedParse = await getShared<ModelParse>(sharedKey);
     if (cachedParse) {
       cacheSource = "shared";
@@ -213,7 +215,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   const { parsed, usage } = cachedParse
     ? { parsed: cachedParse, usage: undefined }
     : await parseWithModel(input.rawInput);
-  if (!cachedParse) {
+  if (!cachedParse && !stub) {
     remember(key, parsed);
     await putShared(sharedKey, parsed);
   }
