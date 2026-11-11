@@ -12,12 +12,26 @@ import { createReviewService, ResolveError } from "./hitl/service";
 import { savePaused, getPaused, markResolved } from "./hitl/store";
 import type { AgentInvoker } from "./pipeline";
 import { createRateLimiter } from "./rateLimit";
+import { createOriginGuard } from "./originGuard";
 
 const app = express();
 // Behind API Gateway the visitor address arrives in X-Forwarded-For. Trust exactly one
 // proxy hop so req.ip is the entry API Gateway appended, not a value the caller can forge.
 app.set("trust proxy", 1);
 app.use(cors());
+// T2.9: only API Gateway (which adds the secret header) may reach the Conductor.
+let originSecret: { value?: string; at: number } | undefined;
+app.use(
+  createOriginGuard(async () => {
+    if (originSecret && (originSecret.value || Date.now() - originSecret.at < 60_000)) return originSecret.value;
+    try {
+      originSecret = { value: await resolveSecret("ORIGIN_SECRET", "/sage/conductor/ORIGIN_SECRET"), at: Date.now() };
+    } catch {
+      originSecret = { value: undefined, at: Date.now() };
+    }
+    return originSecret.value;
+  })
+);
 app.use(express.json());
 
 // Every /request calls two free-tier language-model APIs, so the public endpoint is
