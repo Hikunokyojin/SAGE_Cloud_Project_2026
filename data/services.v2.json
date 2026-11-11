@@ -1,0 +1,506 @@
+[
+  {
+    "serviceId": "svc-authservice",
+    "name": "SecureAuth",
+    "provider": "Synthetic (project-original)",
+    "description": "Managed authentication and identity service with OAuth2 and SSO support",
+    "capability": "authentication",
+    "endpoint": "https://auth.secureauth.example.com",
+    "pricing": {
+      "amount": 0,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.99,
+      "latencyMs": 80
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-computereserved",
+    "name": "SteadyCompute",
+    "provider": "Synthetic (project-original)",
+    "description": "Reserved, always-available compute instances with guaranteed uptime SLA",
+    "capability": "compute",
+    "endpoint": "https://api.steadycompute.example.com/instances",
+    "pricing": {
+      "amount": 0.12,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.99,
+      "latencyMs": 200
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-computespot",
+    "name": "SpotCompute",
+    "provider": "Synthetic (project-original)",
+    "description": "Discounted on-demand compute instances for interruptible batch workloads",
+    "capability": "compute",
+    "endpoint": "https://api.spotcompute.example.com/instances",
+    "pricing": {
+      "amount": 0.008,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 95,
+      "latencyMs": 3000
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-cdn",
+    "name": "EdgeDeliver",
+    "provider": "Synthetic (project-original)",
+    "description": "Global content delivery network with edge caching and DDoS protection",
+    "capability": "content-delivery",
+    "endpoint": "https://cdn.edgedeliver.example.com",
+    "pricing": {
+      "amount": 0.06,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.95,
+      "latencyMs": 25
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-pdfgen",
+    "name": "DocForge",
+    "provider": "Synthetic (project-original)",
+    "description": "Server-side PDF generation and templating API from HTML or JSON data",
+    "capability": "document-generation",
+    "endpoint": "https://api.docforge.example.com/generate",
+    "pricing": {
+      "amount": 0.01,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 98.8,
+      "latencyMs": 750
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-emailapi",
+    "name": "MailRelay",
+    "provider": "Synthetic (project-original)",
+    "description": "Transactional email delivery API with bounce and complaint tracking",
+    "capability": "email-delivery",
+    "endpoint": "https://api.mailrelay.example.com/v1/send",
+    "pricing": {
+      "amount": 0.001,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.7,
+      "latencyMs": 220
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-embeddingapi",
+    "name": "VectorForge",
+    "provider": "Synthetic (project-original)",
+    "description": "Text and image embedding generation API for semantic search applications",
+    "capability": "embedding-generation",
+    "endpoint": "https://api.vectorforge.example.com/embed",
+    "pricing": {
+      "amount": 0.05,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.3,
+      "latencyMs": 150
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-searchindex",
+    "name": "FastSearch",
+    "provider": "Synthetic (project-original)",
+    "description": "Managed full-text search indexing and query service with typo tolerance",
+    "capability": "full-text-search",
+    "endpoint": "https://api.fastsearch.example.com/index",
+    "pricing": {
+      "amount": 0.04,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.5,
+      "latencyMs": 90
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-geolocation",
+    "name": "GeoLocate",
+    "provider": "Synthetic (project-original)",
+    "description": "IP and address geolocation lookup API with reverse geocoding",
+    "capability": "geolocation",
+    "endpoint": "https://api.geolocate.example.com/lookup",
+    "pricing": {
+      "amount": 0.002,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.3,
+      "latencyMs": 60
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-budgetresize",
+    "name": "BudgetResize",
+    "provider": "Synthetic (project-original)",
+    "description": "Low-cost image resizing service for non-critical batch workloads",
+    "capability": "image-resizing",
+    "endpoint": "https://api.budgetresize.example.com/resize",
+    "pricing": {
+      "amount": 0.005,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 97.5,
+      "latencyMs": 650
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-fastresize",
+    "name": "FastResize",
+    "provider": "Synthetic (project-original)",
+    "description": "High-throughput image resizing and format conversion API with CDN-backed delivery",
+    "capability": "image-resizing",
+    "endpoint": "https://api.fastresize.example.com/v1/resize",
+    "pricing": {
+      "amount": 0.02,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.9,
+      "latencyMs": 180
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-turboresize",
+    "name": "TurboResize",
+    "provider": "Synthetic (project-original)",
+    "description": "Ultra-low-latency image resizing service optimized for synchronous, latency-sensitive pipelines",
+    "capability": "image-resizing",
+    "endpoint": "https://api.turboresize.example.com/v1/resize",
+    "pricing": {
+      "amount": 0.045,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.7,
+      "latencyMs": 45
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-queueservice",
+    "name": "QueueRunner",
+    "provider": "Synthetic (project-original)",
+    "description": "Managed message queue service with dead-letter handling and retries",
+    "capability": "message-queue",
+    "endpoint": "https://api.queuerunner.example.com/v1",
+    "pricing": {
+      "amount": 0.0007,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.9,
+      "latencyMs": 15
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-smsapi",
+    "name": "TextBridge",
+    "provider": "Synthetic (project-original)",
+    "description": "SMS and WhatsApp messaging API with global carrier routing",
+    "capability": "messaging",
+    "endpoint": "https://api.textbridge.example.com/messages",
+    "pricing": {
+      "amount": 0.012,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.6,
+      "latencyMs": 500
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-mlinference",
+    "name": "InferEdge",
+    "provider": "Synthetic (project-original)",
+    "description": "Low-latency machine learning model inference hosting with autoscaling",
+    "capability": "ml-inference",
+    "endpoint": "https://infer.inferedge.example.com/predict",
+    "pricing": {
+      "amount": 0.25,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.4,
+      "latencyMs": 40
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-budgetstorage",
+    "name": "ArchiveBin",
+    "provider": "Synthetic (project-original)",
+    "description": "Cold storage archival service optimized for infrequently accessed data",
+    "capability": "object-storage",
+    "endpoint": "https://api.archivebin.example.com/store",
+    "pricing": {
+      "amount": 0.004,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99,
+      "latencyMs": 1200
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-objectstorage",
+    "name": "CloudVault",
+    "provider": "Synthetic (project-original)",
+    "description": "Durable object storage service with lifecycle policies and versioning",
+    "capability": "object-storage",
+    "endpoint": "https://storage.cloudvault.example.com/v1",
+    "pricing": {
+      "amount": 0.023,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.99,
+      "latencyMs": 60
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-paymentgateway",
+    "name": "PayFlow",
+    "provider": "Synthetic (project-original)",
+    "description": "Payment processing gateway supporting cards, wallets, and bank transfers",
+    "capability": "payment-processing",
+    "endpoint": "https://api.payflow.example.com/v3/charges",
+    "pricing": {
+      "amount": 0.029,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.98,
+      "latencyMs": 350
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-analytics",
+    "name": "MetricPulse",
+    "provider": "Synthetic (project-original)",
+    "description": "Real-time event analytics and dashboarding platform for product usage data",
+    "capability": "product-analytics",
+    "endpoint": "https://api.metricpulse.example.com/events",
+    "pricing": {
+      "amount": 0.018,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.6,
+      "latencyMs": 300
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-audiotranscribe",
+    "name": "VoiceScribe",
+    "provider": "Synthetic (project-original)",
+    "description": "Real-time speech-to-text transcription API with multi-language support",
+    "capability": "speech-transcription",
+    "endpoint": "https://api.voicescribe.example.com/transcribe",
+    "pricing": {
+      "amount": 0.08,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.2,
+      "latencyMs": 900
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  },
+  {
+    "serviceId": "svc-videotranscode",
+    "name": "StreamTranscode",
+    "provider": "Synthetic (project-original)",
+    "description": "Cloud video transcoding service supporting H.264, H.265, and AV1 output formats",
+    "capability": "video-transcoding",
+    "endpoint": "https://api.streamtranscode.example.com/v2/jobs",
+    "pricing": {
+      "amount": 0.15,
+      "unit": "per request",
+      "currency": "USD",
+      "notes": "synthetic value"
+    },
+    "advertised": {
+      "uptime": 99.5,
+      "latencyMs": 4200
+    },
+    "source": {
+      "url": "https://github.com/Hikunokyojin/SAGE_Cloud_Project_2026/blob/main/data/services.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
+    },
+    "synthetic": true
+  }
+]

@@ -25,7 +25,8 @@
     "build:dashboard-api": "npm run build:api --workspace=apps/dashboard",
     "catalogue:refs": "node scripts/catalogue-references.mjs",
     "audit:verify": "tsx packages/audit/scripts/verify.ts",
-    "load-test": "node scripts/load-test.mjs"
+    "load-test": "node scripts/load-test.mjs",
+    "catalogue:ingest": "tsx scripts/catalogue-ingest.ts"
   },
   "workspaces": [
     "apps/*",

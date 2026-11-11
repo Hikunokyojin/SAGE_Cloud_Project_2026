@@ -1,0 +1,2 @@
+serviceId,name,provider,description,capability,endpoint,price,priceUnit,currency,priceNotes,uptime,latencyMs,sourceUrl,retrievedAt,terms
+svc-example-mail,Example Mail,Example Inc.,"Transactional email API with bounce and complaint tracking.",email-delivery,https://api.example.com/v1,0.0008,per email,USD,"first 3,000 per month free",99.9,,https://example.com/pricing,2026-11-11,public pricing page

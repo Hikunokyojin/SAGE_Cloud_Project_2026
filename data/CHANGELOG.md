@@ -2,6 +2,23 @@
 
 This dataset (`services.json`) is versioned independently of the application code, since its content and schema directly affect Broker's retrieval quality and the reproducibility of any example or test request run against it.
 
+## v2.0.0-alpha — 2026-11-11 (`services.v2.json`)
+
+**New schema (T3.1), in a new file; `services.json` (v1.1.0) is unchanged and still what the agents load.** Each record now states where its numbers came from and when:
+
+| Field | Purpose |
+|---|---|
+| `provider` | Who runs the service |
+| `pricing.{amount, unit, currency, notes}` | The price with its unit (for example "per email") and currency, not a bare number |
+| `advertised.{uptime, latencyMs}` | What the provider's SLA or docs claim |
+| `measured.{uptime, latencyMs, sampledAt, samples}` | What our own probes measure (T3.3); preferred over advertised values when present |
+| `source.{url, retrievedAt, terms}` | The public page the record came from, the date (YYYY-MM-DD) and a terms-of-use note |
+| `synthetic` | `true` for the 21 original made-up services until real ones replace them |
+
+**Content:** the 21 v1.1.0 services, migrated unchanged (`npm run catalogue:ingest -- --from-v1`), all marked `synthetic`.
+
+**How records get in:** only through `npm run catalogue:ingest`. It sanitises provider-written text (instruction-like or ranking-steering phrases, markup, links, hidden and control characters, and length caps of 80 characters for names and 300 for descriptions), validates every field, refuses duplicates, and prints what it cleaned or refused. Curate in a sheet copied from `data/catalogue-template.csv`.
+
 ## v1.1.0 — 2026-09-23
 
 **Schema change (additive, backward-compatible):** every service record gained four new fields, to support evidence tracking and latency-aware scoring:
