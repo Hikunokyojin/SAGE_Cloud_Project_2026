@@ -10,7 +10,7 @@
 // Every provider failure is logged with console.warn. Groq's keep the wording
 // "Groq API error (<status>)", which the CloudWatch quota alarm (T2.5) searches for.
 import { resolveSecret } from "@sage/secrets";
-import { toLlmUsage, type LlmUsage } from "@sage/shared-types";
+import { toLlmUsage, SERVICE_CATEGORIES, type LlmUsage } from "@sage/shared-types";
 
 export interface ChatRequest {
   system: string;
@@ -213,8 +213,51 @@ async function callBedrock(p: BedrockProvider, req: ChatRequest, signal: AbortSi
   return { text, usage };
 }
 
+// ---------------------------------------------------------------- stub mode (T2.8)
+// LLM_MODE=stub answers instantly without any provider, so load tests never use a free
+// quota. JSON requests (Intent) get a schema-shaped answer whose category is guessed from
+// keywords; text requests (the Explainer) get the user prompt back, which for the Explainer
+// is its fact sheet, so the claim check passes.
+export function isStubMode(): boolean {
+  return process.env.LLM_MODE === "stub";
+}
+
+const STUB_KEYWORDS: [RegExp, string][] = [
+  [/\b(image|photo|thumbnail|resiz)/i, "image-resizing"],
+  [/\b(video|transcod)/i, "video-transcoding"],
+  [/\b(speech|transcri|voice)/i, "speech-transcription"],
+  [/\b(storage|store files|bucket|archiv)/i, "object-storage"],
+  [/\b(cdn|content delivery|edge)/i, "content-delivery"],
+  [/\b(email|e-mail|mail)/i, "email-delivery"],
+  [/\b(sms|whatsapp|text message)/i, "messaging"],
+  [/\b(auth|login|sign[- ]?in|sso|identity)/i, "authentication"],
+  [/\b(payment|card|checkout)/i, "payment-processing"],
+  [/\b(inference|model serving|machine learning)/i, "ml-inference"],
+  [/\b(embedding)/i, "embedding-generation"],
+  [/\b(analytics|events? tracking|dashboard)/i, "product-analytics"],
+  [/\b(queue)/i, "message-queue"],
+  [/\b(search)/i, "full-text-search"],
+  [/\b(pdf|document)/i, "document-generation"],
+  [/\b(compute|server|vm|virtual machine|instance)/i, "compute"],
+  [/\b(geolocat|geocod|location)/i, "geolocation"],
+];
+
+function stubAnswer(req: ChatRequest): ChatResult {
+  let text = req.user;
+  if (req.jsonSchema) {
+    const hit = STUB_KEYWORDS.find(([re, cat]) => re.test(req.user) && (SERVICE_CATEGORIES as readonly string[]).includes(cat));
+    text = JSON.stringify({ capability: req.user.slice(0, 200), category: hit ? hit[1] : "unknown", constraints: [] });
+  }
+  return { text, provider: "stub", model: "stub", usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 } };
+}
+
 // ---------------------------------------------------------------- chat
 export async function chat(req: ChatRequest): Promise<ChatResult> {
+  if (isStubMode()) {
+    const delay = Number(process.env.LLM_STUB_DELAY_MS) || 0;
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+    return stubAnswer(req);
+  }
   const failed: string[] = [];
   const reasons: string[] = [];
   const providers = order();

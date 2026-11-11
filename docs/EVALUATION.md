@@ -152,6 +152,7 @@ Groq was forced to fail (an invalid model name on the Intent and Explainer Lambd
 | 1 | `google/gemma-4-31b-it:free`, 6 s | 0 of 1 | the free model was rate-limited upstream (429) |
 | 2 | `openrouter/free`, 6 s | 2 of 5 | the free router often needed more than 6 s |
 | 3 | `openrouter/free`, 15 s fallback limit | 3 of 5 | once over 15 s; once the fallback got the primary's 6 s limit because the primary's circuit was open (a bug, fixed with a test) |
+| 4 (2026-11-11) | as 3, with the fix | **4 of 5** | once the free model returned an empty answer; once the Explainer's fallback was too slow and it used the fact sheet (request still completed) |
 
 In every round the switch-over happened on each request, and the circuit breaker skipped Groq after three failures. Completed requests took 8 to 14 s, with model-written explanations. The free fallback keeps the system answering through a Groq outage most of the time, but a free model has no guaranteed speed, so it is a best-effort backup, not a guarantee.
 

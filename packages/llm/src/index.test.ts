@@ -166,3 +166,32 @@ describe("fallback time limit when the primary is skipped", () => {
     expect(out.provider).toBe("openrouter");
   });
 });
+
+describe("stub mode (T2.8)", () => {
+  it("answers without calling any provider, and marks the answer as a stub", async () => {
+    vi.resetModules();
+    fetchMock.mockReset();
+    process.env.LLM_MODE = "stub";
+    const llm = await import("./index");
+    const out = await llm.chat({ system: "s", user: "Price $0.02 for MailRelay.", maxTokens: 10 });
+    expect(out).toMatchObject({ provider: "stub", text: "Price $0.02 for MailRelay." });
+    expect(fetchMock).not.toHaveBeenCalled();
+    delete process.env.LLM_MODE;
+  });
+
+  it("returns schema-shaped JSON with a keyword-guessed category for JSON requests", async () => {
+    vi.resetModules();
+    process.env.LLM_MODE = "stub";
+    const llm = await import("./index");
+    const out = await llm.chat({
+      system: "s",
+      user: "I need cheap image resizing",
+      maxTokens: 10,
+      jsonSchema: { name: "intent", schema: { type: "object" } },
+    });
+    expect(JSON.parse(out.text)).toEqual({ capability: "I need cheap image resizing", category: "image-resizing", constraints: [] });
+    const unknown = await llm.chat({ system: "s", user: "a time machine", maxTokens: 10, jsonSchema: { name: "intent", schema: {} } });
+    expect(JSON.parse(unknown.text).category).toBe("unknown");
+    delete process.env.LLM_MODE;
+  });
+});
