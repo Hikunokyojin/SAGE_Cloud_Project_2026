@@ -335,4 +335,22 @@ describe("SageStack", () => {
       expect(fns.find((f) => f.Properties.FunctionName === "sage-broker").Properties.MemorySize).toBeGreaterThanOrEqual(1769);
     });
   });
+
+  it("has API Gateway add the origin secret header to every Conductor call, resolved from SSM at deploy time", () => {
+    const template = synth();
+    const methods = Object.values(template.findResources("AWS::ApiGateway::Method")) as any[];
+    const proxied = methods.filter((m) => m.Properties.Integration?.Type === "HTTP_PROXY");
+    expect(proxied.length).toBeGreaterThanOrEqual(3);
+    // The value comes from an SSM-typed template parameter resolved at deploy time, so the
+    // secret itself never appears in the template or in git.
+    const params = (template.toJSON().Parameters ?? {}) as Record<string, any>;
+    for (const m of proxied) {
+      const header = m.Properties.Integration.RequestParameters?.["integration.request.header.X-Sage-Origin"];
+      const ref = JSON.stringify(header).match(/"Ref":"([^"]+)"/)?.[1];
+      expect(ref, "header must reference a parameter").toBeDefined();
+      expect(params[ref!]).toMatchObject({ Type: "AWS::SSM::Parameter::Value<String>", Default: "/sage/conductor/ORIGIN_SECRET" });
+    }
+    const policies = JSON.stringify(template.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("parameter/sage/conductor/ORIGIN_SECRET");
+  });
 });

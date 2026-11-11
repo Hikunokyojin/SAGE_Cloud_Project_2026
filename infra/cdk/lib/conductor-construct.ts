@@ -5,6 +5,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
@@ -85,7 +86,10 @@ export class ConductorConstruct extends Construct {
     role.addToPolicy(
       new iam.PolicyStatement({
         actions: ["ssm:GetParameter"],
-        resources: [`arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/HITL_SIGNING_KEY`],
+        resources: [
+          `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/HITL_SIGNING_KEY`,
+          `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/ORIGIN_SECRET`,
+        ],
       })
     );
     role.addToPolicy(
@@ -159,13 +163,18 @@ export class ConductorConstruct extends Construct {
     const pilotAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, "PilotAuthorizer", {
       cognitoUserPools: [this.userPool],
     });
+    // T2.9: every call to the instance carries X-Sage-Origin, resolved from SSM at deploy
+    // time (a dynamic reference, so the value is never in the template or in git). The
+    // Conductor refuses requests without it, which closes direct access by IP.
+    const originSecret = ssm.StringParameter.valueForStringParameter(this, "/sage/conductor/ORIGIN_SECRET");
+    const originHeader = { "integration.request.header.X-Sage-Origin": `'${originSecret}'` };
     const proxyIntegration = new apigateway.HttpIntegration(
       `http://${this.eip.ref}:3001/{proxy}`,
       {
         httpMethod: "ANY",
         proxy: true,
         options: {
-          requestParameters: { "integration.request.path.proxy": "method.request.path.proxy" },
+          requestParameters: { "integration.request.path.proxy": "method.request.path.proxy", ...originHeader },
         },
       }
     );
@@ -193,7 +202,11 @@ export class ConductorConstruct extends Construct {
     // /prod/ needs its own method.
     this.api.root.addMethod(
       "GET",
-      new apigateway.HttpIntegration(`http://${this.eip.ref}:3001/`, { httpMethod: "GET", proxy: true })
+      new apigateway.HttpIntegration(`http://${this.eip.ref}:3001/`, {
+        httpMethod: "GET",
+        proxy: true,
+        options: { requestParameters: originHeader },
+      })
     );
   }
 }
