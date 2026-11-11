@@ -24,6 +24,72 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-aws-cognito",
+    "name": "Amazon Cognito User Pools",
+    "provider": "Amazon Web Services",
+    "description": "User sign-up, sign-in and access control for web and mobile apps, with social and enterprise login.",
+    "capability": "authentication",
+    "endpoint": "https://cognito-idp.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.0055,
+      "unit": "per monthly active user",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Cognito User Pools us-east-1 tier 1 pricing"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCognito/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/cognito/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-aws-lambda",
+    "name": "AWS Lambda",
+    "provider": "Amazon Web Services",
+    "description": "Serverless functions that run code on demand and scale automatically, billed per request and duration.",
+    "capability": "compute",
+    "endpoint": "https://lambda.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.2,
+      "unit": "per 1,000,000 requests",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: AWS Lambda - Total Requests - US East (Northern Virginia)"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/lambda/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-functions",
+    "name": "Azure Functions (Consumption)",
+    "provider": "Microsoft Azure",
+    "description": "Serverless functions triggered by HTTP, queues and timers, billed per execution and duration.",
+    "capability": "compute",
+    "endpoint": "https://management.azure.com",
+    "pricing": {
+      "amount": 0.2,
+      "unit": "per 1,000,000 executions",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Functions Standard Standard Total Executions: $0.000002 per 10"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Functions'%20and%20productName%20eq%20'Functions'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Total%20Executions'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-computereserved",
     "name": "SteadyCompute",
     "provider": "Synthetic (project-original)",
@@ -96,6 +162,116 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-aws-kinesis",
+    "name": "Amazon Kinesis Data Streams",
+    "provider": "Amazon Web Services",
+    "description": "Real-time data streaming for ingesting and processing event and log streams.",
+    "capability": "data-streaming",
+    "endpoint": "https://kinesis.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.08,
+      "unit": "per GB written (on-demand)",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: 0.08 per GB of data written"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/kinesis/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-event-hubs",
+    "name": "Azure Event Hubs (Standard)",
+    "provider": "Microsoft Azure",
+    "description": "Big-data streaming platform and event ingestion service for millions of events per second.",
+    "capability": "data-streaming",
+    "endpoint": "https://servicebus.windows.net",
+    "pricing": {
+      "amount": 0.028,
+      "unit": "per 1,000,000 ingress events",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Event Hubs Standard Standard Ingress Events: $0.028 per 1M"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Event%20Hubs'%20and%20productName%20eq%20'Event%20Hubs'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Ingress%20Events'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-aws-dynamodb",
+    "name": "Amazon DynamoDB",
+    "provider": "Amazon Web Services",
+    "description": "Serverless key-value and document database with single-digit millisecond reads at any scale.",
+    "capability": "database",
+    "endpoint": "https://dynamodb.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.625,
+      "unit": "per 1,000,000 write request units",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.625 per million write request units (N. Virginia)"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonDynamoDB/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/dynamodb/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-aws-route53",
+    "name": "Amazon Route 53 Resolver",
+    "provider": "Amazon Web Services",
+    "description": "Highly available DNS service for domain name resolution and traffic routing.",
+    "capability": "dns",
+    "endpoint": "https://route53.amazonaws.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 queries",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.40 per 1,000,000 resolver queries for the first 1 Billion queries"
+    },
+    "advertised": {
+      "uptime": 100
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRoute53/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/route53/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-dns",
+    "name": "Azure DNS",
+    "provider": "Microsoft Azure",
+    "description": "Hosts DNS domains on Microsoft's global network of name servers.",
+    "capability": "dns",
+    "endpoint": "https://management.azure.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 queries",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure DNS Public Public Queries: $0.4 per 1M"
+    },
+    "advertised": {
+      "uptime": 100
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20DNS'%20and%20productName%20eq%20'Azure%20DNS'%20and%20skuName%20eq%20'Public'%20and%20meterName%20eq%20'Public%20Queries'%20and%20armRegionName%20eq%20'Zone%201'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-pdfgen",
     "name": "DocForge",
     "provider": "Synthetic (project-original)",
@@ -118,6 +294,72 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-aws-textract",
+    "name": "Amazon Textract",
+    "provider": "Amazon Web Services",
+    "description": "Extracts printed and handwritten text, forms and tables from scanned documents.",
+    "capability": "document-ocr",
+    "endpoint": "https://textract.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 1.5,
+      "unit": "per 1,000 pages",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: SyncPagesProcessed: 0 - 1M DetectDocumentText pages processed USD per month, $1.50 USD per 1000 pages"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonTextract/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/textract/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-document-intelligence",
+    "name": "Azure AI Document Intelligence (Read)",
+    "provider": "Microsoft Azure",
+    "description": "Extracts text, key-value pairs and tables from documents and forms.",
+    "capability": "document-ocr",
+    "endpoint": "https://eastus.api.cognitive.microsoft.com",
+    "pricing": {
+      "amount": 1.5,
+      "unit": "per 1,000 pages",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure Document Intelligence S0 S0 Batch Read Pages: $1.5 per 1K"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Document%20Intelligence'%20and%20skuName%20eq%20'S0'%20and%20meterName%20eq%20'S0%20Batch%20Read%20Pages'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-aws-ses",
+    "name": "Amazon SES",
+    "provider": "Amazon Web Services",
+    "description": "Cloud email service for sending transactional and marketing email through an API or SMTP.",
+    "capability": "email-delivery",
+    "endpoint": "https://email.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.1,
+      "unit": "per 1,000 emails",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Cost per recipient of SendEmail or SendRawEmail"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonSES/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/ses/sla/"
+    }
   },
   {
     "serviceId": "svc-emailapi",
@@ -168,6 +410,28 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-azure-ai-search",
+    "name": "Azure AI Search (Basic)",
+    "provider": "Microsoft Azure",
+    "description": "Managed search service with full-text, vector and hybrid search over your content.",
+    "capability": "full-text-search",
+    "endpoint": "https://search.windows.net",
+    "pricing": {
+      "amount": 0.101,
+      "unit": "per search-unit hour",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure AI Search Basic Basic Unit: $0.101 per 1 Hour"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Cognitive%20Search'%20and%20productName%20eq%20'Azure%20AI%20Search'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Unit'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-searchindex",
     "name": "FastSearch",
     "provider": "Synthetic (project-original)",
@@ -192,6 +456,50 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-aws-location",
+    "name": "Amazon Location Service Places",
+    "provider": "Amazon Web Services",
+    "description": "Geocoding, reverse geocoding and place search for maps and location-aware apps.",
+    "capability": "geolocation",
+    "endpoint": "https://geo.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.5,
+      "unit": "per 1,000 requests",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.50 per thousand GetPlace request (Core) in US East (N. Virginia)"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonLocationService/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/location/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-maps",
+    "name": "Azure Maps",
+    "provider": "Microsoft Azure",
+    "description": "Geospatial APIs for search, geocoding, routing, maps and time zones.",
+    "capability": "geolocation",
+    "endpoint": "https://atlas.microsoft.com",
+    "pricing": {
+      "amount": 0.5,
+      "unit": "per 1,000 transactions",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure Maps Standard Standard Hybrid Aerial Imagery Transactions: $0.5 per 1K"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Maps'%20and%20productName%20eq%20'Azure%20Maps'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Hybrid%20Aerial%20Imagery%20Transactions'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-geolocation",
     "name": "GeoLocate",
     "provider": "Synthetic (project-original)",
@@ -214,6 +522,28 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-aws-rekognition",
+    "name": "Amazon Rekognition Image",
+    "provider": "Amazon Web Services",
+    "description": "Image analysis API for labels, faces, text in images and content moderation.",
+    "capability": "image-analysis",
+    "endpoint": "https://rekognition.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 1,
+      "unit": "per 1,000 images",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Images Processed: 5001 - 1 MM images processed per month, 1.00 USD per 1000 images processed."
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRekognition/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/rekognition/sla/"
+    }
   },
   {
     "serviceId": "svc-budgetresize",
@@ -288,6 +618,50 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-aws-sqs",
+    "name": "Amazon SQS",
+    "provider": "Amazon Web Services",
+    "description": "Fully managed message queue for decoupling and scaling services, with standard and FIFO queues.",
+    "capability": "message-queue",
+    "endpoint": "https://sqs.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 requests",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.40 per million Amazon SQS standard requests in Tier1 in US East (N Virginia)"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSQueueService/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/messaging/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-service-bus",
+    "name": "Azure Service Bus (Basic)",
+    "provider": "Microsoft Azure",
+    "description": "Enterprise message broker with queues for reliable, decoupled communication between services.",
+    "capability": "message-queue",
+    "endpoint": "https://servicebus.windows.net",
+    "pricing": {
+      "amount": 0.05,
+      "unit": "per 1,000,000 operations",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Service Bus Basic Basic Messaging Operations: $0.05 per 1M"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Service%20Bus'%20and%20productName%20eq%20'Service%20Bus'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Messaging%20Operations'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-queueservice",
     "name": "QueueRunner",
     "provider": "Synthetic (project-original)",
@@ -310,6 +684,28 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-aws-sns",
+    "name": "Amazon SNS",
+    "provider": "Amazon Web Services",
+    "description": "Managed publish-subscribe messaging for fan-out to queues, functions, HTTP endpoints and mobile push.",
+    "capability": "messaging",
+    "endpoint": "https://sns.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.5,
+      "unit": "per 1,000,000 publish requests",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.50 per 1,000,000 Amazon SNS API Requests per month thereafter"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonSNS/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/messaging/sla/"
+    }
   },
   {
     "serviceId": "svc-smsapi",
@@ -358,6 +754,50 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-aws-s3",
+    "name": "Amazon S3 Standard",
+    "provider": "Amazon Web Services",
+    "description": "Object storage with high durability for files, backups, media and data lakes.",
+    "capability": "object-storage",
+    "endpoint": "https://s3.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.023,
+      "unit": "per GB-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.023 per GB - first 50 TB / month of storage used"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/s3/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-blob",
+    "name": "Azure Blob Storage (Hot LRS)",
+    "provider": "Microsoft Azure",
+    "description": "Object storage for unstructured data such as documents, images, video and backups.",
+    "capability": "object-storage",
+    "endpoint": "https://blob.core.windows.net",
+    "pricing": {
+      "amount": 0.0208,
+      "unit": "per GB-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Blob Storage Hot LRS Hot LRS Data Stored: $0.0208 per 1 GB/Month"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Storage'%20and%20productName%20eq%20'Blob%20Storage'%20and%20skuName%20eq%20'Hot%20LRS'%20and%20meterName%20eq%20'Hot%20LRS%20Data%20Stored'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
   },
   {
     "serviceId": "svc-budgetstorage",
@@ -456,6 +896,50 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-aws-secrets-manager",
+    "name": "AWS Secrets Manager",
+    "provider": "Amazon Web Services",
+    "description": "Stores, rotates and audits access to credentials, API keys and other secrets.",
+    "capability": "secrets-management",
+    "endpoint": "https://secretsmanager.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per secret-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.40 per Secret"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/secrets-manager/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-key-vault",
+    "name": "Azure Key Vault (Standard)",
+    "provider": "Microsoft Azure",
+    "description": "Safeguards keys, secrets and certificates used by cloud applications.",
+    "capability": "secrets-management",
+    "endpoint": "https://vault.azure.net",
+    "pricing": {
+      "amount": 0.03,
+      "unit": "per 10,000 operations",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Key Vault Standard Operations: $0.03 per 10K"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Key%20Vault'%20and%20productName%20eq%20'Key%20Vault'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Operations'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
     "serviceId": "svc-audiotranscribe",
     "name": "VoiceScribe",
     "provider": "Synthetic (project-original)",
@@ -478,6 +962,116 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-azure-speech-stt",
+    "name": "Azure AI Speech to Text",
+    "provider": "Microsoft Azure",
+    "description": "Real-time and batch speech recognition that turns audio into text.",
+    "capability": "speech-transcription",
+    "endpoint": "https://eastus.stt.speech.microsoft.com",
+    "pricing": {
+      "amount": 1,
+      "unit": "per audio hour",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure Speech S1 S1 Speech To Text: $1 per 1 Hour"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Speech'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Speech%20To%20Text'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-aws-polly",
+    "name": "Amazon Polly Neural",
+    "provider": "Amazon Web Services",
+    "description": "Text-to-speech API that turns text into natural-sounding speech in many voices and languages.",
+    "capability": "text-to-speech",
+    "endpoint": "https://polly.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 16,
+      "unit": "per 1,000,000 characters",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $16 per million characters for SynthesizeSpeechNeural-Characters in US East (N. Virginia)"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonPolly/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/polly/sla/"
+    }
+  },
+  {
+    "serviceId": "svc-azure-speech-tts",
+    "name": "Azure AI Speech Neural TTS",
+    "provider": "Microsoft Azure",
+    "description": "Neural text-to-speech with natural voices in many languages.",
+    "capability": "text-to-speech",
+    "endpoint": "https://eastus.tts.speech.microsoft.com",
+    "pricing": {
+      "amount": 15,
+      "unit": "per 1,000,000 characters",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Azure Speech S1 S1 Neural Text To Speech Characters: $15 per 1M"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Speech'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Neural%20Text%20To%20Speech%20Characters'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-azure-translator",
+    "name": "Azure AI Translator",
+    "provider": "Microsoft Azure",
+    "description": "Machine translation of text between more than 100 languages.",
+    "capability": "translation",
+    "endpoint": "https://api.cognitive.microsofttranslator.com",
+    "pricing": {
+      "amount": 10,
+      "unit": "per 1,000,000 characters",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Translator Text S1 S1 Characters: $10 per 1M"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Translator%20Text'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Characters'%20and%20armRegionName%20eq%20'eastus'",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-aws-mediaconvert",
+    "name": "AWS Elemental MediaConvert",
+    "provider": "Amazon Web Services",
+    "description": "File-based video transcoding for broadcast and multi-screen delivery formats.",
+    "capability": "video-transcoding",
+    "endpoint": "https://mediaconvert.us-east-1.amazonaws.com",
+    "pricing": {
+      "amount": 0.015,
+      "unit": "per minute of HD output",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: $0.015/min - US East (N. Virginia) - HD, AVC/H.264, <=30 fps, Single pass, Basic Tier"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSElementalMediaConvert/current/us-east-1/index.json",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://aws.amazon.com/elemental/sla/"
+    }
   },
   {
     "serviceId": "svc-videotranscode",
