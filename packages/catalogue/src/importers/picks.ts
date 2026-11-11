@@ -182,4 +182,25 @@ const MORE_AZURE: Row[] = [
   ["svc-azure-sql-serverless", "Azure SQL Database Serverless", "database", "Serverless relational SQL database that scales compute with demand and pauses when idle.", "https://database.windows.net", "per vCore-hour", 1, 99.99, AZ_SLA, ae({ serviceName: "SQL Database", productName: "SQL Database General Purpose - Serverless - Compute Gen5", skuName: "1 vCore", meterName: "vCore" })],
 ];
 
-export const PICKS: PricePick[] = [...BASE, ...MORE_AWS.map(aws), ...MORE_AZURE.map(az)];
+// Google Cloud Billing Catalog (needs GCP_API_KEY; service ids from GET /v1/services).
+const GCP_SLA = "https://cloud.google.com/terms/sla";
+const g = (gcpService: string, skuDescription: string) => ({ gcpService, skuDescription }) as PricePick["match"];
+const MORE_GCP: Row[] = [
+  ["svc-gcp-cloud-run", "Google Cloud Run", "compute", "Serverless containers that scale to zero, billed per request and resource time.", "https://run.googleapis.com", "per 1,000,000 requests", M, 99.95, GCP_SLA, g("152E-C115-5142", "Requests")],
+  ["svc-gcp-storage", "Google Cloud Storage Standard", "object-storage", "Unified object storage for any amount of data, US multi-region.", "https://storage.googleapis.com", "per GB-month", 1, 99.95, GCP_SLA, g("95FF-2EF5-5EA1", "Standard Storage US Multi-region")],
+  ["svc-gcp-pubsub", "Google Cloud Pub/Sub", "message-queue", "Global asynchronous messaging between services.", "https://pubsub.googleapis.com", "per TiB delivered", 1, 99.95, GCP_SLA, g("A1E8-BE35-7EBC", "Message Delivery Basic")],
+  ["svc-gcp-bigquery", "Google BigQuery", "data-query", "Serverless data warehouse with on-demand SQL queries.", "https://bigquery.googleapis.com", "per TiB scanned", 1, 99.99, GCP_SLA, g("24E6-581D-38E5", "Analysis")],
+  ["svc-gcp-vision", "Google Cloud Vision", "image-analysis", "Image labelling, text detection and face detection API.", "https://vision.googleapis.com", "per 1,000 images", K, 99.9, GCP_SLA, g("C08E-37B9-80D3", "Label Detection Operations")],
+  ["svc-gcp-vision-ocr", "Google Cloud Vision OCR", "document-ocr", "Extracts printed and handwritten text from images and documents.", "https://vision.googleapis.com", "per 1,000 images", K, 99.9, GCP_SLA, g("C08E-37B9-80D3", "Document Text Detection Operations")],
+  ["svc-gcp-dns", "Google Cloud DNS", "dns", "Scalable, low-latency authoritative DNS.", "https://dns.googleapis.com", "per 1,000,000 queries", M, 100, GCP_SLA, g("FA26-5236-B8B5", "DNS Query (port 53)")],
+  ["svc-gcp-secret-manager", "Google Secret Manager", "secrets-management", "Stores API keys, passwords and certificates with versioning and audit.", "https://secretmanager.googleapis.com", "per secret version-month", 1, 99.95, GCP_SLA, g("EE82-7A5E-871C", "Secret version replica storage")],
+  ["svc-gcp-artifact-registry", "Google Artifact Registry", "container-registry", "Stores and manages container images and language packages.", "https://artifactregistry.googleapis.com", "per GB-month", 1, 99.9, GCP_SLA, g("149C-F9EC-3994", "Artifact Registry Storage")],
+  ["svc-gcp-speech", "Google Cloud Speech-to-Text", "speech-transcription", "Speech recognition in 125+ languages for streaming and batch audio.", "https://speech.googleapis.com", "per audio minute", 1, 99.9, GCP_SLA, g("63DE-82AB-F564", "Cloud Speech-to-Text Recognition")],
+  ["svc-gcp-tts", "Google Cloud Text-to-Speech", "text-to-speech", "Text-to-speech with standard, WaveNet and neural voices.", "https://texttospeech.googleapis.com", "per 1,000,000 characters", M, 99.9, GCP_SLA, g("02DA-B362-D983", "Count of characters for using standard voices")],
+  ["svc-gcp-cloud-tasks", "Google Cloud Tasks", "message-queue", "Managed task queues for asynchronous work dispatched to HTTP targets.", "https://cloudtasks.googleapis.com", "per 1,000,000 operations", M, 99.95, GCP_SLA, g("F3A6-D7B7-9BDA", "Operations")],
+  ["svc-gcp-workflows", "Google Cloud Workflows", "workflow-orchestration", "Serverless orchestration of HTTP services and Google Cloud APIs.", "https://workflowexecutions.googleapis.com", "per 1,000 internal steps", K, 99.9, GCP_SLA, g("E722-8436-A7EB", "Internal Steps")],
+  ["svc-gcp-logging", "Google Cloud Logging", "monitoring", "Stores, searches and analyses logs from applications and infrastructure.", "https://logging.googleapis.com", "per GB ingested", 1, 99.95, GCP_SLA, g("5490-F7B7-8DF6", "Log Storage cost")],
+];
+const gcp = (r: Row): PricePick => ({ ...aws(r), provider: "gcp" });
+
+export const PICKS: PricePick[] = [...BASE, ...MORE_AWS.map(aws), ...MORE_AZURE.map(az), ...MORE_GCP.map(gcp)];

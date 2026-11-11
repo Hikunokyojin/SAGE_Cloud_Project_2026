@@ -450,13 +450,13 @@
       "amount": 0.5,
       "unit": "per 1,000 transactions",
       "currency": "USD",
-      "notes": "list price, first paid tier; feed says: Azure Maps Standard Standard Hybrid Aerial Imagery Transactions: $0.5 per 1K"
+      "notes": "list price, first paid tier; feed says: Azure Maps Standard Standard Services API Transactions: $0.5 per 1K"
     },
     "advertised": {
       "uptime": 99.9
     },
     "source": {
-      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Maps'%20and%20productName%20eq%20'Azure%20Maps'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Hybrid%20Aerial%20Imagery%20Transactions'%20and%20armRegionName%20eq%20'eastus'",
+      "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Maps'%20and%20productName%20eq%20'Azure%20Maps'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Services%20API%20Transactions'%20and%20armRegionName%20eq%20'eastus'",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
@@ -1581,6 +1581,314 @@
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'SQL%20Database'%20and%20productName%20eq%20'SQL%20Database%20General%20Purpose%20-%20Serverless%20-%20Compute%20Gen5'%20and%20skuName%20eq%20'1%20vCore'%20and%20meterName%20eq%20'vCore'",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-cloud-run",
+    "name": "Google Cloud Run",
+    "provider": "Google Cloud",
+    "description": "Serverless containers that scale to zero, billed per request and resource time.",
+    "capability": "compute",
+    "endpoint": "https://run.googleapis.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 requests",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Requests: $4e-7 per count"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/152E-C115-5142/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-storage",
+    "name": "Google Cloud Storage Standard",
+    "provider": "Google Cloud",
+    "description": "Unified object storage for any amount of data, US multi-region.",
+    "capability": "object-storage",
+    "endpoint": "https://storage.googleapis.com",
+    "pricing": {
+      "amount": 0.026,
+      "unit": "per GB-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Standard Storage US Multi-region: $0.026 per GiBy.mo"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/95FF-2EF5-5EA1/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-pubsub",
+    "name": "Google Cloud Pub/Sub",
+    "provider": "Google Cloud",
+    "description": "Global asynchronous messaging between services.",
+    "capability": "message-queue",
+    "endpoint": "https://pubsub.googleapis.com",
+    "pricing": {
+      "amount": 40,
+      "unit": "per TiB delivered",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Message Delivery Basic: $40 per TiBy"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/A1E8-BE35-7EBC/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-bigquery",
+    "name": "Google BigQuery",
+    "provider": "Google Cloud",
+    "description": "Serverless data warehouse with on-demand SQL queries.",
+    "capability": "data-query",
+    "endpoint": "https://bigquery.googleapis.com",
+    "pricing": {
+      "amount": 6.25,
+      "unit": "per TiB scanned",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Analysis: $6.25 per TiBy"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/24E6-581D-38E5/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-vision",
+    "name": "Google Cloud Vision",
+    "provider": "Google Cloud",
+    "description": "Image labelling, text detection and face detection API.",
+    "capability": "image-analysis",
+    "endpoint": "https://vision.googleapis.com",
+    "pricing": {
+      "amount": 1.5,
+      "unit": "per 1,000 images",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Label Detection Operations: $0.0015 per count"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/C08E-37B9-80D3/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-vision-ocr",
+    "name": "Google Cloud Vision OCR",
+    "provider": "Google Cloud",
+    "description": "Extracts printed and handwritten text from images and documents.",
+    "capability": "document-ocr",
+    "endpoint": "https://vision.googleapis.com",
+    "pricing": {
+      "amount": 1.5,
+      "unit": "per 1,000 images",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Document Text Detection Operations: $0.0015 per count"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/C08E-37B9-80D3/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-dns",
+    "name": "Google Cloud DNS",
+    "provider": "Google Cloud",
+    "description": "Scalable, low-latency authoritative DNS.",
+    "capability": "dns",
+    "endpoint": "https://dns.googleapis.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 queries",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: DNS Query (port 53): $4e-7 per count"
+    },
+    "advertised": {
+      "uptime": 100
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/FA26-5236-B8B5/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-secret-manager",
+    "name": "Google Secret Manager",
+    "provider": "Google Cloud",
+    "description": "Stores API keys, passwords and certificates with versioning and audit.",
+    "capability": "secrets-management",
+    "endpoint": "https://secretmanager.googleapis.com",
+    "pricing": {
+      "amount": 0.06,
+      "unit": "per secret version-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Secret version replica storage: $0.06 per mo"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/EE82-7A5E-871C/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-artifact-registry",
+    "name": "Google Artifact Registry",
+    "provider": "Google Cloud",
+    "description": "Stores and manages container images and language packages.",
+    "capability": "container-registry",
+    "endpoint": "https://artifactregistry.googleapis.com",
+    "pricing": {
+      "amount": 0.1,
+      "unit": "per GB-month",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Artifact Registry Storage: $0.1 per GiBy.mo"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/149C-F9EC-3994/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-speech",
+    "name": "Google Cloud Speech-to-Text",
+    "provider": "Google Cloud",
+    "description": "Speech recognition in 125+ languages for streaming and batch audio.",
+    "capability": "speech-transcription",
+    "endpoint": "https://speech.googleapis.com",
+    "pricing": {
+      "amount": 0.016,
+      "unit": "per audio minute",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Cloud Speech-to-Text Recognition: $0.016 per min"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/63DE-82AB-F564/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-tts",
+    "name": "Google Cloud Text-to-Speech",
+    "provider": "Google Cloud",
+    "description": "Text-to-speech with standard, WaveNet and neural voices.",
+    "capability": "text-to-speech",
+    "endpoint": "https://texttospeech.googleapis.com",
+    "pricing": {
+      "amount": 4,
+      "unit": "per 1,000,000 characters",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Count of characters for using standard voices: $0.000004 per count"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/02DA-B362-D983/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-cloud-tasks",
+    "name": "Google Cloud Tasks",
+    "provider": "Google Cloud",
+    "description": "Managed task queues for asynchronous work dispatched to HTTP targets.",
+    "capability": "message-queue",
+    "endpoint": "https://cloudtasks.googleapis.com",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "per 1,000,000 operations",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Operations: $4e-7 per count"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/F3A6-D7B7-9BDA/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-workflows",
+    "name": "Google Cloud Workflows",
+    "provider": "Google Cloud",
+    "description": "Serverless orchestration of HTTP services and Google Cloud APIs.",
+    "capability": "workflow-orchestration",
+    "endpoint": "https://workflowexecutions.googleapis.com",
+    "pricing": {
+      "amount": 0.01,
+      "unit": "per 1,000 internal steps",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Internal Steps: $0.00001 per count"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/E722-8436-A7EB/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-gcp-logging",
+    "name": "Google Cloud Logging",
+    "provider": "Google Cloud",
+    "description": "Stores, searches and analyses logs from applications and infrastructure.",
+    "capability": "monitoring",
+    "endpoint": "https://logging.googleapis.com",
+    "pricing": {
+      "amount": 0.5,
+      "unit": "per GB ingested",
+      "currency": "USD",
+      "notes": "list price, first paid tier; feed says: Log Storage cost: $0.5 per GiBy"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://cloudbilling.googleapis.com/v1/services/5490-F7B7-8DF6/skus?currencyCode=USD",
+      "retrievedAt": "2026-11-11",
+      "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   }
 ]
