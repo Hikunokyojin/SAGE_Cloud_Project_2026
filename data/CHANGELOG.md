@@ -37,3 +37,10 @@ This dataset (`services.json`) is versioned independently of the application cod
 ## v1.0.0 — 2026-09-11
 
 Initial dataset: 20 services across 18 capability areas, fields `serviceId`, `name`, `description`, `price`, `uptime`, `endpoint`.
+
+## v2.0.0-alpha.2 (2026-11-11)
+- First real services: 27 from the official AWS Price List and Azure Retail Prices feeds
+  (`npm run catalogue:import`, then `catalogue:ingest -- data/sources/cloud-prices.json`).
+  List prices, us-east-1 / eastus, first paid tier; uptime from each provider's SLA page.
+- New categories: database, dns, data-streaming, secrets-management, text-to-speech,
+  translation, document-ocr, image-analysis (25 in total).

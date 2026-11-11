@@ -18,6 +18,9 @@ export const SERVICE_CATEGORIES = [
   "content-delivery", "email-delivery", "messaging", "authentication", "payment-processing",
   "ml-inference", "embedding-generation", "product-analytics", "message-queue",
   "full-text-search", "document-generation", "compute", "geolocation",
+  // Added with the real catalogue (T3.2).
+  "database", "dns", "data-streaming", "secrets-management", "text-to-speech",
+  "translation", "document-ocr", "image-analysis",
 ] as const;
 
 export interface Intent {
