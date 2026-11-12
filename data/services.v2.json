@@ -66,6 +66,28 @@
     }
   },
   {
+    "serviceId": "svc-fastly",
+    "name": "Fastly AI Runtime Control",
+    "provider": "Fastly",
+    "description": "Edge control plane for routing governing and observing AI traffic.",
+    "capability": "api-gateway",
+    "endpoint": "https://api.fastly.com",
+    "pricing": {
+      "amount": 2.5,
+      "unit": "per 10000 requests (after 100K free)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): 100,000-1M requests $2.50 per 10,000 requests; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 100
+    },
+    "source": {
+      "url": "https://www.fastly.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-google-api-gateway",
     "name": "Google API Gateway",
     "provider": "Google",
@@ -1840,6 +1862,28 @@
     }
   },
   {
+    "serviceId": "svc-hetzner-storage-box",
+    "name": "Hetzner Storage Box",
+    "provider": "Hetzner",
+    "description": "Online storage accessible via SFTP SMB and WebDAV.",
+    "capability": "file-storage",
+    "endpoint": "https://api.hetzner.com",
+    "pricing": {
+      "amount": 3.2,
+      "unit": "per month (BX11, 1 TB)",
+      "currency": "EUR",
+      "notes": "page checked 2026-11-12 (user screenshot): BX11 EUR 3.20 max/mo for 1 TB, excl. VAT; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.hetzner.com/storage/storage-box/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-aws-fraud-detector",
     "name": "Amazon Fraud Detector",
     "provider": "Amazon Web Services",
@@ -2152,6 +2196,28 @@
     "synthetic": true
   },
   {
+    "serviceId": "svc-google-geocoding",
+    "name": "Google Maps Geocoding",
+    "provider": "Google",
+    "description": "Address to coordinates conversion.",
+    "capability": "geolocation",
+    "endpoint": "https://maps.googleapis.com/maps/api/geocode",
+    "pricing": {
+      "amount": 100,
+      "unit": "per month (Starter, 50000 calls incl. Geocoding)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Starter $100/month, 50,000 monthly calls, includes Geocoding; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://mapsplatform.google.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-ipinfo",
     "name": "IPinfo",
     "provider": "IPinfo",
@@ -2169,6 +2235,28 @@
     },
     "source": {
       "url": "https://ipinfo.io/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-mapbox-geocoding",
+    "name": "Mapbox Map Matching API",
+    "provider": "Mapbox",
+    "description": "Snaps GPS traces to the road network for clean routes and analysis.",
+    "capability": "geolocation",
+    "endpoint": "https://api.mapbox.com",
+    "pricing": {
+      "amount": 2,
+      "unit": "per 1000 requests (after 100K free)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Map Matching 100,001-500,000 requests $2.00 per 1,000; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.mapbox.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -2842,6 +2930,28 @@
     }
   },
   {
+    "serviceId": "svc-bird-sms",
+    "name": "Bird SMS",
+    "provider": "Bird",
+    "description": "Omnichannel messaging API including SMS and WhatsApp.",
+    "capability": "messaging",
+    "endpoint": "https://rest.messagebird.com",
+    "pricing": {
+      "amount": 0.0035,
+      "unit": "per SMS segment (US long code, excl. carrier fees)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): $0.0035 / US outbound long-code segment + carrier fees; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://bird.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-onesignal",
     "name": "OneSignal Push",
     "provider": "OneSignal",
@@ -2903,6 +3013,28 @@
     },
     "source": {
       "url": "https://pusher.com/channels/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-sinch-sms",
+    "name": "Sinch SMS",
+    "provider": "Sinch",
+    "description": "Global SMS API with delivery reports.",
+    "capability": "messaging",
+    "endpoint": "https://sms.api.sinch.com",
+    "pricing": {
+      "amount": 0.0078,
+      "unit": "per outbound SMS (US 10DLC, excl. carrier fees)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): 10DLC send $0.0078 per outbound message, carrier fees apply; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://sinch.com/pricing/sms/",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -3020,6 +3152,28 @@
     }
   },
   {
+    "serviceId": "svc-gemini-flash",
+    "name": "Gemini 4 Carbon",
+    "provider": "Google",
+    "description": "Google's most capable Gemini reasoning model via API.",
+    "capability": "ml-inference",
+    "endpoint": "https://generativelanguage.googleapis.com",
+    "pricing": {
+      "amount": 2,
+      "unit": "per 1000000 input tokens",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Paid tier input $2.00 per 1M tokens through Nov 30 2026, $4.00 from Dec 1; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://ai.google.dev/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-mlinference",
     "name": "InferEdge",
     "provider": "Synthetic (project-original)",
@@ -3042,6 +3196,28 @@
       "terms": "project-original synthetic data; endpoints are fictitious example.com addresses"
     },
     "synthetic": true
+  },
+  {
+    "serviceId": "svc-openai-gpt-mini",
+    "name": "OpenAI GPT-6 Luna",
+    "provider": "OpenAI",
+    "description": "OpenAI's most efficient model for focused high-volume tasks.",
+    "capability": "ml-inference",
+    "endpoint": "https://api.openai.com/v1",
+    "pricing": {
+      "amount": 0.1,
+      "unit": "per 1000000 input tokens",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): GPT-6 Luna input $0.10 / 1M tokens, output $0.50; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://openai.com/api/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
   },
   {
     "serviceId": "svc-replicate",
@@ -3688,6 +3864,28 @@
     }
   },
   {
+    "serviceId": "svc-square",
+    "name": "Square Online Payments",
+    "provider": "Block Inc.",
+    "description": "Card payments API for online and in-person sales.",
+    "capability": "payment-processing",
+    "endpoint": "https://connect.squareup.com/v2",
+    "pricing": {
+      "amount": 49,
+      "unit": "per month per location (Square Plus)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Square Plus $49/mo per location; processing fees separate; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://squareup.com/us/en/payments/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-stripe",
     "name": "Stripe Payments",
     "provider": "Stripe",
@@ -3844,6 +4042,28 @@
     }
   },
   {
+    "serviceId": "svc-google-recommendations",
+    "name": "Google Vertex AI Search for commerce",
+    "provider": "Google",
+    "description": "Retail recommendations and search.",
+    "capability": "recommendations",
+    "endpoint": "https://retail.googleapis.com",
+    "pricing": {
+      "amount": 0.27,
+      "unit": "per 1000 predictions (first 20M)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Prediction 0 to 20,000,000 count $0.27; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://cloud.google.com/retail/docs/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-recombee",
     "name": "Recombee",
     "provider": "Recombee",
@@ -3973,6 +4193,50 @@
       "url": "https://cloudbilling.googleapis.com/v1/services/EE82-7A5E-871C/skus?currencyCode=USD",
       "retrievedAt": "2026-11-11",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
+    }
+  },
+  {
+    "serviceId": "svc-hcp-vault",
+    "name": "HCP Vault Dedicated (Development)",
+    "provider": "HashiCorp",
+    "description": "Managed secrets storage and rotation.",
+    "capability": "secrets-management",
+    "endpoint": "https://api.cloud.hashicorp.com",
+    "pricing": {
+      "amount": 0.62,
+      "unit": "per cluster-hour (Development)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Development starting at $0.62 per cluster per hour; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.hashicorp.com/products/vault/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-infisical",
+    "name": "Infisical",
+    "provider": "Infisical",
+    "description": "Open-source secrets management platform.",
+    "capability": "secrets-management",
+    "endpoint": "https://app.infisical.com/api",
+    "pricing": {
+      "amount": 20,
+      "unit": "per identity-month (Pro, billed annually)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Pro $20 /identity/month billed annually; 99.99% SLA on Enterprise only; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://infisical.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
     }
   },
   {
@@ -4462,6 +4726,28 @@
     }
   },
   {
+    "serviceId": "svc-deepl",
+    "name": "DeepL API",
+    "provider": "DeepL SE",
+    "description": "High-quality machine translation for 30+ languages.",
+    "capability": "translation",
+    "endpoint": "https://api.deepl.com/v2",
+    "pricing": {
+      "amount": 26,
+      "unit": "per month (Growth, billed annually, plus usage)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Growth $26.00 per month billed annually + usage-based price (shown for India, USD); no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://www.deepl.com/pro-api",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
     "serviceId": "svc-google-translate",
     "name": "Google Cloud Translation",
     "provider": "Google",
@@ -4877,6 +5163,28 @@
     },
     "source": {
       "url": "https://www.inngest.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-temporal-cloud",
+    "name": "Temporal Cloud",
+    "provider": "Temporal Technologies",
+    "description": "Durable workflow execution as a service.",
+    "capability": "workflow-orchestration",
+    "endpoint": "https://saas-api.tmprl.cloud",
+    "pricing": {
+      "amount": 50,
+      "unit": "per 1000000 actions",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (user screenshot): Pay-as-you-go starting at $50 per million actions; 99.9% SLA"
+    },
+    "advertised": {
+      "uptime": 99.9
+    },
+    "source": {
+      "url": "https://temporal.io/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
