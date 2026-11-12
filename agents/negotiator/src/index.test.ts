@@ -270,3 +270,78 @@ describe("soft preferences", () => {
     expect(wantsFast.scoreBreakdown.weights.latency).toBe(3);
   });
 });
+
+describe("Negotiator volume pricing and plan quotas (T4.1b)", () => {
+  const volume = { amount: 100_000, unit: "emails" as const };
+  const sendgrid = candidate({
+    serviceId: "svc-sendgrid", name: "SendGrid", capability: "email", price: 19.95, uptime: 99.95,
+    volumeBasis: "quota", includedUnits: { amount: 50_000, unit: "emails" }, otherPlans: true,
+  });
+  const ses = candidate({
+    serviceId: "svc-ses", name: "SES", capability: "email", price: 10, uptime: 99.9,
+    listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD", priceBasis: "estimated USD/month at 100,000 emails/month",
+  });
+
+  it("rejects a plan whose quota is smaller than the stated volume, and says why", async () => {
+    const r = await handler(baseInput({ candidates: [sendgrid, ses], volume }));
+    expect(r.chosen.service.serviceId).toBe("svc-ses");
+    expect(r.rejected).toContainEqual({ serviceId: "svc-sendgrid", name: "SendGrid", reason: "its plan covers 50,000 emails a month, 100,000 emails needed" });
+  });
+
+  it("keeps a plan whose quota covers the volume and notes it", async () => {
+    const r = await handler(baseInput({ candidates: [sendgrid], volume: { amount: 40_000, unit: "emails" } }));
+    expect(r.chosen.service.volumeNote).toBe("plan covers 50,000 emails a month, enough for 40,000 emails");
+  });
+
+  it("re-prices a metered service at the stated volume", async () => {
+    const r = await handler(baseInput({ candidates: [ses], volume: { amount: 250_000, unit: "emails" } }));
+    expect(r.chosen.service.price).toBe(25);
+    expect(r.chosen.service.priceBasis).toBe("estimated USD/month at 250,000 emails/month");
+  });
+
+  it("checks a per-unit price limit against the unit price", async () => {
+    const perUnit: Constraint = { field: "price", operator: "lte", value: 0.00015, mandatory: true, per: "unit" };
+    const r = await handler(baseInput({ candidates: [sendgrid, ses], constraints: [perUnit] }));
+    // SES: $0.0001 an email passes; SendGrid: $19.95 / 50,000 = $0.000399 fails.
+    expect(r.chosen.service.serviceId).toBe("svc-ses");
+    expect(r.rejected?.[0].reason).toMatch(/^price per unit/);
+  });
+});
+
+describe("Negotiator chain mode (T4.1b)", () => {
+  const step = (capability: string, cands: ServiceCandidateWithEvidence[], dependsOn: number[] = []) => ({
+    capability, candidates: cands, constraints: [] as Constraint[], dependsOn,
+  });
+  const ocrA = candidate({ serviceId: "ocr-a", price: 30, uptime: 99.9, latencyMs: 300 });
+  const ocrB = candidate({ serviceId: "ocr-b", price: 5, uptime: 99.0, latencyMs: 800 });
+  const trA = candidate({ serviceId: "tr-a", price: 20, uptime: 99.95, latencyMs: 200 });
+  const trB = candidate({ serviceId: "tr-b", price: 4, uptime: 99.5, latencyMs: 400 });
+
+  it("picks one service per step and reports chain totals", async () => {
+    const r = await handler(baseInput({ steps: [step("ocr", [ocrA, ocrB]), step("translation", [trA, trB], [0])] }));
+    expect(r.chain?.steps.map((s) => s.capability)).toEqual(["ocr", "translation"]);
+    expect(r.chain?.steps[1].dependsOn).toEqual([0]);
+    expect(r.chain?.combinationsCompared).toBe(4);
+    const [a, b] = r.chain!.steps.map((s) => s.chosen.service);
+    expect(r.chain?.totals.price).toBeCloseTo(a.price + b.price, 2);
+    expect(r.chain?.totals.uptime).toBeCloseTo(a.uptime * b.uptime / 100, 3);
+    expect(r.chain?.totals.latencyMs).toBe((a.latencyMs ?? 0) + (b.latencyMs ?? 0));
+    expect(r.chosen.service.serviceId).toBe(a.serviceId);
+  });
+
+  it("applies chain-wide limits to the totals, not to each step", async () => {
+    const budget: Constraint = { field: "price", operator: "lte", value: 12, mandatory: true };
+    const r = await handler(baseInput({ constraints: [budget], steps: [step("ocr", [ocrA, ocrB]), step("translation", [trA, trB])] }));
+    expect(r.chain?.steps.map((s) => s.chosen.service.serviceId)).toEqual(["ocr-b", "tr-b"]);
+    expect(r.chain?.combinationsValid).toBe(1);
+  });
+
+  it("fails clearly when no combination fits the chain-wide limits", async () => {
+    const budget: Constraint = { field: "price", operator: "lte", value: 1, mandatory: true };
+    await expect(handler(baseInput({ constraints: [budget], steps: [step("ocr", [ocrA]), step("translation", [trA])] }))).rejects.toThrow(/none of the 1 combinations/);
+  });
+
+  it("names the step when one step has no eligible candidate", async () => {
+    await expect(handler(baseInput({ steps: [step("ocr", [ocrA]), step("translation", [])] }))).rejects.toThrow(/step 2 \(translation\)/);
+  });
+});

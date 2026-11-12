@@ -51,7 +51,13 @@ const KINDS: [RegExp, keyof typeof USAGE, string][] = [
   [/request|call|quer|operation|transaction|message|push|execution|action|step|transition|prediction|command|unit|write/, "requests", "requests"],
 ];
 
-export function monthlyCost(pricing: { amount: number; unit: string; currency: string }): MonthlyCost {
+// `usage` overrides the fixed profile for some kinds, for example the volume a request states
+// (T4.1b, L3): monthlyCost(pricing, { emails: 250_000 }).
+export function monthlyCost(
+  pricing: { amount: number; unit: string; currency: string },
+  usage: Partial<Record<keyof typeof USAGE, number>> = {}
+): MonthlyCost {
+  const U = { ...USAGE, ...usage };
   const fx = FX_TO_USD[pricing.currency];
   if (fx === undefined) throw new Error(`no exchange rate for currency ${pricing.currency}`);
   const raw = pricing.unit.trim();
@@ -63,28 +69,28 @@ export function monthlyCost(pricing: { amount: number; unit: string; currency: s
 
   if (/^percent/.test(u)) {
     const fee = /\+\s*(?:\$|eur\s*)([\d.]+)/.exec(u);
-    const fixed = fee ? Number(fee[1]) * USAGE.payments * fx : 0;
-    return { usd: (a / 100) * USAGE.paymentVolumeUsd + fixed, assumption: `at $${fmt(USAGE.paymentVolumeUsd)}/month in ${USAGE.payments} payments` };
+    const fixed = fee ? Number(fee[1]) * U.payments * fx : 0;
+    return { usd: (a / 100) * U.paymentVolumeUsd + fixed, assumption: `at $${fmt(U.paymentVolumeUsd)}/month in ${U.payments} payments` };
   }
 
   // Data volume (before "month", so "GB-month" is storage, not a subscription).
-  if (/\b(gb|gib)-month/.test(u)) return out(a * USAGE.gb, `at ${USAGE.gb} GB stored`);
-  if (/\b(tb|tib)\b/.test(u)) return out(a * USAGE.tb, `at ${USAGE.tb} TB/month`);
-  if (/\b(gb|gib)-second/.test(u)) return out(a * USAGE.gbSeconds, `at ${fmt(USAGE.gbSeconds)} GB-seconds/month`);
-  if (/\bgb\b/.test(u)) return out(a * USAGE.gb, `at ${USAGE.gb} GB/month`);
+  if (/\b(gb|gib)-month/.test(u)) return out(a * U.gb, `at ${U.gb} GB stored`);
+  if (/\b(tb|tib)\b/.test(u)) return out(a * U.tb, `at ${U.tb} TB/month`);
+  if (/\b(gb|gib)-second/.test(u)) return out(a * U.gbSeconds, `at ${fmt(U.gbSeconds)} GB-seconds/month`);
+  if (/\bgb\b/.test(u)) return out(a * U.gb, `at ${U.gb} GB/month`);
 
   // Audio and compute time.
-  if (/audio hour/.test(u)) return out(a * (USAGE.minutes / 60), `at ${fmt(USAGE.minutes)} audio minutes/month`);
-  if (/^per (audio )?minute/.test(u)) return out(a * USAGE.minutes, `at ${fmt(USAGE.minutes)} minutes/month`);
-  if (/^per second/.test(u)) return out(a * USAGE.cpuSeconds, `at ${fmt(USAGE.cpuSeconds)} CPU-seconds/month`);
+  if (/audio hour/.test(u)) return out(a * (U.minutes / 60), `at ${fmt(U.minutes)} audio minutes/month`);
+  if (/^per (audio )?minute/.test(u)) return out(a * U.minutes, `at ${fmt(U.minutes)} minutes/month`);
+  if (/^per second/.test(u)) return out(a * U.cpuSeconds, `at ${fmt(U.cpuSeconds)} CPU-seconds/month`);
 
   // Per user (before "month", since "monthly active user" is a count, not a subscription).
-  if (/active user|retained user/.test(u)) return out(a * USAGE.users, `at ${fmt(USAGE.users)} monthly active users`);
+  if (/active user|retained user/.test(u)) return out(a * U.users, `at ${fmt(U.users)} monthly active users`);
 
   // Subscriptions and always-on capacity.
   if (/month/.test(u)) return out(a, "on its flat monthly plan");
-  if (/hour\b/.test(u)) return out(a * USAGE.hours, "running all month (730 hours)");
-  if (/-day\b/.test(u)) return out(a * USAGE.days, "running all month (30 days)");
+  if (/hour\b/.test(u)) return out(a * U.hours, "running all month (730 hours)");
+  if (/-day\b/.test(u)) return out(a * U.days, "running all month (30 days)");
 
   // Per-N counts: "per 1,000,000 requests", "per page", "per 1,000 units of 100 characters".
   const m = /^per ([\d,]+ )?(.+)$/.exec(u);
@@ -96,7 +102,7 @@ export function monthlyCost(pricing: { amount: number; unit: string; currency: s
     const kind = KINDS.find(([re]) => re.test(noun));
     if (kind) {
       const [, key, label] = kind;
-      const volume = USAGE[key];
+      const volume = U[key];
       return out((a / n) * volume, `at ${fmt(volume)} ${label}/month`);
     }
   }

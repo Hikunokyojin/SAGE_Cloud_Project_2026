@@ -56,3 +56,15 @@ describe("the whole real catalogue normalises", () => {
     expect(failures).toEqual([]);
   });
 });
+
+describe("monthlyCost at a stated volume (T4.1b)", () => {
+  const p = (amount: number, unit: string) => ({ amount, unit, currency: "USD" });
+  it("prices a metered unit at the given volume instead of the fixed profile", () => {
+    const c = monthlyCost(p(0.1, "per 1,000 emails"), { emails: 250_000 });
+    expect(c.usd).toBeCloseTo(25, 9);
+    expect(c.assumption).toBe("at 250,000 emails/month");
+  });
+  it("leaves a flat monthly plan unchanged", () => {
+    expect(monthlyCost(p(19.95, "per month"), { emails: 250_000 }).usd).toBe(19.95);
+  });
+});

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@sage/audit": "*",
+    "@sage/catalogue": "*",
     "@sage/shared-types": "*"
   },
   "devDependencies": {

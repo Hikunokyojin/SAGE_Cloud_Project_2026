@@ -51,6 +51,7 @@ export interface AgentInvoker {
     priorViolations?: Violation[];
     requiredCategory?: string;
     preferences?: Intent["preferences"];
+    volume?: Intent["volume"];
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<Composition>;
@@ -279,6 +280,8 @@ async function fromIntent(
         priorViolations,
         requiredCategory: intent.category,
         preferences: intent.preferences,
+        // T4.1b: price at, and check plan quotas against, the stated monthly volume.
+        ...(intent.volume ? { volume: intent.volume } : {}),
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
       });

@@ -172,6 +172,10 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
         ...(["quota", "unmetered", "unknown"].includes(meta.volumeBasis) ? { volumeBasis: meta.volumeBasis } : {}),
         ...(meta.includedUnits && typeof meta.includedUnits.amount === "number" ? { includedUnits: meta.includedUnits } : {}),
         ...(meta.otherPlans === true ? { otherPlans: true } : {}),
+        // T4.1b: the provider's own price, so the Negotiator can re-price at the stated volume.
+        ...(typeof meta.listPrice === "number" && typeof meta.priceUnit === "string" && typeof meta.currency === "string"
+          ? { listPrice: meta.listPrice, priceUnit: meta.priceUnit, currency: meta.currency }
+          : {}),
         endpoint: meta.endpoint,
         similarityScore: r.score,
         evidence: [

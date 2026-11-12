@@ -504,6 +504,18 @@ describe("cheaper-plan wording (T4.1, L1)", () => {
     expect(explanation).toContain("This is the cheaper plan; SendGrid Email API also offers other plans for other usage levels.");
   });
 
+  it("adds the cheaper-plan sentence back when the model's wording leaves it out (T4.1b)", async () => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, otherPlans: true };
+    const name = c.chosen.service.name;
+    const alts = c.alternatives.map((a) => a.service.name).join(" and ");
+    fetchMock.mockResolvedValue(groqResponse(`We picked ${name}. ${alts} were also considered.`));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: c });
+    expect(out.explanationSource).toBe("model");
+    expect(out.explanation).toBe(`We picked ${name}. ${alts} were also considered. This is the cheaper plan; ${name} also offers other plans for other usage levels.`);
+  });
+
   it("says nothing extra for a service without plan details", async () => {
     fetchMock.mockRejectedValue(new Error("down"));
     const { handler } = await import("./index");

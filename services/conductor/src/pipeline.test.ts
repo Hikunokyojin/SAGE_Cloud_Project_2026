@@ -178,6 +178,23 @@ describe("runPipeline", () => {
     expect(vi.mocked(invoker.broker).mock.calls[0][0].category).toBe("image-resizing");
   });
 
+  it("passes the stated monthly volume to the Negotiator (T4.1b)", async () => {
+    const invoker = makeInvoker({
+      intent: vi.fn(async (input) => ({
+        requestId: input.requestId,
+        capability: "email delivery",
+        category: "email-delivery",
+        constraints: [] as Constraint[],
+        volume: { amount: 100000, unit: "emails" as const },
+        rawInput: input.rawInput,
+      })),
+    });
+
+    await runPipeline("req-1", "about 100k emails a month", invoker);
+
+    expect(vi.mocked(invoker.negotiator).mock.calls[0][0].volume).toEqual({ amount: 100000, unit: "emails" });
+  });
+
   it("passes Intent's soft preferences to the Negotiator", async () => {
     const invoker = makeInvoker({
       intent: vi.fn(async (input) => ({
