@@ -138,3 +138,41 @@ describe("the curation template", () => {
     expect(report.rejected[1].problems.join()).toMatch(/duplicate/);
   });
 });
+
+describe("flat-plan quotas (T4.1, L1)", () => {
+  const flat = (plan: CatalogueServiceV2["pricing"]["plan"]) =>
+    good({ pricing: { amount: 19.95, unit: "per month (Essentials, 50,000 emails)", currency: "USD", plan } });
+
+  it("accepts a quota, an unmetered plan and an unknown one", () => {
+    expect(validateService(flat({ volume: "quota", included: { amount: 50000, unit: "emails" }, otherPlans: true }))).toEqual([]);
+    expect(validateService(flat({ volume: "unmetered" }))).toEqual([]);
+    expect(validateService(flat({ volume: "unknown", otherPlans: true }))).toEqual([]);
+  });
+
+  it("refuses a quota without a positive amount in a known unit, or a bad volume kind", () => {
+    expect(validateService(flat({ volume: "quota" })).join()).toContain("pricing.plan.included");
+    expect(validateService(flat({ volume: "quota", included: { amount: 0, unit: "emails" } })).join()).toContain("pricing.plan.included");
+    expect(validateService(flat({ volume: "quota", included: { amount: 5, unit: "widgets" as never } })).join()).toContain("pricing.plan.included");
+    expect(validateService(flat({ volume: "lots" as never })).join()).toContain("pricing.plan.volume");
+  });
+
+  it("toV1 carries the plan to the agents", () => {
+    expect(toV1(flat({ volume: "quota", included: { amount: 50000, unit: "emails" }, otherPlans: true }))).toMatchObject({
+      volumeBasis: "quota",
+      includedUnits: { amount: 50000, unit: "emails" },
+      otherPlans: true,
+    });
+    expect(toV1(good())).not.toHaveProperty("volumeBasis");
+  });
+
+  it("every real flat-plan service in data/services.v2.json says what its plan covers", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { monthlyCost } = await import("./normalise");
+    const all: CatalogueServiceV2[] = JSON.parse(readFileSync(join(__dirname, "..", "..", "..", "data", "services.v2.json"), "utf-8"));
+    const missing = all
+      .filter((s) => !s.synthetic && monthlyCost(s.pricing).assumption === "on its flat monthly plan" && !s.pricing.plan)
+      .map((s) => s.serviceId);
+    expect(missing).toEqual([]);
+  });
+});

@@ -168,6 +168,10 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
         latencyMs: typeof meta.latencyMs === "number" ? meta.latencyMs : undefined,
         capability: typeof meta.capability === "string" ? meta.capability : undefined,
         ...(typeof meta.priceBasis === "string" ? { priceBasis: meta.priceBasis } : {}),
+        // T4.1 (L1): what a flat plan covers, for the Negotiator and the Explainer.
+        ...(["quota", "unmetered", "unknown"].includes(meta.volumeBasis) ? { volumeBasis: meta.volumeBasis } : {}),
+        ...(meta.includedUnits && typeof meta.includedUnits.amount === "number" ? { includedUnits: meta.includedUnits } : {}),
+        ...(meta.otherPlans === true ? { otherPlans: true } : {}),
         endpoint: meta.endpoint,
         similarityScore: r.score,
         evidence: [

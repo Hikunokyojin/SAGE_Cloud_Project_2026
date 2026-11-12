@@ -30,6 +30,10 @@ export interface ServiceV1 {
   retrievedAt: string;
   qosBasis: "blended" | "advertised";
   synthetic?: boolean;
+  // T4.1 (L1): what a flat plan covers.
+  volumeBasis?: "quota" | "unmetered" | "unknown";
+  includedUnits?: { amount: number; unit: string };
+  otherPlans?: boolean;
 }
 
 export function toV1(s: CatalogueServiceV2): ServiceV1 {
@@ -56,5 +60,8 @@ export function toV1(s: CatalogueServiceV2): ServiceV1 {
     retrievedAt: s.source.retrievedAt,
     qosBasis: q.basis,
     ...(s.synthetic ? { synthetic: true } : {}),
+    ...(s.pricing.plan ? { volumeBasis: s.pricing.plan.volume } : {}),
+    ...(s.pricing.plan?.included ? { includedUnits: s.pricing.plan.included } : {}),
+    ...(s.pricing.plan?.otherPlans ? { otherPlans: true } : {}),
   };
 }

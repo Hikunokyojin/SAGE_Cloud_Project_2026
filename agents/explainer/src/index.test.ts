@@ -477,3 +477,37 @@ describe("checkClaims", () => {
     );
   });
 });
+
+describe("cheaper-plan wording (T4.1, L1)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("says what the plan includes and that it is the cheaper of the provider's plans", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = {
+      ...c.chosen.service,
+      name: "SendGrid Email API",
+      price: 19.95,
+      priceBasis: "estimated USD/month on its flat monthly plan",
+      volumeBasis: "quota",
+      includedUnits: { amount: 50000, unit: "emails" },
+      otherPlans: true,
+    };
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: c });
+    expect(explanation).toContain("The plan includes 50,000 emails a month.");
+    expect(explanation).toContain("This is the cheaper plan; SendGrid Email API also offers other plans for other usage levels.");
+  });
+
+  it("says nothing extra for a service without plan details", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: composition() });
+    expect(explanation).not.toContain("cheaper plan");
+  });
+});
