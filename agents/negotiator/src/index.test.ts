@@ -299,6 +299,12 @@ describe("Negotiator volume pricing and plan quotas (T4.1b)", () => {
     expect(r.chosen.service.priceBasis).toBe("estimated USD/month at 250,000 emails/month");
   });
 
+  it("treats a volume equal to the standard profile as used, with no note (live finding)", async () => {
+    const r = await handler(baseInput({ candidates: [ses], volume }));
+    expect(r.chosen.service.price).toBe(10);
+    expect(r.chosen.service.volumeNote).toBeUndefined();
+  });
+
   it("checks a per-unit price limit against the unit price", async () => {
     const perUnit: Constraint = { field: "price", operator: "lte", value: 0.00015, mandatory: true, per: "unit" };
     const r = await handler(baseInput({ candidates: [sendgrid, ses], constraints: [perUnit] }));

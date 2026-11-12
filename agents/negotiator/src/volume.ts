@@ -42,9 +42,11 @@ export function priceAtVolume(c: ServiceCandidateWithEvidence, volume?: UsageVol
   const pricing = listed(c);
   if (!pricing) return { candidate: c };
   try {
-    const standard = monthlyCost(pricing);
     const atVolume = monthlyCost(pricing, { [volume.unit]: volume.amount });
-    if (atVolume.assumption === standard.assumption) {
+    // The volume was used if changing it changes the price (a volume equal to the standard
+    // profile gives the same assumption text, so that cannot be the test).
+    const probe = monthlyCost(pricing, { [volume.unit]: volume.amount + 1 });
+    if (probe.usd === atVolume.usd) {
       // Priced in another unit (for example per GB): the standard estimate stays.
       return { candidate: { ...c, volumeNote: `priced ${pricing.unit}, so the standard estimate is kept` } };
     }
