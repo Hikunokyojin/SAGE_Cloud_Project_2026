@@ -8,7 +8,7 @@
 // and the exit code is 1, so a renamed meter is noticed instead of silently dropped.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PICKS, awsUnitPrice, azureUnitPrice, buildRecord, type PricePick, type UnitPrice } from "../packages/catalogue/src/importers";
+import { PICKS, awsUnitPrice, azureUnitPrice, gcpUnitPrice, buildRecord, type PricePick, type UnitPrice } from "../packages/catalogue/src/importers";
 import type { CatalogueServiceV2 } from "../packages/catalogue/src";
 
 const OUT_DIR = join(__dirname, "..", "data", "sources");
@@ -16,7 +16,7 @@ const today = new Date().toISOString().slice(0, 10);
 
 async function getJson(url: string): Promise<any> {
   const res = await fetch(url, { headers: { "user-agent": "sage-catalogue-import" } });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url.replace(/key=[^&]+/, "key=REDACTED")}`);
   return res.json();
 }
 
@@ -43,8 +43,24 @@ async function priceFor(pick: PricePick): Promise<{ price?: UnitPrice; url: stri
     }
     return { price: azureUnitPrice(items, m), url };
   }
-  throw new Error(`provider ${pick.provider} needs an importer run with an API key (not configured)`);
+  // GCP: the key stays in the environment and never in the recorded source URL.
+  const key = process.env.GCP_API_KEY;
+  if (!key) throw new Error("GCP_API_KEY is not set (Google Cloud picks skipped)");
+  const url = `https://cloudbilling.googleapis.com/v1/services/${m.gcpService}/skus?currencyCode=USD`;
+  if (!gcpSkus.has(url)) {
+    gcpSkus.set(url, (async () => {
+      const skus: any[] = [];
+      for (let token = ""; ; ) {
+        const page = await getJson(`${url}&pageSize=5000&key=${encodeURIComponent(key)}${token ? `&pageToken=${token}` : ""}`);
+        skus.push(...(page.skus ?? []));
+        if (!page.nextPageToken) return skus;
+        token = page.nextPageToken;
+      }
+    })());
+  }
+  return { price: gcpUnitPrice(await gcpSkus.get(url)!, m.skuDescription), url };
 }
+const gcpSkus = new Map<string, Promise<any[]>>();
 
 async function main() {
   const records: CatalogueServiceV2[] = [];
