@@ -66,7 +66,7 @@ const BASE: PricePick[] = [
     match: { offer: "AWSElementalMediaConvert", usagetype: "IAD-B-AVC-HD-S-30" } },
   { provider: "aws", serviceId: "svc-aws-location", name: "Amazon Location Service Places", capability: "geolocation",
     description: "Geocoding, reverse geocoding and place search for maps and location-aware apps.",
-    endpoint: "https://geo.us-east-1.amazonaws.com", unit: "per 1,000 requests", scale: K, uptime: 99.9, slaUrl: AWS_SLA("location"),
+    endpoint: "https://places.geo.us-east-1.amazonaws.com", unit: "per 1,000 requests", scale: K, uptime: 99.9, slaUrl: AWS_SLA("location"),
     match: { offer: "AmazonLocationService", usagetype: "USE1-Usage-Default-Places-Core" } },
   { provider: "aws", serviceId: "svc-aws-secrets-manager", name: "AWS Secrets Manager", capability: "secrets-management",
     description: "Stores, rotates and audits access to credentials, API keys and other secrets.",
@@ -203,4 +203,15 @@ const MORE_GCP: Row[] = [
 ];
 const gcp = (r: Row): PricePick => ({ ...aws(r), provider: "gcp" });
 
-export const PICKS: PricePick[] = [...BASE, ...MORE_AWS.map(aws), ...MORE_AZURE.map(az), ...MORE_GCP.map(gcp)];
+// Azure data-plane hosts are per customer (<account>.blob.core.windows.net and so on), so the
+// shared Azure Resource Manager endpoint is probed for reachability instead.
+const AZURE_PER_TENANT = new Set([
+  "svc-azure-api-management", "svc-azure-container-registry", "svc-azure-files", "svc-azure-ai-search",
+  "svc-azure-queue-storage", "svc-azure-event-grid", "svc-azure-signalr", "svc-azure-event-hubs",
+  "svc-azure-sql-serverless", "svc-azure-blob", "svc-azure-key-vault", "svc-azure-app-service",
+  "svc-azure-service-bus", "svc-azure-notification-hubs",
+]);
+
+export const PICKS: PricePick[] = [...BASE, ...MORE_AWS.map(aws), ...MORE_AZURE.map(az), ...MORE_GCP.map(gcp)].map((p) =>
+  AZURE_PER_TENANT.has(p.serviceId) ? { ...p, probeUrl: "https://management.azure.com/" } : p
+);

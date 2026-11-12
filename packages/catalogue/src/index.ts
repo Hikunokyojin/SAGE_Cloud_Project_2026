@@ -2,6 +2,7 @@ export { validateService, type CatalogueServiceV2 } from "./schema";
 export { sanitizeText, type SanitizeResult } from "./sanitize";
 export { parseCsv, rowToService } from "./csv";
 export { toV1, type ServiceV1 } from "./project";
+export { classifyProbe, summarise, blendQos, HALF_WEIGHT_SAMPLES, type ProbeSample, type Measured } from "./probe";
 
 import { validateService, type CatalogueServiceV2 } from "./schema";
 import { sanitizeText } from "./sanitize";

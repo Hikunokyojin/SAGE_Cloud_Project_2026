@@ -17,7 +17,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonSES/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/ses/sla/"
     }
   },
@@ -39,7 +39,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonSNS/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/messaging/sla/"
     }
   },
@@ -61,7 +61,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSQueueService/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/messaging/sla/"
     }
   },
@@ -83,7 +83,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/s3/sla/"
     }
   },
@@ -105,7 +105,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/lambda/sla/"
     }
   },
@@ -127,7 +127,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonDynamoDB/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/dynamodb/sla/"
     }
   },
@@ -149,7 +149,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRekognition/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/rekognition/sla/"
     }
   },
@@ -171,7 +171,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonPolly/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/polly/sla/"
     }
   },
@@ -193,7 +193,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCognito/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/cognito/sla/"
     }
   },
@@ -215,7 +215,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesis/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/kinesis/sla/"
     }
   },
@@ -237,7 +237,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRoute53/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/route53/sla/"
     }
   },
@@ -259,7 +259,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonTextract/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/textract/sla/"
     }
   },
@@ -281,7 +281,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSElementalMediaConvert/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/elemental/sla/"
     }
   },
@@ -291,7 +291,7 @@
     "provider": "Amazon Web Services",
     "description": "Geocoding, reverse geocoding and place search for maps and location-aware apps.",
     "capability": "geolocation",
-    "endpoint": "https://geo.us-east-1.amazonaws.com",
+    "endpoint": "https://places.geo.us-east-1.amazonaws.com",
     "pricing": {
       "amount": 0.5,
       "unit": "per 1,000 requests",
@@ -303,7 +303,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonLocationService/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/location/sla/"
     }
   },
@@ -325,7 +325,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSSecretsManager/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/secrets-manager/sla/"
     }
   },
@@ -347,7 +347,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Functions'%20and%20productName%20eq%20'Functions'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Total%20Executions'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -358,6 +358,7 @@
     "description": "Object storage for unstructured data such as documents, images, video and backups.",
     "capability": "object-storage",
     "endpoint": "https://blob.core.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.0208,
       "unit": "per GB-month",
@@ -369,7 +370,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Storage'%20and%20productName%20eq%20'Blob%20Storage'%20and%20skuName%20eq%20'Hot%20LRS'%20and%20meterName%20eq%20'Hot%20LRS%20Data%20Stored'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -380,6 +381,7 @@
     "description": "Enterprise message broker with queues for reliable, decoupled communication between services.",
     "capability": "message-queue",
     "endpoint": "https://servicebus.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.05,
       "unit": "per 1,000,000 operations",
@@ -391,7 +393,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Service%20Bus'%20and%20productName%20eq%20'Service%20Bus'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Messaging%20Operations'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -402,6 +404,7 @@
     "description": "Big-data streaming platform and event ingestion service for millions of events per second.",
     "capability": "data-streaming",
     "endpoint": "https://servicebus.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.028,
       "unit": "per 1,000,000 ingress events",
@@ -413,7 +416,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Event%20Hubs'%20and%20productName%20eq%20'Event%20Hubs'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Ingress%20Events'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -424,6 +427,7 @@
     "description": "Safeguards keys, secrets and certificates used by cloud applications.",
     "capability": "secrets-management",
     "endpoint": "https://vault.azure.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.03,
       "unit": "per 10,000 operations",
@@ -435,7 +439,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Key%20Vault'%20and%20productName%20eq%20'Key%20Vault'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Operations'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -457,7 +461,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Maps'%20and%20productName%20eq%20'Azure%20Maps'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Services%20API%20Transactions'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -479,7 +483,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20DNS'%20and%20productName%20eq%20'Azure%20DNS'%20and%20skuName%20eq%20'Public'%20and%20meterName%20eq%20'Public%20Queries'%20and%20armRegionName%20eq%20'Zone%201'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -501,7 +505,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Speech'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Speech%20To%20Text'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -523,7 +527,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Speech'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Neural%20Text%20To%20Speech%20Characters'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -545,7 +549,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Translator%20Text'%20and%20skuName%20eq%20'S1'%20and%20meterName%20eq%20'S1%20Characters'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -567,7 +571,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Document%20Intelligence'%20and%20skuName%20eq%20'S0'%20and%20meterName%20eq%20'S0%20Batch%20Read%20Pages'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -578,6 +582,7 @@
     "description": "Managed search service with full-text, vector and hybrid search over your content.",
     "capability": "full-text-search",
     "endpoint": "https://search.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.101,
       "unit": "per search-unit hour",
@@ -589,7 +594,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Azure%20Cognitive%20Search'%20and%20productName%20eq%20'Azure%20AI%20Search'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Unit'%20and%20armRegionName%20eq%20'eastus'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -611,7 +616,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/comprehend/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/comprehend/sla/"
     }
   },
@@ -633,7 +638,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/comprehend/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/comprehend/sla/"
     }
   },
@@ -655,7 +660,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/translate/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/translate/sla/"
     }
   },
@@ -677,7 +682,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/transcribe/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/transcribe/sla/"
     }
   },
@@ -699,7 +704,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonApiGateway/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/api-gateway/sla/"
     }
   },
@@ -721,7 +726,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonApiGateway/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/api-gateway/sla/"
     }
   },
@@ -743,7 +748,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSEvents/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/eventbridge/sla/"
     }
   },
@@ -765,7 +770,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonStates/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/step-functions/sla/"
     }
   },
@@ -787,7 +792,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonStates/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/step-functions/sla/"
     }
   },
@@ -809,7 +814,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonMQ/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/amazon-mq/sla/"
     }
   },
@@ -831,7 +836,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonMSK/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/msk/sla/"
     }
   },
@@ -853,7 +858,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKinesisFirehose/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/kinesis/sla/"
     }
   },
@@ -875,7 +880,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonECR/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/ecr/sla/"
     }
   },
@@ -897,7 +902,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEFS/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/efs/sla/"
     }
   },
@@ -919,7 +924,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonGlacier/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/s3/sla/"
     }
   },
@@ -941,7 +946,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonPolly/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/polly/sla/"
     }
   },
@@ -963,7 +968,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonKendra/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/kendra/sla/"
     }
   },
@@ -985,7 +990,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudSearch/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/cloudsearch/sla/"
     }
   },
@@ -1007,7 +1012,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSXRay/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/xray/sla/"
     }
   },
@@ -1029,7 +1034,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSCloudTrail/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/cloudtrail/sla/"
     }
   },
@@ -1051,7 +1056,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonPrometheus/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/prometheus/sla/"
     }
   },
@@ -1073,7 +1078,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonGrafana/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/grafana/sla/"
     }
   },
@@ -1095,7 +1100,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/awskms/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/kms/sla/"
     }
   },
@@ -1117,7 +1122,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonVerifiedPermissions/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/verified-permissions/sla/"
     }
   },
@@ -1139,7 +1144,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonPersonalize/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/personalize/sla/"
     }
   },
@@ -1161,7 +1166,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonFraudDetector/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/frauddetector/sla/"
     }
   },
@@ -1183,7 +1188,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonAthena/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/athena/sla/"
     }
   },
@@ -1205,7 +1210,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSAmplify/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/amplify/sla/"
     }
   },
@@ -1227,7 +1232,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSAppRunner/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/apprunner/sla/"
     }
   },
@@ -1249,7 +1254,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonDocDB/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/documentdb/sla/"
     }
   },
@@ -1271,7 +1276,7 @@
     },
     "source": {
       "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonMemoryDB/current/us-east-1/index.json",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://aws.amazon.com/memorydb/sla/"
     }
   },
@@ -1282,6 +1287,7 @@
     "description": "Managed private registry for container images and artifacts.",
     "capability": "container-registry",
     "endpoint": "https://azurecr.io",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.1666,
       "unit": "per registry-day",
@@ -1293,7 +1299,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Container%20Registry'%20and%20productName%20eq%20'Container%20Registry'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Registry%20Unit'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1304,6 +1310,7 @@
     "description": "Managed SMB and NFS file shares in the cloud.",
     "capability": "file-storage",
     "endpoint": "https://file.core.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.075,
       "unit": "per GB-month",
@@ -1315,7 +1322,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Storage'%20and%20productName%20eq%20'Files%20v2'%20and%20skuName%20eq%20'Standard%20ZRS'%20and%20meterName%20eq%20'ZRS%20Data%20Stored'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1326,6 +1333,7 @@
     "description": "Simple, durable message queues for large numbers of messages.",
     "capability": "message-queue",
     "endpoint": "https://queue.core.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.004,
       "unit": "per 10,000 operations",
@@ -1337,7 +1345,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Storage'%20and%20productName%20eq%20'Queues%20v2'%20and%20skuName%20eq%20'Standard%20ZRS'%20and%20meterName%20eq%20'ZRS%20Class%201%20Operations'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1359,7 +1367,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Logic%20Apps'%20and%20productName%20eq%20'Logic%20Apps'%20and%20skuName%20eq%20'Consumption'%20and%20meterName%20eq%20'Consumption%20Built-in%20Actions'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1370,6 +1378,7 @@
     "description": "Serverless API gateway with policies, keys, rate limits and a developer portal.",
     "capability": "api-gateway",
     "endpoint": "https://azure-api.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.035,
       "unit": "per 10,000 calls",
@@ -1381,7 +1390,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'API%20Management'%20and%20productName%20eq%20'API%20Management'%20and%20skuName%20eq%20'Consumption'%20and%20meterName%20eq%20'Consumption%20Calls'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1403,7 +1412,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Log%20Analytics'%20and%20productName%20eq%20'Log%20Analytics'%20and%20skuName%20eq%20'Analytics%20Logs'%20and%20meterName%20eq%20'Analytics%20Logs%20Data%20Ingestion'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1414,6 +1423,7 @@
     "description": "Sends mobile push notifications to any platform from any back end.",
     "capability": "messaging",
     "endpoint": "https://servicebus.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 1,
       "unit": "per 1,000,000 pushes",
@@ -1425,7 +1435,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Notification%20Hubs'%20and%20productName%20eq%20'Notification%20Hubs'%20and%20skuName%20eq%20'Basic'%20and%20meterName%20eq%20'Basic%20Pushes'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1436,6 +1446,7 @@
     "description": "Event routing service for reactive, event-driven applications.",
     "capability": "messaging",
     "endpoint": "https://eventgrid.azure.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.6,
       "unit": "per 1,000,000 events",
@@ -1447,7 +1458,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Event%20Grid'%20and%20productName%20eq%20'Event%20Grid'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Event%20Operations'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1458,6 +1469,7 @@
     "description": "Real-time messaging over WebSockets for live web and mobile updates.",
     "capability": "messaging",
     "endpoint": "https://service.signalr.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 1,
       "unit": "per 1,000,000 messages",
@@ -1469,7 +1481,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'SignalR'%20and%20productName%20eq%20'SignalR'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Message'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1491,7 +1503,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Azure%20Container%20Apps'%20and%20productName%20eq%20'Azure%20Container%20Apps'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Requests'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1513,7 +1525,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Content%20Safety'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Text%20Records'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1535,7 +1547,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Foundry%20Tools'%20and%20productName%20eq%20'Azure%20Vision%20-%20Face'%20and%20skuName%20eq%20'Standard'%20and%20meterName%20eq%20'Standard%20Transactions'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1546,6 +1558,7 @@
     "description": "Managed hosting for web apps and APIs with deployment slots and autoscale.",
     "capability": "web-hosting",
     "endpoint": "https://azurewebsites.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.017,
       "unit": "per instance-hour",
@@ -1557,7 +1570,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'Azure%20App%20Service'%20and%20productName%20eq%20'Azure%20App%20Service%20Basic%20Plan%20-%20Linux'%20and%20skuName%20eq%20'B1'%20and%20meterName%20eq%20'B1'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1568,6 +1581,7 @@
     "description": "Serverless relational SQL database that scales compute with demand and pauses when idle.",
     "capability": "database",
     "endpoint": "https://database.windows.net",
+    "probeUrl": "https://management.azure.com/",
     "pricing": {
       "amount": 0.521758,
       "unit": "per vCore-hour",
@@ -1579,7 +1593,7 @@
     },
     "source": {
       "url": "https://prices.azure.com/api/retail/prices?$filter=armRegionName%20eq%20'eastus'%20and%20serviceName%20eq%20'SQL%20Database'%20and%20productName%20eq%20'SQL%20Database%20General%20Purpose%20-%20Serverless%20-%20Compute%20Gen5'%20and%20skuName%20eq%20'1%20vCore'%20and%20meterName%20eq%20'vCore'",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://www.microsoft.com/licensing/docs/view/Service-Level-Agreements-SLA-for-Online-Services"
     }
   },
@@ -1601,7 +1615,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/152E-C115-5142/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1623,7 +1637,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/95FF-2EF5-5EA1/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1645,7 +1659,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/A1E8-BE35-7EBC/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1667,7 +1681,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/24E6-581D-38E5/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1689,7 +1703,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/C08E-37B9-80D3/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1711,7 +1725,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/C08E-37B9-80D3/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1733,7 +1747,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/FA26-5236-B8B5/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1755,7 +1769,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/EE82-7A5E-871C/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1777,7 +1791,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/149C-F9EC-3994/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1799,7 +1813,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/63DE-82AB-F564/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1821,7 +1835,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/02DA-B362-D983/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1843,7 +1857,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/F3A6-D7B7-9BDA/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1865,7 +1879,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/E722-8436-A7EB/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   },
@@ -1887,7 +1901,7 @@
     },
     "source": {
       "url": "https://cloudbilling.googleapis.com/v1/services/5490-F7B7-8DF6/skus?currencyCode=USD",
-      "retrievedAt": "2026-11-11",
+      "retrievedAt": "2026-11-12",
       "terms": "official public price feed; uptime from https://cloud.google.com/terms/sla"
     }
   }

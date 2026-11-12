@@ -34,6 +34,8 @@ export interface PricePick {
   uptime: number;
   slaUrl: string;
   match: PickMatch;
+  // See CatalogueServiceV2.probeUrl.
+  probeUrl?: string;
 }
 
 // ── AWS ──────────────────────────────────────────────────────────────────────
@@ -100,6 +102,7 @@ export function buildRecord(pick: PricePick, price: UnitPrice, sourceUrl: string
     description: pick.description,
     capability: pick.capability,
     endpoint: pick.endpoint,
+    ...(pick.probeUrl ? { probeUrl: pick.probeUrl } : {}),
     pricing: {
       amount: round(price.usd * pick.scale),
       unit: pick.unit,
