@@ -16,9 +16,13 @@ const ROOT = join(__dirname, "..", "..", "..");
 interface Service { serviceId: string; name: string; description: string; capability: string }
 
 async function main() {
-  const services: Service[] = JSON.parse(readFileSync(join(ROOT, "data", "services.json"), "utf-8"));
+  // --v2: the real catalogue (T3.4), synthetic records excluded, with the 35-category query set.
+  const v2 = process.argv.includes("--v2");
+  const services: Service[] = v2
+    ? JSON.parse(readFileSync(join(ROOT, "data", "services.v2.json"), "utf-8")).filter((s: { synthetic?: boolean }) => !s.synthetic)
+    : JSON.parse(readFileSync(join(ROOT, "data", "services.json"), "utf-8"));
   const labelled: { in: [string, string][]; out: string[] } = JSON.parse(
-    readFileSync(join(__dirname, "labelled-queries.json"), "utf-8")
+    readFileSync(join(__dirname, v2 ? "labelled-queries.v2.json" : "labelled-queries.json"), "utf-8")
   );
 
   const make = pipeline as (task: string, model: string) => Promise<FeatureExtractionPipeline>;
@@ -40,7 +44,8 @@ async function main() {
 
   const points = curve(scored, thresholdGrid());
   const chosen = chooseThreshold(points, 0.95);
-  const current = points.find((p) => p.threshold === 0.35);
+  // The Broker's live cut-off (agents/broker/src/index.ts MIN_SIMILARITY).
+  const current = points.find((p) => p.threshold === 0.38);
 
   const out = {
     generatedAt: new Date().toISOString(),
@@ -53,8 +58,8 @@ async function main() {
     curve: points,
   };
   mkdirSync(join(ROOT, "results"), { recursive: true });
-  writeFileSync(join(ROOT, "results", "retrieval-calibration.json"), JSON.stringify(out, null, 2) + "\n");
-  console.log("current 0.35:", current);
+  writeFileSync(join(ROOT, "results", v2 ? "retrieval-calibration-v2.json" : "retrieval-calibration.json"), JSON.stringify(out, null, 2) + "\n");
+  console.log(`${services.length} services; current 0.38:`, current);
   console.log("chosen:", chosen);
   const worstIn = scored.filter((q) => q.kind === "in").sort((a, b) => a.best - b.best).slice(0, 5);
   const bestOut = scored.filter((q) => q.kind === "out").sort((a, b) => b.best - a.best).slice(0, 5);

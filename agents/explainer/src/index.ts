@@ -55,7 +55,7 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   const s = chosen.service;
 
   const parts: string[] = [
-    `${s.name} was selected (price $${s.price}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}).`,
+    `${s.name} was selected (price ${s.priceBasis?.startsWith("estimated") ? `about $${s.price} a month, ${s.priceBasis.replace(/^estimated USD\/month /, "")}` : `$${s.price}`}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}).`,
   ];
   if (scoreBreakdown.soleSurvivor) {
     parts.push("It was the only candidate that met every requirement.");

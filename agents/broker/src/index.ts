@@ -165,6 +165,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
         uptime: meta.uptime,
         latencyMs: typeof meta.latencyMs === "number" ? meta.latencyMs : undefined,
         capability: typeof meta.capability === "string" ? meta.capability : undefined,
+        ...(typeof meta.priceBasis === "string" ? { priceBasis: meta.priceBasis } : {}),
         endpoint: meta.endpoint,
         similarityScore: r.score,
         evidence: [
