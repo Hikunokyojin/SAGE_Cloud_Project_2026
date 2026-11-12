@@ -5231,38 +5231,6 @@
     }
   },
   {
-    "serviceId": "svc-segment",
-    "name": "Segment",
-    "provider": "Twilio Segment",
-    "description": "Customer data platform collecting events for any tool.",
-    "capability": "product-analytics",
-    "endpoint": "https://api.segment.io/v1",
-    "pricing": {
-      "amount": 120,
-      "unit": "per month (Team plan)",
-      "currency": "USD",
-      "notes": "page checked 2026-11-12: Team starts at $120/month; no published SLA %, uptime is an estimate",
-      "plan": {
-        "volume": "unknown",
-        "otherPlans": true
-      }
-    },
-    "advertised": {
-      "uptime": 99.9
-    },
-    "source": {
-      "url": "https://segment.com/pricing/",
-      "retrievedAt": "2026-11-12",
-      "terms": "public pricing page"
-    },
-    "measured": {
-      "uptime": 100,
-      "latencyMs": 1478,
-      "samples": 1,
-      "sampledAt": "2026-11-12"
-    }
-  },
-  {
     "serviceId": "svc-algolia-recommend",
     "name": "Algolia Recommend",
     "provider": "Algolia",
@@ -6212,38 +6180,6 @@
     "measured": {
       "uptime": 100,
       "latencyMs": 192,
-      "samples": 1,
-      "sampledAt": "2026-11-12"
-    }
-  },
-  {
-    "serviceId": "svc-deepl",
-    "name": "DeepL API",
-    "provider": "DeepL SE",
-    "description": "High-quality machine translation for 30+ languages.",
-    "capability": "translation",
-    "endpoint": "https://api.deepl.com/v2",
-    "pricing": {
-      "amount": 26,
-      "unit": "per month (Growth, billed annually, plus usage)",
-      "currency": "USD",
-      "notes": "page checked 2026-11-12 (user screenshot): Growth $26.00 per month billed annually + usage-based price (shown for India, USD); no published SLA %, uptime is an estimate",
-      "plan": {
-        "volume": "unknown",
-        "otherPlans": true
-      }
-    },
-    "advertised": {
-      "uptime": 99.9
-    },
-    "source": {
-      "url": "https://www.deepl.com/pro-api",
-      "retrievedAt": "2026-11-12",
-      "terms": "public pricing page"
-    },
-    "measured": {
-      "uptime": 100,
-      "latencyMs": 743,
       "samples": 1,
       "sampledAt": "2026-11-12"
     }

@@ -6,50 +6,326 @@
     "unknown": "volume-based but the quota could not be confirmed; needs a human check"
   },
   "services": [
-    { "serviceId": "svc-auth0", "kind": "quota", "includedUnits": { "amount": 500, "unit": "users" }, "evidence": "price unit: Essentials, 500 MAU" },
-    { "serviceId": "svc-docraptor", "kind": "quota", "includedUnits": { "amount": 125, "unit": "pages" }, "evidence": "price unit: Basic, 125 docs" },
-    { "serviceId": "svc-pdfmonkey", "kind": "quota", "includedUnits": { "amount": 300, "unit": "pages" }, "evidence": "price unit: Starter, 300 docs" },
-    { "serviceId": "svc-pdfshift", "kind": "quota", "includedUnits": { "amount": 500, "unit": "pages" }, "evidence": "1 credit = 1 document per 5 MB; $0.04 per extra credit" },
-    { "serviceId": "svc-carbone", "kind": "quota", "includedUnits": { "amount": 1000, "unit": "pages" }, "evidence": "1,000 documents/month; overage EUR 0.02 (from summarised table, check)", "check": true },
-    { "serviceId": "svc-brevo", "kind": "quota", "includedUnits": { "amount": 5000, "unit": "emails" }, "evidence": "price unit: Starter, 5,000 emails" },
-    { "serviceId": "svc-mailjet", "kind": "quota", "includedUnits": { "amount": 8000, "unit": "emails" }, "evidence": "8,000 emails/month, confirmed on page" },
-    { "serviceId": "svc-sendgrid", "kind": "quota", "includedUnits": { "amount": 50000, "unit": "emails" }, "evidence": "price unit: Essentials, 50,000 emails" },
-    { "serviceId": "svc-google-geocoding", "kind": "quota", "includedUnits": { "amount": 50000, "unit": "requests" }, "evidence": "price unit: 50000 calls incl. Geocoding" },
-    { "serviceId": "svc-ipinfo", "kind": "quota", "includedUnits": { "amount": 150000, "unit": "requests" }, "evidence": "price unit: Core, 150K requests" },
-    { "serviceId": "svc-opencage", "kind": "quota", "includedUnits": { "amount": 300000, "unit": "requests" }, "evidence": "10,000 requests/day (x30); no usage-based overage" },
-    { "serviceId": "svc-sightengine", "kind": "quota", "includedUnits": { "amount": 10000, "unit": "requests" }, "evidence": "price unit: Starter 10K ops" },
-    { "serviceId": "svc-ocr-space", "kind": "quota", "includedUnits": { "amount": 300000, "unit": "requests" }, "evidence": "300,000 requests/month (plus 30,000 Engine 3)" },
-    { "serviceId": "svc-kong-konnect", "kind": "quota", "includedUnits": { "amount": 1000000, "unit": "requests" }, "evidence": "Plus: 1 million API requests; $200 per extra million" },
-    { "serviceId": "svc-zuplo", "kind": "quota", "includedUnits": { "amount": 100000, "unit": "requests" }, "evidence": "table: 100K included ($100 per 100K); prose elsewhere says 1M cap", "check": true },
-    { "serviceId": "svc-uploadcare", "kind": "quota", "includedUnits": { "amount": 5000, "unit": "requests" }, "evidence": "5,000 operations/month, then $1.6 per 1,000" },
-    { "serviceId": "svc-cloudamqp", "kind": "quota", "includedUnits": { "amount": 20000000, "unit": "requests" }, "evidence": "message quota 20 M/month" },
-    { "serviceId": "svc-pusher-channels", "kind": "quota", "includedUnits": { "amount": 30000000, "unit": "requests" }, "evidence": "1 million messages/day (x30)" },
-    { "serviceId": "svc-ably", "kind": "quota", "includedUnits": { "amount": 1000, "unit": "users" }, "evidence": "Pro: 1K MAUs (priced by users, not messages)" },
-    { "serviceId": "svc-recombee", "kind": "quota", "includedUnits": { "amount": 100000, "unit": "requests" }, "evidence": "100,000 recommendation requests/month; extra units $0.70" },
-    { "serviceId": "svc-inngest", "kind": "quota", "includedUnits": { "amount": 1000000, "unit": "requests" }, "evidence": "1m executions/month, then $50 per 1m" },
-    { "serviceId": "svc-seon", "kind": "quota", "includedUnits": { "amount": 2500, "unit": "requests" }, "evidence": "2,500 fraud checks/month" },
-    { "serviceId": "svc-sentry", "kind": "quota", "includedUnits": { "amount": 50000, "unit": "events" }, "evidence": "Team: 50k errors (page price $26 is the annual rate)" },
-    { "serviceId": "svc-honeycomb", "kind": "quota", "includedUnits": { "amount": 50000000, "unit": "events" }, "evidence": "price unit: Pro, 50M events" },
-    { "serviceId": "svc-plausible", "kind": "quota", "includedUnits": { "amount": 10000, "unit": "events" }, "evidence": "price unit: Starter, 10K pageviews" },
-    { "serviceId": "svc-cartesia", "kind": "quota", "includedUnits": { "amount": 100000, "unit": "characters" }, "evidence": "100K credits; 1 credit = 1 TTS character" },
-    { "serviceId": "svc-cloudinary", "kind": "quota", "includedUnits": { "amount": 225000, "unit": "images" }, "evidence": "225 credits; 1 credit = 1,000 transformations (credits also pay for storage and bandwidth)", "check": true },
-    { "serviceId": "svc-imagekit", "kind": "quota", "includedUnits": { "amount": 40, "unit": "gb" }, "evidence": "Lite: 40 GB bandwidth, then $0.5/GB" },
-    { "serviceId": "svc-do-spaces", "kind": "quota", "includedUnits": { "amount": 250, "unit": "gb" }, "evidence": "price unit: 250 GiB" },
-    { "serviceId": "svc-hetzner-storage-box", "kind": "quota", "includedUnits": { "amount": 1000, "unit": "gb" }, "evidence": "price unit: BX11, 1 TB" },
-
-    { "serviceId": "svc-imgix", "kind": "unknown", "evidence": "375 credits, but credit use per transformation varies by feature" },
-    { "serviceId": "svc-segment", "kind": "unknown", "evidence": "pricing page redirects to Twilio; quota not read" },
-    { "serviceId": "svc-deepl", "kind": "unknown", "evidence": "Growth API plan not on the page read" },
-    { "serviceId": "svc-grafana-cloud", "kind": "unknown", "evidence": "per-product allowances (10k metric series, 50 GB logs...); none maps to one usage unit" },
-
-    { "serviceId": "svc-cloudflare-cdn", "kind": "unmetered", "evidence": "no bandwidth or request cap listed for Pro" },
-    { "serviceId": "svc-elastic-cloud", "kind": "unmetered", "evidence": "capacity-based (120 GB storage / 2 zones)" },
-    { "serviceId": "svc-meilisearch-cloud", "kind": "unmetered", "evidence": "fixed price no matter how many searches" }
+    {
+      "serviceId": "svc-auth0",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 500,
+        "unit": "users"
+      },
+      "evidence": "price unit: Essentials, 500 MAU"
+    },
+    {
+      "serviceId": "svc-docraptor",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 125,
+        "unit": "pages"
+      },
+      "evidence": "price unit: Basic, 125 docs"
+    },
+    {
+      "serviceId": "svc-pdfmonkey",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 300,
+        "unit": "pages"
+      },
+      "evidence": "price unit: Starter, 300 docs"
+    },
+    {
+      "serviceId": "svc-pdfshift",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 500,
+        "unit": "pages"
+      },
+      "evidence": "1 credit = 1 document per 5 MB; $0.04 per extra credit"
+    },
+    {
+      "serviceId": "svc-carbone",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 1000,
+        "unit": "pages"
+      },
+      "evidence": "1,000 documents/month; overage EUR 0.02 (from summarised table, check)",
+      "check": true
+    },
+    {
+      "serviceId": "svc-brevo",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 5000,
+        "unit": "emails"
+      },
+      "evidence": "price unit: Starter, 5,000 emails"
+    },
+    {
+      "serviceId": "svc-mailjet",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 8000,
+        "unit": "emails"
+      },
+      "evidence": "8,000 emails/month, confirmed on page"
+    },
+    {
+      "serviceId": "svc-sendgrid",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 50000,
+        "unit": "emails"
+      },
+      "evidence": "price unit: Essentials, 50,000 emails"
+    },
+    {
+      "serviceId": "svc-google-geocoding",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 50000,
+        "unit": "requests"
+      },
+      "evidence": "price unit: 50000 calls incl. Geocoding"
+    },
+    {
+      "serviceId": "svc-ipinfo",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 150000,
+        "unit": "requests"
+      },
+      "evidence": "price unit: Core, 150K requests"
+    },
+    {
+      "serviceId": "svc-opencage",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 300000,
+        "unit": "requests"
+      },
+      "evidence": "10,000 requests/day (x30); no usage-based overage"
+    },
+    {
+      "serviceId": "svc-sightengine",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 10000,
+        "unit": "requests"
+      },
+      "evidence": "price unit: Starter 10K ops"
+    },
+    {
+      "serviceId": "svc-ocr-space",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 300000,
+        "unit": "requests"
+      },
+      "evidence": "300,000 requests/month (plus 30,000 Engine 3)"
+    },
+    {
+      "serviceId": "svc-kong-konnect",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 1000000,
+        "unit": "requests"
+      },
+      "evidence": "Plus: 1 million API requests; $200 per extra million"
+    },
+    {
+      "serviceId": "svc-zuplo",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 100000,
+        "unit": "requests"
+      },
+      "evidence": "table: 100K included ($100 per 100K); prose elsewhere says 1M cap",
+      "check": true
+    },
+    {
+      "serviceId": "svc-uploadcare",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 5000,
+        "unit": "requests"
+      },
+      "evidence": "5,000 operations/month, then $1.6 per 1,000"
+    },
+    {
+      "serviceId": "svc-cloudamqp",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 20000000,
+        "unit": "requests"
+      },
+      "evidence": "message quota 20 M/month"
+    },
+    {
+      "serviceId": "svc-pusher-channels",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 30000000,
+        "unit": "requests"
+      },
+      "evidence": "1 million messages/day (x30)"
+    },
+    {
+      "serviceId": "svc-ably",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 1000,
+        "unit": "users"
+      },
+      "evidence": "Pro: 1K MAUs (priced by users, not messages)"
+    },
+    {
+      "serviceId": "svc-recombee",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 100000,
+        "unit": "requests"
+      },
+      "evidence": "100,000 recommendation requests/month; extra units $0.70"
+    },
+    {
+      "serviceId": "svc-inngest",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 1000000,
+        "unit": "requests"
+      },
+      "evidence": "1m executions/month, then $50 per 1m"
+    },
+    {
+      "serviceId": "svc-seon",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 2500,
+        "unit": "requests"
+      },
+      "evidence": "2,500 fraud checks/month"
+    },
+    {
+      "serviceId": "svc-sentry",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 50000,
+        "unit": "events"
+      },
+      "evidence": "Team: 50k errors (page price $26 is the annual rate)"
+    },
+    {
+      "serviceId": "svc-honeycomb",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 50000000,
+        "unit": "events"
+      },
+      "evidence": "price unit: Pro, 50M events"
+    },
+    {
+      "serviceId": "svc-plausible",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 10000,
+        "unit": "events"
+      },
+      "evidence": "price unit: Starter, 10K pageviews"
+    },
+    {
+      "serviceId": "svc-cartesia",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 100000,
+        "unit": "characters"
+      },
+      "evidence": "100K credits; 1 credit = 1 TTS character"
+    },
+    {
+      "serviceId": "svc-cloudinary",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 225000,
+        "unit": "images"
+      },
+      "evidence": "225 credits; 1 credit = 1,000 transformations (credits also pay for storage and bandwidth)",
+      "check": true
+    },
+    {
+      "serviceId": "svc-imagekit",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 40,
+        "unit": "gb"
+      },
+      "evidence": "Lite: 40 GB bandwidth, then $0.5/GB"
+    },
+    {
+      "serviceId": "svc-do-spaces",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 250,
+        "unit": "gb"
+      },
+      "evidence": "price unit: 250 GiB"
+    },
+    {
+      "serviceId": "svc-hetzner-storage-box",
+      "kind": "quota",
+      "includedUnits": {
+        "amount": 1000,
+        "unit": "gb"
+      },
+      "evidence": "price unit: BX11, 1 TB"
+    },
+    {
+      "serviceId": "svc-imgix",
+      "kind": "unknown",
+      "evidence": "375 credits, but credit use per transformation varies by feature"
+    },
+    {
+      "serviceId": "svc-grafana-cloud",
+      "kind": "unknown",
+      "evidence": "per-product allowances (10k metric series, 50 GB logs...); none maps to one usage unit"
+    },
+    {
+      "serviceId": "svc-cloudflare-cdn",
+      "kind": "unmetered",
+      "evidence": "no bandwidth or request cap listed for Pro"
+    },
+    {
+      "serviceId": "svc-elastic-cloud",
+      "kind": "unmetered",
+      "evidence": "capacity-based (120 GB storage / 2 zones)"
+    },
+    {
+      "serviceId": "svc-meilisearch-cloud",
+      "kind": "unmetered",
+      "evidence": "fixed price no matter how many searches"
+    }
   ],
   "unmeteredBySeatOrResource": [
-    "svc-docker-hub", "svc-mongodb-atlas", "svc-planetscale", "svc-supabase-db", "svc-turso",
-    "svc-dnsimple", "svc-ns1", "svc-bunny-optimizer", "svc-square", "svc-aws-grafana",
-    "svc-betterstack", "svc-datadog", "svc-aws-kms", "svc-aws-secrets-manager", "svc-doppler",
-    "svc-gcp-secret-manager", "svc-infisical", "svc-fly-io", "svc-netlify", "svc-render", "svc-vercel"
+    "svc-docker-hub",
+    "svc-mongodb-atlas",
+    "svc-planetscale",
+    "svc-supabase-db",
+    "svc-turso",
+    "svc-dnsimple",
+    "svc-ns1",
+    "svc-bunny-optimizer",
+    "svc-square",
+    "svc-aws-grafana",
+    "svc-betterstack",
+    "svc-datadog",
+    "svc-aws-kms",
+    "svc-aws-secrets-manager",
+    "svc-doppler",
+    "svc-gcp-secret-manager",
+    "svc-infisical",
+    "svc-fly-io",
+    "svc-netlify",
+    "svc-render",
+    "svc-vercel"
   ]
 }
