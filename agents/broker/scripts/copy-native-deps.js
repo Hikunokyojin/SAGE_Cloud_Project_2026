@@ -51,9 +51,7 @@ function packageDir(pkgName) {
     const candidate = path.join(hoistedRoot, ...pkgName.split("/"));
     if (!fs.existsSync(candidate)) {
       const hint = pkgName.startsWith("@img/sharp-")
-        ? "\nThe Lambda bundle needs sharp's Linux x64 binaries, which npm skips on other platforms. " +
-          "Build on Linux/WSL/CI, or install them first:\n" +
-          "  npm install --no-save --force @img/sharp-linux-x64@0.34.5 @img/sharp-libvips-linux-x64@1.2.4"
+        ? "\nThe build fetches sharp's Linux x64 binaries with `npm pack`; check network access to the npm registry."
         : "";
       throw new Error(`Could not locate package root for ${pkgName} (looked in ${candidate})${hint}`);
     }
@@ -71,7 +69,53 @@ function packageDir(pkgName) {
   }
 }
 
-const DIST_NODE_MODULES = path.join(__dirname, "..", "dist", "node_modules");
+const DIST = path.join(__dirname, "..", "dist");
+const DIST_NODE_MODULES = path.join(DIST, "node_modules");
+
+// L11: npm skips these on non-Linux machines and removes a --no-save install on the next
+// `npm install`. The pinned versions live in package.json; the build fetches any that are
+// missing with `npm pack` (which ignores os/cpu) and unpacks them into node_modules itself.
+const NATIVE_PACKAGES = require("../package.json").optionalDependencies;
+
+function missingNativePackages(nodeModulesRoot) {
+  // package.json, not just the folder: an interrupted fetch can leave an empty directory.
+  return Object.entries(NATIVE_PACKAGES).filter(
+    ([name]) => !fs.existsSync(path.join(nodeModulesRoot, ...name.split("/"), "package.json"))
+  );
+}
+
+function fetchNativePackages(nodeModulesRoot) {
+  const { execFileSync } = require("child_process");
+  const os = require("os");
+  for (const [name, version] of missingNativePackages(nodeModulesRoot)) {
+    console.log(`Fetching ${name}@${version} (Linux binary for the Lambda bundle)...`);
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sage-native-"));
+    try {
+      const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+      const tgz = execFileSync(npm, ["pack", `${name}@${version}`, "--pack-destination", tmp, "--silent"], {
+        encoding: "utf8",
+        shell: process.platform === "win32",
+      }).trim().split(/\r?\n/).pop();
+      const dest = path.join(nodeModulesRoot, ...name.split("/"));
+      fs.mkdirSync(dest, { recursive: true });
+      // Relative paths only: GNU tar (Git Bash) reads "C:\..." as a remote host.
+      fs.copyFileSync(path.join(tmp, tgz), path.join(dest, tgz));
+      execFileSync("tar", ["-xzf", tgz, "--strip-components=1"], { cwd: dest });
+      fs.rmSync(path.join(dest, tgz), { force: true });
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
+}
+
+// A half-finished build (dist/index.js written, native modules not copied) is newer than
+// its sources, so the stale-bundle guard would accept it. Remove it so a deploy cannot
+// ship it; the next `npm run build` starts clean.
+function failBuild(distDir, err) {
+  fs.rmSync(path.join(distDir, "index.js"), { force: true });
+  fs.rmSync(path.join(distDir, "node_modules"), { recursive: true, force: true });
+  throw err;
+}
 
 function copyDir(src, dest, { exclude = [] } = {}) {
   fs.mkdirSync(dest, { recursive: true });
@@ -89,6 +133,7 @@ function copyDir(src, dest, { exclude = [] } = {}) {
 
 function main() {
   fs.rmSync(DIST_NODE_MODULES, { recursive: true, force: true });
+  fetchNativePackages(path.dirname(packageDir("onnxruntime-common")));
 
   // onnxruntime-common: onnxruntime-node's only real runtime dependency (confirmed via
   // grep of its own dist/*.js require() calls -- global-agent/tar are install-time-only,
@@ -141,4 +186,17 @@ function main() {
   console.log("Copied native dependencies into dist/node_modules/");
 }
 
-main();
+module.exports = { NATIVE_PACKAGES, missingNativePackages, failBuild };
+
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    try {
+      failBuild(DIST, err);
+    } catch {
+      console.error(`Broker build failed; removed the half-built dist/ bundle.\n${err.message}`);
+      process.exit(1);
+    }
+  }
+}
