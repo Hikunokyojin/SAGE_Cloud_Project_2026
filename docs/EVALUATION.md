@@ -156,15 +156,29 @@ Groq was forced to fail (an invalid model name on the Intent and Explainer Lambd
 
 In every round the switch-over happened on each request, and the circuit breaker skipped Groq after three failures. Completed requests took 8 to 14 s, with model-written explanations. The free fallback keeps the system answering through a Groq outage most of the time, but a free model has no guaranteed speed, so it is a best-effort backup, not a guarantee.
 
+## Real catalogue live (T3.4, RT6, 2026-11-12)
+
+The live system now searches 213 real services in 35 categories. The 21 synthetic services were removed from MongoDB and Qdrant and are kept in the repo for the offline tests above. Real prices are turned into an estimated USD per month at a fixed usage level (for example 100,000 emails), so services priced per email, per GB or per seat can be compared. Uptime and latency blend our own probe results with the provider's claim.
+
+**Retrieval calibration on v2** (105 in-catalogue and 15 out-of-catalogue labelled queries, `results/retrieval-calibration-v2.json`): at the existing cut-off of 0.38, recall@5 is **0.952** (target at least 0.95), so the cut-off is unchanged. Only **60%** of out-of-catalogue requests are refused (100% on the 21-service set), because a bigger catalogue has closer near neighbours (Kubernetes scored 0.546, e-signatures 0.520).
+
+**Live request** (deployed Lambdas): "transactional email API, about 100k emails a month, under $50 a month, at least 99.9% uptime". Broker returned five real email services; Brevo was chosen ($7.50 a month, score 0.610) ahead of Amazon SES (0.596) and SendGrid (0.547); Mailgun and Postmark were rejected on price ($180). The model-worded explanation passed the fact check.
+
+**RT6, an outage changes the selection: pass.** Brevo's live uptime was set to 95% with `agents/broker/scripts/simulate-outage.ts`. The same request then rejected Brevo ("uptime 95% is not at least 99.9%") and chose Amazon SES. Brevo's real values were restored afterwards. The outage was written straight to MongoDB, because probe results do not yet reach the live database on their own ([LOOPHOLES.md](LOOPHOLES.md), L5).
+
+Gaps found in this stage are tracked in [LOOPHOLES.md](LOOPHOLES.md).
+
 ## Limitations
 
-1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
+1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
 2. **Single run per condition.** LLM sampling is nondeterministic. With 27 cases, one case is 3.7 percentage points, so most gaps between SAGE variants are within noise. Only large, explained differences (D's escalation failures, E's impossible approval, Baseline 2's violation rate) should be relied on.
 3. **Ground truth is hand-derived** from each request's wording and the catalog, and validated by unit test. "Cheapest" and "fastest" are treated as preferences scored by selection accuracy, not as constraints.
 4. **HITL% and explanation consistency are partial measures** (see Metrics). Escalation correctness is better read from selection accuracy, and explanation quality is not judged.
 5. **The local harness has no SNS topic or audit-table writes.** Both are verified on the deployed system instead (live escalation test and the 2026-10-04 dry run).
 6. **Groq free tier: 8,000 tokens per minute and 200,000 per day.** With the fixed settings, the full run completed with no rate-limit retries.
 7. **Only full SAGE was re-run with the capability check.** The baselines and ablations B–F are from 2026-10-04 and run without it, so A-versus-ablation differences partly reflect the capability check.
+8. **Monthly prices on the live system.** Per-request budgets ("under $0.05 per image") are compared with estimated monthly prices and match almost nothing; monthly budgets work. Flat plan prices do not change with volume, so a cheap plan can win a high-volume request it would not cover (LOOPHOLES L1 to L3).
+9. **Out-of-catalogue refusal on v2 is 60%**, below the 95% target (LOOPHOLES L4).
 
 ## Summary
 

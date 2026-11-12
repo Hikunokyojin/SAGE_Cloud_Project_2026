@@ -110,6 +110,8 @@ const TOP_N = 5;
 // pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
 // Calibrated 2026-11-05 on 51 in-catalogue + 15 out-of-catalogue labelled queries:
 // recall@5 0.96 and 100% out-of-catalogue refused (0.35 let 1 of 15 through).
+// Re-checked 2026-11-12 on the 213 real services (results/retrieval-calibration-v2.json):
+// recall@5 0.952, but only 60% out-of-catalogue refused (docs/LOOPHOLES.md L4).
 const MIN_SIMILARITY = 0.38;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
