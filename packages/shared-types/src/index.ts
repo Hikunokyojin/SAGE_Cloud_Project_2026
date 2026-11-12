@@ -39,6 +39,11 @@ export interface Intent {
   constraints: Constraint[];
   // Soft wishes ("fast", "cheapest", "X is not a concern") as scoring weights.
   preferences?: Preferences;
+  // T4.1a: the monthly volume for a single-capability request (L3).
+  volume?: UsageVolume;
+  // T4.1a: present only for a chain of two to four capabilities. capability/category then
+  // describe the first step, and constraints are limits on the whole chain.
+  steps?: IntentStep[];
   rawInput: string;
 }
 
@@ -280,6 +285,36 @@ export interface Constraint {
   value: number;
   mandatory: boolean; // true = hard filter, false = weighted preference
   priority?: number; // relative weight, used when mandatory = false
+  // T4.1a (L2): a price limit stated per unit ("under $0.05 per image"). Intent converts it
+  // to a monthly limit when the request states a volume; otherwise it stays per unit.
+  per?: "unit";
+}
+
+// ── Multi-service composition (T4.1) ──────────────────────────────────────
+
+// The usage kinds the catalogue's monthly price estimate understands
+// (packages/catalogue/src/normalise.ts USAGE).
+export const USAGE_UNITS = [
+  "requests", "emails", "sms", "characters", "tokens", "pages", "images",
+  "users", "events", "minutes", "gb", "payments",
+] as const;
+export type UsageUnit = (typeof USAGE_UNITS)[number];
+
+// How much of a capability the user says they need each month ("about 100k emails").
+export interface UsageVolume {
+  amount: number;
+  unit: UsageUnit;
+}
+
+// One capability in a multi-service request. Its constraints apply to that step alone;
+// the Intent's top-level constraints apply to the whole chain.
+export interface IntentStep {
+  capability: string;
+  category?: string;
+  constraints: Constraint[];
+  volume?: UsageVolume;
+  // Indexes of earlier steps this one consumes the output of.
+  dependsOn: number[];
 }
 
 // ── Evidence (S6.2) ───────────────────────────────────────────────────────

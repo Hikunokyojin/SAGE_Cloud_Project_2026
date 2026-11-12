@@ -1,46 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { resolveSecret } from "@sage/secrets";
-import { SERVICE_CATEGORIES, toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
-import type { IntentAgentInput, Intent, Constraint, ConstraintOperator, LlmUsage } from "@sage/shared-types";
+import { SERVICE_CATEGORIES, USAGE_UNITS, isWarmup, WARMED } from "@sage/shared-types";
+import type { IntentAgentInput, Intent, LlmUsage } from "@sage/shared-types";
+import { normalizeCategory, normalizeConstraints, normalizeVolume, normalizeSteps, applyVolume } from "./steps";
 import { recordDecision, warmUp } from "@sage/audit";
 import { chat, isStubMode } from "@sage/llm";
 import { cacheKey, getShared, putShared } from "./sharedCache";
 
-const VALID_FIELDS = new Set(["price", "uptime", "latencyMs"]);
-const VALID_OPERATORS: ConstraintOperator[] = ["lt", "lte", "gt", "gte", "eq"];
-
-// Only an exact catalog category is accepted; anything else (including "unknown")
-// means no category filter downstream, rather than filtering on a guess.
-export function normalizeCategory(raw: unknown): string | undefined {
-  return typeof raw === "string" && (SERVICE_CATEGORIES as readonly string[]).includes(raw) ? raw : undefined;
-}
-
-// normalizes the LLM's raw JSON into strictly-typed Constraint[] --
-// a model can produce a malformed field/operator/type despite the prompt's
-// instructions, so this is defensive parsing, not a pass-through cast.
-function normalizeConstraints(raw: unknown): Constraint[] {
-  if (!Array.isArray(raw)) return [];
-  const result: Constraint[] = [];
-  for (const entry of raw) {
-    if (typeof entry !== "object" || entry === null) continue;
-    const e = entry as Record<string, unknown>;
-    if (typeof e.field !== "string" || !VALID_FIELDS.has(e.field)) continue;
-    if (typeof e.operator !== "string" || !VALID_OPERATORS.includes(e.operator as ConstraintOperator)) continue;
-    if (typeof e.value !== "number" || Number.isNaN(e.value)) continue;
-    const mandatory = e.mandatory === true;
-    const constraint: Constraint = {
-      field: e.field,
-      operator: e.operator as ConstraintOperator,
-      value: e.value,
-      mandatory,
-    };
-    if (!mandatory) {
-      constraint.priority = typeof e.priority === "number" && !Number.isNaN(e.priority) ? e.priority : 5;
-    }
-    result.push(constraint);
-  }
-  return result;
-}
+// Parsing of the model's JSON (categories, constraints, T4.1a steps and volumes) lives in
+// ./steps; a model can produce malformed output despite the prompt, so it is defensive.
+export { normalizeCategory } from "./steps";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
 // access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
@@ -70,9 +39,13 @@ Convert the user's request into a JSON object with exactly these fields:
   "capability": "<short description of what they need>",
   "category": "<exactly one of: ${SERVICE_CATEGORIES.join(", ")}; or \"unknown\" if none fits>",
   "constraints": [
-    { "field": "price" | "uptime" | "latencyMs", "operator": "lt" | "lte" | "gt" | "gte" | "eq", "value": <number>, "mandatory": true | false, "priority": <1-10, only when mandatory is false> }
-  ]
+    { "field": "price" | "uptime" | "latencyMs", "operator": "lt" | "lte" | "gt" | "gte" | "eq", "value": <number>, "mandatory": true | false, "priority": <1-10, only when mandatory is false>, "per": "unit" (only for a price stated per item, e.g. "$0.05 per image") }
+  ],
+  "volume": { "amount": <number>, "unit": "<one of: ${USAGE_UNITS.join(", ")}>" } (only when the user states how much they need per month),
+  "steps": [ ... ] (only when the user needs TWO OR MORE different services working together; otherwise [])
 }
+Each entry of "steps" is { "capability", "category", "constraints", "volume", "dependsOn": [<indexes of earlier steps whose output it uses>] } with the same meaning as above, in the order the services are used.
+When there are steps: the top-level "capability" and "category" repeat the first step, and the top-level "constraints" are limits on the WHOLE chain (total monthly price, overall uptime, total latency); limits on one service go in that step's "constraints".
 Rules for "constraints":
 - Use "mandatory": true for a hard requirement explicitly stated (e.g. "must be under $0.05", "at least 99% uptime", "under 100ms").
 - Use "mandatory": false with a "priority" from 1-10 (higher = more important) for a softer preference (e.g. "prefer cheap", "ideally fast", "reliability matters most").
@@ -117,7 +90,31 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
 
 const GROQ_SEED = 42;
 // Bump when the prompt or schema changes so the shared cache stops serving old parses.
-const CACHE_VERSION = `${GROQ_MODEL}|intent-v1`;
+const CACHE_VERSION = `${GROQ_MODEL}|intent-v2`;
+
+const CONSTRAINTS_SCHEMA = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      field: { type: "string", enum: ["price", "uptime", "latencyMs"] },
+      operator: { type: "string", enum: ["lt", "lte", "gt", "gte", "eq"] },
+      value: { type: "number" },
+      mandatory: { type: "boolean" },
+      priority: { type: "number" },
+      per: { type: "string", enum: ["unit"] },
+    },
+    required: ["field", "operator", "value", "mandatory"],
+    additionalProperties: false,
+  },
+};
+const CATEGORY_SCHEMA = { type: "string", enum: [...SERVICE_CATEGORIES, "unknown"] };
+const VOLUME_SCHEMA = {
+  type: "object",
+  properties: { amount: { type: "number" }, unit: { type: "string", enum: [...USAGE_UNITS] } },
+  required: ["amount", "unit"],
+  additionalProperties: false,
+};
 
 const INTENT_JSON_SCHEMA = {
   name: "intent",
@@ -125,19 +122,21 @@ const INTENT_JSON_SCHEMA = {
     type: "object",
     properties: {
       capability: { type: "string" },
-      category: { type: "string", enum: [...SERVICE_CATEGORIES, "unknown"] },
-      constraints: {
+      category: CATEGORY_SCHEMA,
+      constraints: CONSTRAINTS_SCHEMA,
+      volume: VOLUME_SCHEMA,
+      steps: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            field: { type: "string", enum: ["price", "uptime", "latencyMs"] },
-            operator: { type: "string", enum: ["lt", "lte", "gt", "gte", "eq"] },
-            value: { type: "number" },
-            mandatory: { type: "boolean" },
-            priority: { type: "number" },
+            capability: { type: "string" },
+            category: CATEGORY_SCHEMA,
+            constraints: CONSTRAINTS_SCHEMA,
+            volume: VOLUME_SCHEMA,
+            dependsOn: { type: "array", items: { type: "integer" } },
           },
-          required: ["field", "operator", "value", "mandatory"],
+          required: ["capability", "category", "constraints"],
           additionalProperties: false,
         },
       },
@@ -147,7 +146,7 @@ const INTENT_JSON_SCHEMA = {
   },
 };
 
-type ModelParse = { capability: string; category?: unknown; constraints: unknown };
+type ModelParse = { capability: string; category?: unknown; constraints: unknown; volume?: unknown; steps?: unknown };
 
 // Same request (ignoring case and spacing) gives the same parse for as long as this
 // process (a warm Lambda) lives. Bounded so memory stays flat.
@@ -220,13 +219,18 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
     await putShared(sharedKey, parsed);
   }
 
+  const steps = normalizeSteps(parsed.steps);
+  // A chain's top-level limits are totals, so a per-unit flag there has no single volume.
+  const volume = steps ? undefined : normalizeVolume(parsed.volume);
   const output: Intent = {
     requestId: input.requestId,
-    capability: parsed.capability,
-    category: normalizeCategory(parsed.category),
-    constraints: normalizeConstraints(parsed.constraints),
+    capability: steps ? steps[0].capability : parsed.capability,
+    category: steps ? steps[0].category : normalizeCategory(parsed.category),
+    constraints: applyVolume(normalizeConstraints(parsed.constraints), volume),
     rawInput: input.rawInput,
   };
+  if (volume) output.volume = volume;
+  if (steps) output.steps = steps;
   const preferences = extractPreferences(input.rawInput);
   if (Object.keys(preferences).length > 0) output.preferences = preferences;
 
@@ -239,7 +243,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       input,
       output,
       usage,
-      reasoning: `${cacheSource ? `Reused the cached parse of an identical request (${cacheSource} cache). ` : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.`,
+      reasoning: `${cacheSource ? `Reused the cached parse of an identical request (${cacheSource} cache). ` : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.${output.volume ? ` Volume: ${output.volume.amount} ${output.volume.unit}/month.` : ""}${output.steps ? ` Chain of ${output.steps.length} steps: ${output.steps.map((s) => s.category ?? s.capability).join(" -> ")}.` : ""}`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,
