@@ -1560,7 +1560,7 @@
       "amount": 625,
       "unit": "per month (Starter, 5,000 emails)",
       "currency": "INR",
-      "notes": "page checked in browser 2026-11-12: Starter from 5,000 emails per month, Rs 625/month (India locale); no published SLA %, uptime is an estimate"
+      "notes": "Indian price; page checked in browser 2026-11-12: Starter from 5,000 emails per month, Rs 625/month (India locale); no published SLA %, uptime is an estimate"
     },
     "advertised": {
       "uptime": 99.9
@@ -1679,6 +1679,28 @@
     },
     "source": {
       "url": "https://resend.com/pricing",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-sendgrid",
+    "name": "SendGrid Email API",
+    "provider": "Twilio SendGrid",
+    "description": "Transactional and marketing email API with deliverability analytics.",
+    "capability": "email-delivery",
+    "endpoint": "https://api.sendgrid.com/v3",
+    "pricing": {
+      "amount": 19.95,
+      "unit": "per month (Essentials, 50,000 emails)",
+      "currency": "USD",
+      "notes": "page checked 2026-11-12 (screenshot): Essentials starting $19.95/mo, 50,000-100,000 emails/mo; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.95
+    },
+    "source": {
+      "url": "https://sendgrid.com/en-us/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -1857,6 +1879,28 @@
     },
     "source": {
       "url": "https://seon.io/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-stripe-radar",
+    "name": "Stripe Radar",
+    "provider": "Stripe",
+    "description": "ML fraud screening for Stripe payments.",
+    "capability": "fraud-detection",
+    "endpoint": "https://api.stripe.com/v1",
+    "pricing": {
+      "amount": 5,
+      "unit": "per screened transaction",
+      "currency": "INR",
+      "notes": "Indian price; page checked 2026-11-12: Rs 5.00 per screened transaction (Radar); no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://stripe.com/radar/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
@@ -3632,13 +3676,35 @@
       "amount": 2,
       "unit": "percent per transaction",
       "currency": "INR",
-      "notes": "page checked in browser 2026-11-12: Standard plan 2%; no published SLA %, uptime is an estimate"
+      "notes": "Indian price; page checked in browser 2026-11-12: Standard plan 2%; no published SLA %, uptime is an estimate"
     },
     "advertised": {
       "uptime": 99.9
     },
     "source": {
       "url": "https://razorpay.com/pricing/",
+      "retrievedAt": "2026-11-12",
+      "terms": "public pricing page"
+    }
+  },
+  {
+    "serviceId": "svc-stripe",
+    "name": "Stripe Payments",
+    "provider": "Stripe",
+    "description": "Online card payments checkout and billing APIs.",
+    "capability": "payment-processing",
+    "endpoint": "https://api.stripe.com/v1",
+    "pricing": {
+      "amount": 0.4,
+      "unit": "percent per domestic debit card transaction (capped Rs 200)",
+      "currency": "INR",
+      "notes": "Indian price; page checked 2026-11-12: domestic debit card MDR 0.4% capped to Rs 200; no published SLA %, uptime is an estimate"
+    },
+    "advertised": {
+      "uptime": 99.99
+    },
+    "source": {
+      "url": "https://stripe.com/pricing",
       "retrievedAt": "2026-11-12",
       "terms": "public pricing page"
     }
