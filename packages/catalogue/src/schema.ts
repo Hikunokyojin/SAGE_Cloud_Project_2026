@@ -1,7 +1,18 @@
 // Catalogue schema v2 (T3.1). Every service records where its numbers came from and when,
 // keeps advertised and measured quality apart, and notes the source's terms, so a real
 // catalogue can be audited and refreshed.
-import { SERVICE_CATEGORIES } from "@sage/shared-types";
+import { SERVICE_CATEGORIES, USAGE_UNITS } from "@sage/shared-types";
+import type { UsageVolume } from "@sage/shared-types";
+
+export interface PlanCoverage {
+  // quota: the fee covers `included` per month; unmetered: priced per seat, key, host or
+  // instance, or no usage cap, so volume does not change the price; unknown: not confirmed.
+  volume: "quota" | "unmetered" | "unknown";
+  included?: UsageVolume;
+  // Curation rule: where a provider has several plans or prices, the catalogue records the
+  // cheaper one, and this flag says other plans exist for other usage levels.
+  otherPlans?: boolean;
+}
 
 export interface CatalogueServiceV2 {
   // Lower-case, digits and hyphens, starting "svc-".
@@ -24,6 +35,9 @@ export interface CatalogueServiceV2 {
     // ISO 4217, upper case.
     currency: string;
     notes?: string;
+    // T4.1 (L1): what a flat monthly plan covers, so the Negotiator can tell whether the
+    // user's volume fits it.
+    plan?: PlanCoverage;
   };
   // From the provider's SLA or documentation.
   advertised: { uptime: number; latencyMs?: number };
@@ -70,6 +84,16 @@ export function validateService(s: CatalogueServiceV2): string[] {
   if (!num(s.advertised?.uptime) || s.advertised.uptime < 0 || s.advertised.uptime > 100) p.push("advertised.uptime must be a percentage from 0 to 100");
   if (s.advertised?.latencyMs !== undefined && (!num(s.advertised.latencyMs) || s.advertised.latencyMs <= 0)) {
     p.push("advertised.latencyMs must be a positive number when given");
+  }
+  const plan = s.pricing?.plan;
+  if (plan) {
+    if (!["quota", "unmetered", "unknown"].includes(plan.volume)) p.push(`pricing.plan.volume "${plan.volume}" must be quota, unmetered or unknown`);
+    if (plan.volume === "quota") {
+      const inc = plan.included;
+      if (!inc || !num(inc.amount) || inc.amount <= 0 || !(USAGE_UNITS as readonly string[]).includes(inc.unit)) {
+        p.push(`pricing.plan.included must give a positive amount in one of: ${USAGE_UNITS.join(", ")}`);
+      }
+    }
   }
   if (s.measured) {
     if (!num(s.measured.uptime) || s.measured.uptime < 0 || s.measured.uptime > 100) p.push("measured.uptime must be a percentage from 0 to 100");

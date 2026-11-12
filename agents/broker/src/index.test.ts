@@ -118,6 +118,21 @@ describe("Broker Agent handler", () => {
     ]);
   });
 
+  it("carries a flat plan's coverage through to the candidate (T4.1, L1)", async () => {
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
+    mongoFindToArrayMock.mockResolvedValue([
+      MONGO_DOC({ volumeBasis: "quota", includedUnits: { amount: 50000, unit: "emails" }, otherPlans: true }),
+    ]);
+    const { handler } = await import("./index");
+    const [c] = await handler({ requestId: "req-plan", capability: "email", constraints: [] });
+    expect(c).toMatchObject({ volumeBasis: "quota", includedUnits: { amount: 50000, unit: "emails" }, otherPlans: true });
+
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
+    const [plain] = await handler({ requestId: "req-plain", capability: "email", constraints: [] });
+    expect(plain).not.toHaveProperty("volumeBasis");
+    expect(plain).not.toHaveProperty("otherPlans");
+  });
+
   it("requests payloads from Qdrant, since serviceId lives there, not in the point ID", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);

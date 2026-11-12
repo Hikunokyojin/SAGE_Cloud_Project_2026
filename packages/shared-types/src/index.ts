@@ -73,6 +73,12 @@ export interface ServiceCandidate {
   // How `price` was derived (T3.4), e.g. "estimated USD/month at 100,000 emails/month"; absent
   // for the original synthetic catalogue, whose price is a per-request figure.
   priceBasis?: string;
+  // T4.1 (L1): what a flat monthly plan covers. quota: `includedUnits` per month;
+  // unmetered: volume does not change the price; unknown: not confirmed.
+  volumeBasis?: "quota" | "unmetered" | "unknown";
+  includedUnits?: UsageVolume;
+  // The catalogue holds the provider's cheaper plan; other plans exist for other usage.
+  otherPlans?: boolean;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────

@@ -2,6 +2,19 @@
 
 This dataset (`services.json`) is versioned independently of the application code, since its content and schema directly affect Broker's retrieval quality and the reproducibility of any example or test request run against it.
 
+## v2.1.0 — 2026-11-12 (flat-plan coverage, T4.1 / L1)
+
+All 58 real services priced on a flat monthly plan now say what the plan covers, in `pricing.plan`:
+
+- `volume: "quota"` (30 services): `included` gives the monthly usage the fee covers (for example SendGrid Essentials, 50,000 emails).
+- `volume: "unmetered"` (24 services): priced per seat, key, host, site, instance or storage size, or no usage cap stated.
+- `volume: "unknown"` (4 services: imgix, Segment, DeepL, Grafana Cloud): the quota could not be confirmed.
+- `otherPlans: true` (54 services). **Curation rule:** where a provider has several plans or prices, the catalogue records the cheaper one and flags that other plans exist for other usage levels. The four single-price AWS/GCP pay-per-key services have no flag.
+- Choices made under that rule: Zuplo takes the 100K-request figure from the pricing table, not the 1M figure in the page text. Sentry keeps the $26 annual-billing rate ($29 billed monthly). Cloudinary counts all its credits as transformations.
+- Kong Konnect's $25 plan is now called "Plus".
+- Sources, quotes and retrieval dates: `data/drafts/included-units.draft.json` (pages read 2026-11-12).
+- `toV1` projects these as `volumeBasis`, `includedUnits` and `otherPlans`. The Explainer states what the plan includes, and that it is the cheaper plan, with other plans available.
+
 ## v2.0.0 — 2026-11-12 (live)
 
 **`services.v2.json` is now what the live system loads.** The 213 real services were seeded into MongoDB (`seed-services --v2 --prune`) and re-embedded into Qdrant; the 21 synthetic services were deleted from both and stay in the file for offline evaluation (`synthetic: true`).

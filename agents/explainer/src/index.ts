@@ -57,6 +57,13 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   const parts: string[] = [
     `${s.name} was selected (price ${s.priceBasis?.startsWith("estimated") ? `about $${s.price.toFixed(2)} a month, ${s.priceBasis.replace(/^estimated USD\/month /, "")}` : `$${s.price}`}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}).`,
   ];
+  // T4.1 (L1): what the flat plan covers, and the catalogue's cheaper-plan rule.
+  if (s.volumeBasis === "quota" && s.includedUnits) {
+    parts.push(`The plan includes ${s.includedUnits.amount.toLocaleString("en-US")} ${s.includedUnits.unit} a month.`);
+  }
+  if (s.otherPlans) {
+    parts.push(`This is the cheaper plan; ${s.name} also offers other plans for other usage levels.`);
+  }
   if (scoreBreakdown.soleSurvivor) {
     parts.push("It was the only candidate that met every requirement.");
   } else if (alternatives.length > 0) {

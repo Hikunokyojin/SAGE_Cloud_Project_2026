@@ -149,9 +149,17 @@
     "endpoint": "https://us.api.konghq.com",
     "pricing": {
       "amount": 25,
-      "unit": "per month (starting)",
+      "unit": "per month (Plus)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: From $25/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: From $25/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 1000000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -179,7 +187,15 @@
       "amount": 25,
       "unit": "per month (Builder)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $25/mo; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $25/mo; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 100000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -207,7 +223,15 @@
       "amount": 35,
       "unit": "per month (Essentials, 500 MAU)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Essentials from $35/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Essentials from $35/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 500,
+          "unit": "users"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -700,7 +724,11 @@
       "amount": 16,
       "unit": "per user-month (Team, monthly)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Team $16 monthly, $15 annual; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Team $16 monthly, $15 annual; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -808,7 +836,11 @@
       "amount": 20,
       "unit": "per month (Pro, billed annually)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $20/mo billed annually, or $25/mo billed monthly; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $20/mo billed annually, or $25/mo billed monthly; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 100
@@ -1258,7 +1290,11 @@
       "amount": 8,
       "unit": "per month (Flex base)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Flex base $8.00 monthly; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Flex base $8.00 monthly; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -1314,7 +1350,11 @@
       "amount": 5,
       "unit": "per month (single node, starting)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: Single node, starting at $5/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: Single node, starting at $5/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -1342,7 +1382,11 @@
       "amount": 25,
       "unit": "per month (Pro plan)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Pro from $25/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Pro from $25/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -1370,7 +1414,11 @@
       "amount": 4.99,
       "unit": "per month (Developer)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $4.99/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $4.99/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -1510,7 +1558,11 @@
       "amount": 0.5,
       "unit": "per hosted zone per month (Solo)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Solo $0.50 per hosted zone per month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Solo $0.50 per hosted zone per month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 100
@@ -1566,7 +1618,11 @@
       "amount": 108,
       "unit": "per month (Essentials)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Starting at $108.00 per month; 100% uptime SLA"
+      "notes": "page checked 2026-11-12: Starting at $108.00 per month; 100% uptime SLA",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 100
@@ -1594,7 +1650,15 @@
       "amount": 29,
       "unit": "per month (Essential)",
       "currency": "EUR",
-      "notes": "page checked 2026-11-12: Essential 29 EUR per month; SLA 99.5%"
+      "notes": "page checked 2026-11-12: Essential 29 EUR per month; SLA 99.5%",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 1000,
+          "unit": "pages"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.5
@@ -1622,7 +1686,15 @@
       "amount": 15,
       "unit": "per month (Basic, 125 docs)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Basic 125 docs $15/mo; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Basic 125 docs $15/mo; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 125,
+          "unit": "pages"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -1702,7 +1774,15 @@
       "amount": 5,
       "unit": "per month (Starter, 300 docs)",
       "currency": "EUR",
-      "notes": "page checked 2026-11-12: 5 EUR / month, overage 0.008 EUR/doc; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: 5 EUR / month, overage 0.008 EUR/doc; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 300,
+          "unit": "pages"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -1730,7 +1810,15 @@
       "amount": 9,
       "unit": "per month (Starter, 500 credits)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Starter $9/mo, 500 credits; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Starter $9/mo, 500 credits; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 500,
+          "unit": "pages"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -1898,7 +1986,15 @@
       "amount": 30,
       "unit": "per month (PRO)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $30/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $30/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 300000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.5
@@ -1982,7 +2078,15 @@
       "amount": 625,
       "unit": "per month (Starter, 5,000 emails)",
       "currency": "INR",
-      "notes": "Indian price; page checked in browser 2026-11-12: Starter from 5,000 emails per month, Rs 625/month (India locale); no published SLA %, uptime is an estimate"
+      "notes": "Indian price; page checked in browser 2026-11-12: Starter from 5,000 emails per month, Rs 625/month (India locale); no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 5000,
+          "unit": "emails"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2062,7 +2166,15 @@
       "amount": 9,
       "unit": "per month (Starter, 8000 emails)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $9/month for 8,000 emails/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: $9/month for 8,000 emails/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 8000,
+          "unit": "emails"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2146,7 +2258,15 @@
       "amount": 19.95,
       "unit": "per month (Essentials, 50,000 emails)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12 (screenshot): Essentials starting $19.95/mo, 50,000-100,000 emails/mo; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (screenshot): Essentials starting $19.95/mo, 50,000-100,000 emails/mo; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 50000,
+          "unit": "emails"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -2339,7 +2459,15 @@
       "amount": 3.2,
       "unit": "per month (BX11, 1 TB)",
       "currency": "EUR",
-      "notes": "page checked 2026-11-12 (user screenshot): BX11 EUR 3.20 max/mo for 1 TB, excl. VAT; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (user screenshot): BX11 EUR 3.20 max/mo for 1 TB, excl. VAT; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 1000,
+          "unit": "gb"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2395,7 +2523,15 @@
       "amount": 699,
       "unit": "per month (Starter)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $699 per month (Starter); no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: $699 per month (Starter); no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 2500,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2564,7 +2700,11 @@
       "amount": 99,
       "unit": "per month (Standard, cloud hosted)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: As low as $99 per month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: As low as $99 per month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2592,7 +2732,11 @@
       "amount": 20,
       "unit": "per month (XS instance)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Meilisearch Cloud starts at $20/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Meilisearch Cloud starts at $20/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2752,7 +2896,15 @@
       "amount": 100,
       "unit": "per month (Starter, 50000 calls incl. Geocoding)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12 (user screenshot): Starter $100/month, 50,000 monthly calls, includes Geocoding; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (user screenshot): Starter $100/month, 50,000 monthly calls, includes Geocoding; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 50000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2780,7 +2932,15 @@
       "amount": 26,
       "unit": "per month (Core, 150K requests)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Core $26/mo, overage $0.34 per 1K; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Core $26/mo, overage $0.34 per 1K; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 150000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -2864,7 +3024,15 @@
       "amount": 45,
       "unit": "per month (X-Small)",
       "currency": "EUR",
-      "notes": "page checked in browser 2026-11-12: EUR 45/MO, about EUR 0.15 per 1,000; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: EUR 45/MO, about EUR 0.15 per 1,000; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 300000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -2976,7 +3144,15 @@
       "amount": 29,
       "unit": "per month (Starter 10K ops)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $29/mo, 10,000 ops + $0.002 per extra op; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: $29/mo, 10,000 ops + $0.002 per extra op; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 10000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -3028,7 +3204,11 @@
       "amount": 9.5,
       "unit": "per month per website",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $9.50/website; 99.99% SLA"
+      "notes": "page checked 2026-11-12: $9.50/website; 99.99% SLA",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -3084,7 +3264,15 @@
       "amount": 99,
       "unit": "per month (Plus, 225 credits)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Plus $99 per month (monthly billing); no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Plus $99 per month (monthly billing); no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 225000,
+          "unit": "images"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -3136,7 +3324,15 @@
       "amount": 9,
       "unit": "per month (Lite)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Lite $9/mo + pay-as-you-go; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Lite $9/mo + pay-as-you-go; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 40,
+          "unit": "gb"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -3164,7 +3360,11 @@
       "amount": 75,
       "unit": "per month (Basic, 375 credits)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Basic $75/mo; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Basic $75/mo; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unknown",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -3216,7 +3416,15 @@
       "amount": 79,
       "unit": "per month (Pro plan)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $79/mo; 99.9% SLA on all paid plans"
+      "notes": "page checked 2026-11-12: $79/mo; 99.9% SLA on all paid plans",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 5000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -3358,7 +3566,15 @@
       "amount": 19,
       "unit": "per month (Elegant Ermine shared)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $19/mo shared plan; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: $19/mo shared plan; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 20000000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -3494,7 +3710,15 @@
       "amount": 29,
       "unit": "per month (Pro plan)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: From $29/month (1K MAUs, annual); 99.999% SLO"
+      "notes": "page checked 2026-11-12: From $29/month (1K MAUs, annual); 99.999% SLO",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 1000,
+          "unit": "users"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.999
@@ -3749,7 +3973,15 @@
       "amount": 49,
       "unit": "per month (Startup plan)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Startup $49/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Startup $49/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 30000000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -4105,7 +4337,10 @@
       "amount": 9,
       "unit": "per editor-month",
       "currency": "USD",
-      "notes": "list price, first paid tier; feed says: $9 per Editor per month for US East (Northern Virginia)"
+      "notes": "list price, first paid tier; feed says: $9 per Editor per month for US East (Northern Virginia)",
+      "plan": {
+        "volume": "unmetered"
+      }
     },
     "advertised": {
       "uptime": 99.5
@@ -4217,7 +4452,11 @@
       "amount": 29,
       "unit": "per month per responder (annual)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Responder $34 monthly, $29 yearly; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Responder $34 monthly, $29 yearly; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -4245,7 +4484,11 @@
       "amount": 18,
       "unit": "per host-month (Pro, on-demand)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: Billed annually or $18 on-demand; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: Billed annually or $18 on-demand; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -4301,7 +4544,11 @@
       "amount": 19,
       "unit": "per month (Pro platform fee)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: Platform fee of $19 per month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: Platform fee of $19 per month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unknown",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.5
@@ -4329,7 +4576,15 @@
       "amount": 150,
       "unit": "per month (Pro, 50M events)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: Pro: Starting at $150 / 50M events; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: Pro: Starting at $150 / 50M events; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 50000000,
+          "unit": "events"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -4385,7 +4640,15 @@
       "amount": 26,
       "unit": "per month (Team plan, annual)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Team $29/mo monthly, $26/mo annual; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Team $29/mo monthly, $26/mo annual; no published SLA %, uptime is an estimate Annual-billing rate (the cheaper one); $29/month when billed monthly.",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 50000,
+          "unit": "events"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -4578,7 +4841,15 @@
       "amount": 5,
       "unit": "per month (250 GiB)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: $5 per month with 250 GiB; $0.02/GiB over; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: $5 per month with 250 GiB; $0.02/GiB over; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 250,
+          "unit": "gb"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -4822,7 +5093,11 @@
       "amount": 49,
       "unit": "per month per location (Square Plus)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12 (user screenshot): Square Plus $49/mo per location; processing fees separate; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (user screenshot): Square Plus $49/mo per location; processing fees separate; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -4902,7 +5177,15 @@
       "amount": 9,
       "unit": "per month (Starter, 10K pageviews)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Starter $9/month up to 10k pageviews; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Starter $9/month up to 10k pageviews; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 10000,
+          "unit": "events"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -4958,7 +5241,11 @@
       "amount": 120,
       "unit": "per month (Team plan)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Team starts at $120/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Team starts at $120/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unknown",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -5070,7 +5357,15 @@
       "amount": 99,
       "unit": "per month (Standard)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Standard from $99/mo; 99.9% uptime SLA"
+      "notes": "page checked 2026-11-12: Standard from $99/mo; 99.9% uptime SLA",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 100000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -5098,7 +5393,10 @@
       "amount": 1,
       "unit": "per key-month",
       "currency": "USD",
-      "notes": "list price, first paid tier; feed says: $1 per customer managed KMS key version in US East (N. Virginia)"
+      "notes": "list price, first paid tier; feed says: $1 per customer managed KMS key version in US East (N. Virginia)",
+      "plan": {
+        "volume": "unmetered"
+      }
     },
     "advertised": {
       "uptime": 99.999
@@ -5126,7 +5424,10 @@
       "amount": 0.4,
       "unit": "per secret-month",
       "currency": "USD",
-      "notes": "list price, first paid tier; feed says: $0.40 per Secret"
+      "notes": "list price, first paid tier; feed says: $0.40 per Secret",
+      "plan": {
+        "volume": "unmetered"
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -5183,7 +5484,11 @@
       "amount": 21,
       "unit": "per user-month (Team)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $21/mo per user; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $21/mo per user; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -5211,7 +5516,10 @@
       "amount": 0.06,
       "unit": "per secret version-month",
       "currency": "USD",
-      "notes": "list price, first paid tier; feed says: Secret version replica storage: $0.06 per mo"
+      "notes": "list price, first paid tier; feed says: Secret version replica storage: $0.06 per mo",
+      "plan": {
+        "volume": "unmetered"
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -5267,7 +5575,11 @@
       "amount": 20,
       "unit": "per identity-month (Pro, billed annually)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12 (user screenshot): Pro $20 /identity/month billed annually; 99.99% SLA on Enterprise only; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (user screenshot): Pro $20 /identity/month billed annually; 99.99% SLA on Enterprise only; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -5767,7 +6079,15 @@
       "amount": 5,
       "unit": "per month (Pro, 100K credits)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $5, 100K credits / month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $5, 100K credits / month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 100000,
+          "unit": "characters"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -5907,7 +6227,11 @@
       "amount": 26,
       "unit": "per month (Growth, billed annually, plus usage)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12 (user screenshot): Growth $26.00 per month billed annually + usage-based price (shown for India, USD); no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12 (user screenshot): Growth $26.00 per month billed annually + usage-based price (shown for India, USD); no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unknown",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -6212,7 +6536,11 @@
       "amount": 2.19,
       "unit": "per month (shared-cpu-1x 256MB)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: shared-cpu-1x with 256MB RAM $2.19/month; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: shared-cpu-1x with 256MB RAM $2.19/month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
@@ -6240,7 +6568,11 @@
       "amount": 20,
       "unit": "per month (Pro, unlimited members)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Pro $20/month with unlimited members; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Pro $20/month with unlimited members; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -6268,7 +6600,11 @@
       "amount": 7,
       "unit": "per month (Starter, 512 MB)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: Less than 1 CPU $7/month 512 MB RAM; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: Less than 1 CPU $7/month 512 MB RAM; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.95
@@ -6296,7 +6632,11 @@
       "amount": 20,
       "unit": "per user-month (Pro seat)",
       "currency": "USD",
-      "notes": "page checked 2026-11-12: Developer seat $20 / month; no published SLA %, uptime is an estimate"
+      "notes": "page checked 2026-11-12: Developer seat $20 / month; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "unmetered",
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.99
@@ -6436,7 +6776,15 @@
       "amount": 99,
       "unit": "per month (Pro)",
       "currency": "USD",
-      "notes": "page checked in browser 2026-11-12: $99 plan; no published SLA %, uptime is an estimate"
+      "notes": "page checked in browser 2026-11-12: $99 plan; no published SLA %, uptime is an estimate",
+      "plan": {
+        "volume": "quota",
+        "included": {
+          "amount": 1000000,
+          "unit": "requests"
+        },
+        "otherPlans": true
+      }
     },
     "advertised": {
       "uptime": 99.9
