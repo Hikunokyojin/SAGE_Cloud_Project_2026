@@ -133,6 +133,14 @@ describe("Broker Agent handler", () => {
     expect(plain).not.toHaveProperty("otherPlans");
   });
 
+  it("carries the provider's list price, unit and currency for re-pricing (T4.1b)", async () => {
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC({ listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD" })]);
+    const { handler } = await import("./index");
+    const [c] = await handler({ requestId: "req-list", capability: "email", constraints: [] });
+    expect(c).toMatchObject({ listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD" });
+  });
+
   it("requests payloads from Qdrant, since serviceId lives there, not in the point ID", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);

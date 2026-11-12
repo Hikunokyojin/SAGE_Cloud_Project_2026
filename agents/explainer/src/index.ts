@@ -61,9 +61,8 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   if (s.volumeBasis === "quota" && s.includedUnits) {
     parts.push(`The plan includes ${s.includedUnits.amount.toLocaleString("en-US")} ${s.includedUnits.unit} a month.`);
   }
-  if (s.otherPlans) {
-    parts.push(`This is the cheaper plan; ${s.name} also offers other plans for other usage levels.`);
-  }
+  const cheaperPlan = s.otherPlans ? `This is the cheaper plan; ${s.name} also offers other plans for other usage levels.` : undefined;
+  if (cheaperPlan) parts.push(cheaperPlan);
   if (scoreBreakdown.soleSurvivor) {
     parts.push("It was the only candidate that met every requirement.");
   } else if (alternatives.length > 0) {
@@ -89,7 +88,7 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
     parts.push(`Earlier: ${earlier}.`);
   }
 
-  return { text: parts.join(" "), chosenName: s.name, rejectedNames: rejected.map((r) => r.name) };
+  return { text: parts.join(" "), chosenName: s.name, rejectedNames: rejected.map((r) => r.name), cheaperPlan };
 }
 
 function addUsage(a: LlmUsage | undefined, b: LlmUsage | undefined): LlmUsage | undefined {
@@ -130,7 +129,9 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
     const candidateText = reply.text.trim();
     lastProblems = checkClaims(candidateText, facts);
     if (lastProblems.length === 0) {
-      explanation = candidateText;
+      // The cheaper-plan rule must always be stated (T4.1b): add it back if the wording dropped it.
+      explanation =
+        facts.cheaperPlan && !/cheaper plan/i.test(candidateText) ? `${candidateText} ${facts.cheaperPlan}` : candidateText;
       explanationSource = "model";
       break;
     }

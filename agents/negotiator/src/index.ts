@@ -8,9 +8,11 @@ import type {
   ScoreBreakdown,
   ScoreDimensions,
   RejectedCandidate,
+  ChainComposition,
 } from "@sage/shared-types";
 import { referencesFor, isWarmup, WARMED } from "@sage/shared-types";
 import { recordDecision, warmUp } from "@sage/audit";
+import { priceAtVolume, unitPrice } from "./volume";
 
 // Deterministic scoring algorithm. Still
 // no LLM call anywhere in this file -- the same candidates, constraints, and prior
@@ -63,7 +65,7 @@ function absoluteDimension(value: number, best: number, bound: number, lowerIsBe
 }
 
 function mandatoryLimit(constraints: Constraint[], field: "price" | "uptime" | "latencyMs"): number | undefined {
-  const limit = constraints.find((c) => c.mandatory && c.field === field);
+  const limit = constraints.find((c) => c.mandatory && c.field === field && c.per !== "unit");
   return typeof limit?.value === "number" ? limit.value : undefined;
 }
 
@@ -86,12 +88,10 @@ function resolveWeight(
   return optional?.priority ?? preferences?.[field] ?? DEFAULT_WEIGHT;
 }
 
-export async function handler(input: NegotiatorAgentInput): Promise<Composition> {
-  if (isWarmup(input)) {
-    await warmUp();
-    return WARMED as never;
-  }
-  const startedAt = Date.now();
+type Scored = { candidate: ServiceCandidateWithEvidence; dimensions: ScoreDimensions; total: number };
+
+// Scores one capability's candidates. Throws when none is eligible.
+function negotiate(input: NegotiatorAgentInput): { output: Composition; scored: Scored[] } {
   if (input.candidates.length === 0) {
     throw new Error("Negotiator Agent: no candidates to score");
   }
@@ -110,7 +110,16 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   // Every candidate either passes all hard filters or is recorded with the first rule it
   // failed, so the explanation can say exactly why it was not chosen.
   const rejected: RejectedCandidate[] = [];
-  const eligible = input.candidates.filter((c) => {
+  // T4.1b: re-price at the stated volume first; a plan whose quota is too small is rejected.
+  const priced = input.candidates.flatMap((c) => {
+    const p = priceAtVolume(c, input.volume);
+    if (p.rejectReason) {
+      rejected.push({ serviceId: c.serviceId, name: c.name, reason: p.rejectReason });
+      return [];
+    }
+    return [p.candidate];
+  });
+  const eligible = priced.filter((c) => {
     const reason = rejectionReason(c);
     if (reason) rejected.push({ serviceId: c.serviceId, name: c.name, reason });
     return !reason;
@@ -120,10 +129,11 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
     if (excludedIds.has(c.serviceId)) return "rejected by the Reviewer on an earlier attempt";
     if (!inRequiredCategory(c)) return `wrong category (${c.capability ?? "unknown"}, needed ${input.requiredCategory})`;
     for (const constraint of input.constraints.filter((k) => k.mandatory)) {
-      const actual = fieldValue(c, constraint.field);
-      if (actual === undefined) return `no recorded ${constraint.field}`;
+      const perUnit = constraint.per === "unit" && constraint.field === "price";
+      const actual = perUnit ? unitPrice(c) : fieldValue(c, constraint.field);
+      if (actual === undefined) return perUnit ? "no per-unit price (a flat plan with no stated quota)" : `no recorded ${constraint.field}`;
       if (!evaluateConstraint(actual, constraint)) {
-        const label = FIELD_LABEL[constraint.field] ?? constraint.field;
+        const label = perUnit ? "price per unit" : (FIELD_LABEL[constraint.field] ?? constraint.field);
         const words = OPERATOR_WORDS[constraint.operator] ?? constraint.operator;
         return `${label} ${withUnit(constraint.field, actual)} is not ${words} ${withUnit(constraint.field, constraint.value as number)}`;
       }
@@ -257,6 +267,100 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
     scoreBreakdown,
     rejected,
   };
+  return { output, scored };
+}
+
+// T4.1b chain mode: the top candidates of each step, every combination compared.
+const TOP_PER_STEP = 5;
+
+function chainValue(field: string, totals: ChainComposition["totals"]): number | undefined {
+  if (field === "price") return totals.price;
+  if (field === "uptime") return totals.uptime;
+  if (field === "latencyMs") return totals.latencyMs;
+  return undefined;
+}
+
+function negotiateChain(input: NegotiatorAgentInput): Composition {
+  const steps = input.steps ?? [];
+  const perStep = steps.map((step, i) => {
+    try {
+      return negotiate({
+        requestId: input.requestId,
+        iteration: input.iteration,
+        priorViolations: input.priorViolations,
+        preferences: input.preferences,
+        candidates: step.candidates,
+        constraints: step.constraints,
+        requiredCategory: step.requiredCategory,
+        volume: step.volume,
+      });
+    } catch (err) {
+      throw new Error(`Negotiator Agent: step ${i + 1} (${step.capability}): ${err instanceof Error ? err.message : String(err)}`);
+    }
+  });
+  const toChoice = (e: Scored) => ({ service: e.candidate, score: e.total, reason: `price=${e.candidate.price}, uptime=${e.candidate.uptime}%` });
+
+  const tops = perStep.map((r) => r.scored.slice(0, TOP_PER_STEP));
+  let combos: Scored[][] = [[]];
+  for (const top of tops) combos = combos.flatMap((combo) => top.map((e) => [...combo, e]));
+
+  const chainLimits = input.constraints.filter((c) => c.mandatory && c.per !== "unit");
+  const evaluated = combos.map((combo) => {
+    const latencies = combo.map((e) => e.candidate.latencyMs);
+    const totals: ChainComposition["totals"] = {
+      price: Math.round(combo.reduce((a, e) => a + e.candidate.price, 0) * 100) / 100,
+      uptime: Math.round(combo.reduce((a, e) => a * (e.candidate.uptime / 100), 1) * 1e6) / 1e4,
+      ...(latencies.every((l) => typeof l === "number") ? { latencyMs: latencies.reduce((a, l) => a + (l as number), 0) } : {}),
+    };
+    const score = combo.reduce((a, e) => a + e.total, 0) / combo.length;
+    const valid = chainLimits.every((c) => {
+      const v = chainValue(c.field, totals);
+      return v !== undefined && evaluateConstraint(v, c);
+    });
+    return { combo, totals, score, valid };
+  });
+  const valid = evaluated
+    .filter((e) => e.valid)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.totals.price - b.totals.price ||
+        a.combo.map((e) => e.candidate.serviceId).join().localeCompare(b.combo.map((e) => e.candidate.serviceId).join())
+    );
+  if (valid.length === 0) {
+    throw new Error(
+      `Negotiator Agent: none of the ${evaluated.length} combinations meets the chain-wide limits (${chainLimits
+        .map((c) => `${c.field} ${c.operator} ${c.value}`)
+        .join(", ")})`
+    );
+  }
+  const best = valid[0];
+  const chain: ChainComposition = {
+    steps: best.combo.map((e, i) => ({ capability: steps[i].capability, chosen: toChoice(e), dependsOn: steps[i].dependsOn })),
+    totals: best.totals,
+    score: best.score,
+    combinationsCompared: evaluated.length,
+    combinationsValid: valid.length,
+  };
+  const first = perStep[0].output;
+  return {
+    ...first,
+    chosen: chain.steps[0].chosen,
+    alternatives: [],
+    scoreBreakdown: { ...first.scoreBreakdown, candidateId: chain.steps[0].chosen.service.serviceId, totalScore: best.score },
+    rejected: perStep.flatMap((r, i) => (r.output.rejected ?? []).map((x) => ({ ...x, reason: `step ${i + 1}: ${x.reason}` }))),
+    chain,
+  };
+}
+
+export async function handler(input: NegotiatorAgentInput): Promise<Composition> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
+  const startedAt = Date.now();
+  const output = input.steps && input.steps.length > 0 ? negotiateChain(input) : negotiate(input).output;
+  const { chosen, alternatives } = output;
 
   try {
     await recordDecision({

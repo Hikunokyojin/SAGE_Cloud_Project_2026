@@ -10,6 +10,8 @@ export interface ExplanationFacts {
   text: string;
   chosenName: string;
   rejectedNames: string[];
+  // The cheaper-plan sentence, when the chosen plan is the provider's cheaper one (T4.1b).
+  cheaperPlan?: string;
 }
 
 const NUMBER = /\d+(?:\.\d+)?/g;

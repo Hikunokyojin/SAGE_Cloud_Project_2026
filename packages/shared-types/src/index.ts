@@ -79,6 +79,12 @@ export interface ServiceCandidate {
   includedUnits?: UsageVolume;
   // The catalogue holds the provider's cheaper plan; other plans exist for other usage.
   otherPlans?: boolean;
+  // T4.1b (L2/L3): the provider's own price, so the Negotiator can re-price at the stated volume.
+  listPrice?: number;
+  priceUnit?: string;
+  currency?: string;
+  // Set by the Negotiator when the stated volume was used or could not be checked.
+  volumeNote?: string;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────
@@ -167,6 +173,11 @@ export interface NegotiatorAgentInput {
   requiredCategory?: string;
   // Soft preference weights from Intent; an optional constraint's priority overrides them.
   preferences?: Preferences;
+  // T4.1b: the monthly volume to price at and check plan quotas against.
+  volume?: UsageVolume;
+  // T4.1b: chain mode. Each step is scored on its own; `constraints` then limit the whole
+  // chain (total price, combined uptime, total latency).
+  steps?: NegotiatorStep[];
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -378,12 +389,34 @@ export interface RejectedCandidate {
   reason: string;
 }
 
+export interface NegotiatorStep {
+  capability: string;
+  candidates: ServiceCandidateWithEvidence[];
+  constraints: Constraint[];
+  requiredCategory?: string;
+  volume?: UsageVolume;
+  dependsOn: number[];
+}
+
+// T4.1b: the chosen combination for a chain request.
+export interface ChainComposition {
+  steps: { capability: string; chosen: CompositionChoice; dependsOn: number[] }[];
+  // Sum of step prices, product of step uptimes (as a percentage), sum of step latencies.
+  totals: { price: number; uptime: number; latencyMs?: number };
+  // Mean of the step scores.
+  score: number;
+  // How many combinations were compared, and how many met the chain-wide limits.
+  combinationsCompared: number;
+  combinationsValid: number;
+}
+
 export interface Composition extends CompositionBlueprint {
   iteration: number;
   scoreBreakdown: ScoreBreakdown;
   // Every candidate excluded by a hard filter (wrong category, a failed mandatory
   // constraint, or rejected on an earlier attempt), so explanations can name them.
   rejected?: RejectedCandidate[];
+  chain?: ChainComposition;
 }
 
 // ── Violation (S6.5) ──────────────────────────────────────────────────────
