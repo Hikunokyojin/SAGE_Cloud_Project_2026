@@ -2,6 +2,13 @@
 
 This dataset (`services.json`) is versioned independently of the application code, since its content and schema directly affect Broker's retrieval quality and the reproducibility of any example or test request run against it.
 
+## v2.1.1 — 2026-11-12 (two services removed)
+
+- Removed **DeepL API** (`svc-deepl`): its "Growth" API plan is no longer on DeepL's pricing page.
+- Removed **Segment** (`svc-segment`): its pricing page now redirects to Twilio, so its plan could not be confirmed.
+- Both are also removed from `data/sources/third-party-to-verify.csv`, so a re-import does not bring them back. Their probe history in `data/probes/` is kept as a record.
+- The real catalogue now has 211 services. Translation keeps 4 services and product analytics keeps 2.
+
 ## v2.1.0 — 2026-11-12 (flat-plan coverage, T4.1 / L1)
 
 All 58 real services priced on a flat monthly plan now say what the plan covers, in `pricing.plan`:

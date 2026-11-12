@@ -609,7 +609,7 @@ export const LIVE_CATALOGUE_REFERENCES: Record<string, CategoryReferences> = {
   "product-analytics": {
     "price": {
       "min": 9,
-      "max": 120
+      "max": 50
     },
     "uptime": {
       "min": 99.908,
@@ -617,7 +617,7 @@ export const LIVE_CATALOGUE_REFERENCES: Record<string, CategoryReferences> = {
     },
     "latencyMs": {
       "min": 521,
-      "max": 1478
+      "max": 830
     }
   },
   "recommendations": {
@@ -693,7 +693,7 @@ export const LIVE_CATALOGUE_REFERENCES: Record<string, CategoryReferences> = {
   "translation": {
     "price": {
       "min": 10,
-      "max": 26
+      "max": 20
     },
     "uptime": {
       "min": 99.908,
