@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as cdk from "aws-cdk-lib";
 import { Template, Match } from "aws-cdk-lib/assertions";
@@ -23,14 +24,22 @@ beforeAll(() => {
   }
 });
 
+// Every synth writes a cloud assembly with a copy of each Lambda bundle (~200 MB with the
+// Broker's model). Without an outdir CDK puts it in a new %TEMP%/cdk.out* folder that is
+// never removed; 566 of them filled the disk (WP3.5). All runs now share one folder that is
+// deleted afterwards.
+const synthRoot = fs.mkdtempSync(path.join(os.tmpdir(), "sage-cdk-test-"));
+let synthCount = 0;
+
 afterAll(() => {
   for (const dir of createdPlaceholders) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+  fs.rmSync(synthRoot, { recursive: true, force: true });
 });
 
 function synth(): Template {
-  const app = new cdk.App();
+  const app = new cdk.App({ outdir: path.join(synthRoot, String(synthCount++)) });
   const stack = new SageStack(app, "TestStack", { env: { region: "ap-south-1", account: "123456789012" } });
   return Template.fromStack(stack);
 }

@@ -82,7 +82,7 @@ export function monthlyCost(pricing: { amount: number; unit: string; currency: s
   if (/active user|retained user/.test(u)) return out(a * USAGE.users, `at ${fmt(USAGE.users)} monthly active users`);
 
   // Subscriptions and always-on capacity.
-  if (/month/.test(u)) return out(a, "flat monthly price (one seat, user, key or location)");
+  if (/month/.test(u)) return out(a, "on its flat monthly plan");
   if (/hour\b/.test(u)) return out(a * USAGE.hours, "running all month (730 hours)");
   if (/-day\b/.test(u)) return out(a * USAGE.days, "running all month (30 days)");
 

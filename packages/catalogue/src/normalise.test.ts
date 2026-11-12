@@ -33,6 +33,8 @@ describe("monthlyCost: every price becomes estimated USD per month at a stated u
   });
   it("states the assumption in words", () => {
     expect(monthlyCost(p(0.4, "per 1,000,000 requests")).assumption).toMatch(/100,000 requests\/month/);
+    // WP3.5 L9: plain wording a non-expert can read in an explanation.
+    expect(monthlyCost(p(25, "per month (Pro plan)")).assumption).toBe("on its flat monthly plan");
   });
   it("throws on a unit it cannot read, so nothing is ranked on a guess", () => {
     expect(() => monthlyCost(p(1, "per flurble"))).toThrow(/unit/);

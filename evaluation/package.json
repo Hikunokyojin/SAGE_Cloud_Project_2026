@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@sage/shared-types": "*",
+    "@sage/catalogue": "*",
     "@sage/secrets": "*",
     "@sage/agent-input-guard": "*",
     "@sage/agent-intent": "*",

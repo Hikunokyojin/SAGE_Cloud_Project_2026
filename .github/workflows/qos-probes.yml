@@ -35,11 +35,24 @@ jobs:
         env:
           ONNXRUNTIME_NODE_INSTALL_CUDA: skip
       - run: npm run catalogue:probe
+      # Keep the Negotiator's live scoring references in step with the new measurements
+      # (WP3.5 L6); the Lambda picks them up on its next deploy.
+      - run: npm run catalogue:refs
+      # WP3.5 L5: push the blended uptime/latency to the live catalogue, so a measured outage
+      # changes the next selection without a manual re-seed. Upsert only (no --prune) and no
+      # Qdrant change: uptime and latency are not embedded. Skipped until the repository
+      # secret MONGO_URI exists.
+      - name: Update live catalogue
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          if [ -z "$MONGO_URI" ]; then echo "MONGO_URI secret not set; live catalogue not updated."; exit 0; fi
+          npx tsx agents/broker/scripts/seed-services.ts --v2
       - name: Commit probe results
         run: |
           git config user.name "sage-qos-probe"
           git config user.email "sage-qos-probe@users.noreply.github.com"
-          git add data/probes data/services.v2.json
+          git add data/probes data/services.v2.json packages/shared-types/src/catalogueReferences.ts
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git commit -m "chore(probes): QoS probe run $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
           git pull --rebase origin develop

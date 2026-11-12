@@ -27,6 +27,7 @@ import { MongoClient } from "mongodb";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
+import { planAliasSwap } from "../src/aliasSwap";
 
 const COLLECTION_NAME = "services";
 const VECTOR_SIZE = 384;
@@ -75,13 +76,16 @@ async function main() {
 
   const qdrant = new QdrantClient({ url: qdrantUrl, apiKey: qdrantApiKey, checkCompatibility: false });
 
-  console.log(`Re-creating Qdrant collection "${COLLECTION_NAME}" with ${VECTOR_SIZE}-dim cosine vectors...`);
-  await qdrant.recreateCollection(COLLECTION_NAME, {
+  // WP3.5 L8: build a fresh generation next to the live one; the Broker keeps searching the
+  // old one (through the "services" alias) until the alias moves at the end.
+  const fresh = `${COLLECTION_NAME}_${Date.now()}`;
+  console.log(`Creating Qdrant collection "${fresh}" with ${VECTOR_SIZE}-dim cosine vectors...`);
+  await qdrant.createCollection(fresh, {
     vectors: { size: VECTOR_SIZE, distance: "Cosine" },
   });
 
   // Keyword index so the category filter is exact and fast.
-  await qdrant.createPayloadIndex(COLLECTION_NAME, { field_name: "capability", field_schema: "keyword", wait: true });
+  await qdrant.createPayloadIndex(fresh, { field_name: "capability", field_schema: "keyword", wait: true });
 
   console.log("Embedding and upserting each service...");
   for (const service of services) {
@@ -92,7 +96,7 @@ async function main() {
     // service.serviceId, a human-readable string, directly) -- so a fresh UUID is the
     // point ID, and serviceId travels in the payload instead. Broker's search reads it
     // back from there (see src/index.ts, with_payload: true).
-    await qdrant.upsert(COLLECTION_NAME, {
+    await qdrant.upsert(fresh, {
       wait: true,
       // capability is the category; Broker filters on it (see src/index.ts).
       points: [{ id: randomUUID(), vector, payload: { serviceId: service.serviceId, capability: service.capability } }],
@@ -100,7 +104,28 @@ async function main() {
     console.log(`  upserted ${service.serviceId} (${service.name})`);
   }
 
-  console.log(`Done. Re-embedded ${services.length} services into "${COLLECTION_NAME}".`);
+  const { count } = await qdrant.count(fresh, { exact: true });
+  if (count !== services.length) {
+    throw new Error(`"${fresh}" has ${count} points, expected ${services.length}; the live alias was not moved.`);
+  }
+
+  const collections = (await qdrant.getCollections()).collections.map((c) => c.name);
+  const aliasTarget = (await qdrant.getAliases()).aliases.find((a) => a.alias_name === COLLECTION_NAME)?.collection_name;
+  const plan = planAliasSwap({ alias: COLLECTION_NAME, fresh, collections, aliasTarget });
+  for (const name of plan.dropBefore) {
+    // One-time migration from a plain "services" collection to an alias: search is down only
+    // between this delete and the alias update just below.
+    console.log(`Dropping plain collection "${name}" so the alias can take its name...`);
+    await qdrant.deleteCollection(name);
+  }
+  await qdrant.updateCollectionAliases({ actions: plan.actions });
+  console.log(`Alias "${COLLECTION_NAME}" now points to "${fresh}".`);
+  for (const name of plan.dropAfter) {
+    await qdrant.deleteCollection(name);
+    console.log(`Dropped old generation "${name}".`);
+  }
+
+  console.log(`Done. Re-embedded ${services.length} services into "${fresh}" (searched as "${COLLECTION_NAME}").`);
   await mongo.close();
 }
 
