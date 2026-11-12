@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { GROUND_TRUTH, satisfiesRequest } from "./ground-truth";
 import { TEST_CASES } from "./test-cases";
-import { CATALOGUE_REFERENCES } from "@sage/shared-types";
+import { CATALOGUE_REFERENCES, LIVE_CATALOGUE_REFERENCES } from "@sage/shared-types";
+import { toV1, type CatalogueServiceV2 } from "@sage/catalogue";
 
 const raw = JSON.parse(readFileSync(join(__dirname, "..", "..", "data", "services.json"), "utf-8"));
 const catalog: { serviceId: string }[] = Array.isArray(raw) ? raw : raw.services;
@@ -63,5 +64,19 @@ describe("CATALOGUE_REFERENCES", () => {
       r.latencyMs = { min: Math.min(r.latencyMs.min, s.latencyMs), max: Math.max(r.latencyMs.max, s.latencyMs) };
     }
     expect(CATALOGUE_REFERENCES).toEqual(expected);
+  });
+
+  it("LIVE_CATALOGUE_REFERENCES matches the real services in data/services.v2.json as seeded (WP3.5 L6)", () => {
+    const v2: CatalogueServiceV2[] = JSON.parse(readFileSync(join(__dirname, "..", "..", "data", "services.v2.json"), "utf-8"));
+    const live = v2.filter((s) => !s.synthetic).map(toV1);
+    const cats = new Set(live.map((s) => s.capability));
+    expect(Object.keys(LIVE_CATALOGUE_REFERENCES).sort()).toEqual([...cats].sort());
+    for (const s of live) {
+      const r = LIVE_CATALOGUE_REFERENCES[s.capability];
+      expect(s.price).toBeGreaterThanOrEqual(r.price.min);
+      expect(s.price).toBeLessThanOrEqual(r.price.max);
+      expect(s.uptime).toBeGreaterThanOrEqual(r.uptime.min);
+      expect(s.uptime).toBeLessThanOrEqual(r.uptime.max);
+    }
   });
 });

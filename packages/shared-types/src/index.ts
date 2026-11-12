@@ -10,7 +10,7 @@ export interface IntentConstraints {
 // each request onto one of these so Negotiator and Reviewer can reject candidates from
 // the wrong category -- semantic retrieval alone returns near neighbours across
 // categories. Must be updated when the dataset gains a new category.
-export { CATALOGUE_REFERENCES } from "./catalogueReferences";
+export { CATALOGUE_REFERENCES, LIVE_CATALOGUE_REFERENCES, referencesFor } from "./catalogueReferences";
 export type { CategoryReferences, Range } from "./catalogueReferences";
 
 export const SERVICE_CATEGORIES = [

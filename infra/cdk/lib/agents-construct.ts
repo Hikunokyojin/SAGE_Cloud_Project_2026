@@ -1,4 +1,5 @@
 import * as path from "path";
+import { assertFreshBundles } from "./dist-freshness";
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -90,6 +91,8 @@ export class AgentsConstruct extends Construct {
     };
 
     const agentDir = (name: string) => path.join(__dirname, "..", "..", "..", "agents", name, "dist");
+    // Refuse to synthesise from stale bundles (WP3.5 L7).
+    assertFreshBundles(path.join(__dirname, "..", "..", ".."), ["input-guard", "intent", "broker", "negotiator", "reviewer", "explainer"]);
 
     this.inputGuardFn = new lambda.Function(this, "InputGuardFunction", {
       functionName: "sage-input-guard",
@@ -169,6 +172,8 @@ export class AgentsConstruct extends Construct {
       // Pure deterministic computation -- no external calls beyond its own audit write.
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        // Score against the real catalogue's reference values (WP3.5 L6).
+        SAGE_CATALOGUE: "v2",
       },
     });
     grantAuditWrite(this.negotiatorFn);

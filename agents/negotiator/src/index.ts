@@ -9,7 +9,7 @@ import type {
   ScoreDimensions,
   RejectedCandidate,
 } from "@sage/shared-types";
-import { CATALOGUE_REFERENCES, isWarmup, WARMED } from "@sage/shared-types";
+import { referencesFor, isWarmup, WARMED } from "@sage/shared-types";
 import { recordDecision, warmUp } from "@sage/audit";
 
 // Deterministic scoring algorithm. Still
@@ -163,7 +163,9 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
   // score does not depend on which other candidates are present and a lone survivor does
   // not score 1.000 automatically. Scoring relative to the candidates remains only as a
   // fallback for categories without references.
-  const references = input.requiredCategory ? CATALOGUE_REFERENCES[input.requiredCategory] : undefined;
+  // Live (SAGE_CATALOGUE=v2) scores against the real catalogue; tests and the offline
+  // evaluation keep the synthetic table (WP3.5 L6).
+  const references = input.requiredCategory ? referencesFor(input.requiredCategory) : undefined;
   const basis = references ? "catalogue-references" : "relative-to-candidates";
 
   function scoreOf(candidate: ServiceCandidateWithEvidence): { dimensions: ScoreDimensions; total: number } {

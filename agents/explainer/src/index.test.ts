@@ -75,6 +75,25 @@ function composition(): Composition {
   };
 }
 
+describe("monthly price wording (WP3.5 L9)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("states an estimated monthly price in plain words with cents", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, price: 7.5, priceBasis: "estimated USD/month on its flat monthly plan" };
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1", composition: c });
+    expect(result.explanation).toContain("about $7.50 a month, on its flat monthly plan");
+    expect(result.explanation).not.toContain("USD/month");
+  });
+});
+
 describe("Explainer Agent handler", () => {
   beforeEach(() => {
     vi.resetModules();
