@@ -286,3 +286,64 @@ describe("stub mode never touches the shared Intent cache", () => {
     delete process.env.LLM_MODE;
   });
 });
+
+describe("multi-step Intent (T4.1a)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    sharedStore.clear();
+    fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("asks the model for steps, volume and per-unit limits in its schema", async () => {
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "email", category: "email-delivery", constraints: [] })));
+    const { handler } = await import("./index");
+    await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    const schema = JSON.parse(fetchMock.mock.calls[0][1].body).response_format.json_schema.schema;
+    expect(Object.keys(schema.properties)).toEqual(expect.arrayContaining(["steps", "volume"]));
+    expect(schema.properties.constraints.items.properties.per).toBeDefined();
+  });
+
+  it("returns the chain with the first step mirrored at the top level", async () => {
+    fetchMock.mockResolvedValue(
+      groqResponse(
+        JSON.stringify({
+          capability: "send receipt emails",
+          category: "email-delivery",
+          constraints: [{ field: "price", operator: "lt", value: 60, mandatory: true }],
+          steps: [
+            { capability: "send receipt emails", category: "email-delivery", constraints: [], volume: { amount: 20000, unit: "emails" }, dependsOn: [] },
+            { capability: "send SMS alerts", category: "messaging", constraints: [], volume: { amount: 2000, unit: "sms" }, dependsOn: [0] },
+          ],
+        })
+      )
+    );
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r2", rawInput: "email receipts then text the customer, under $60 a month total" } as IntentAgentInput);
+    expect(out.steps).toHaveLength(2);
+    expect(out.steps![1]).toMatchObject({ category: "messaging", dependsOn: [0], volume: { amount: 2000, unit: "sms" } });
+    expect(out.capability).toBe("send receipt emails");
+    expect(out.constraints).toEqual([{ field: "price", operator: "lt", value: 60, mandatory: true }]);
+  });
+
+  it("a single request keeps today's shape, gains its volume, and converts a per-unit budget (L2, L3)", async () => {
+    fetchMock.mockResolvedValue(
+      groqResponse(
+        JSON.stringify({
+          capability: "image resizing",
+          category: "image-resizing",
+          constraints: [{ field: "price", operator: "lt", value: 0.05, mandatory: true, per: "unit" }],
+          volume: { amount: 10000, unit: "images" },
+          steps: [],
+        })
+      )
+    );
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r3", rawInput: "resize 10k images a month under $0.05 each" } as IntentAgentInput);
+    expect(out.steps).toBeUndefined();
+    expect(out.volume).toEqual({ amount: 10000, unit: "images" });
+    expect(out.constraints).toEqual([{ field: "price", operator: "lt", value: 500, mandatory: true }]);
+  });
+});
