@@ -101,10 +101,11 @@ describe("CSV sheet import", () => {
 });
 
 describe("toV1: the agents keep their current flat shape", () => {
-  it("projects price, uptime and latency, preferring measured values when present", () => {
-    expect(toV1(good())).toMatchObject({ serviceId: "svc-mailrelay", price: 0.001, uptime: 99.95, latencyMs: 120, capability: "email-delivery" });
+  it("projects price, uptime and latency, blending in measured values when present (T3.3)", () => {
+    expect(toV1(good())).toMatchObject({ serviceId: "svc-mailrelay", price: 0.001, uptime: 99.95, latencyMs: 120, capability: "email-delivery", qosBasis: "advertised" });
+    // 12 samples carry half the weight (see blendQos), so the result sits halfway.
     const measured = toV1(good({ measured: { uptime: 99.5, latencyMs: 300, sampledAt: "2026-11-11", samples: 12 } }));
-    expect(measured).toMatchObject({ uptime: 99.5, latencyMs: 300 });
+    expect(measured).toMatchObject({ uptime: 99.725, latencyMs: 210, qosBasis: "blended" });
   });
 });
 

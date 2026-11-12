@@ -1,0 +1,46 @@
+name: QoS probes
+
+# T3.3: measured quality of service. Every 6 hours, one unauthenticated HEAD request goes to
+# each real catalogue service; results are appended to data/probes/YYYY-MM.jsonl and a rolling
+# 30-day summary is written into each record's `measured` block in data/services.v2.json.
+# Scoring blends measured with advertised values (packages/catalogue/src/probe.ts).
+#
+# Scheduled workflows only run from the default branch, so the schedule starts once this file
+# reaches it; until then, run it by hand (Actions -> QoS probes -> Run workflow).
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qos-probes
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      - run: npm run catalogue:probe
+      - name: Commit probe results
+        run: |
+          git config user.name "sage-qos-probe"
+          git config user.email "sage-qos-probe@users.noreply.github.com"
+          git add data/probes data/services.v2.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git commit -m "chore(probes): QoS probe run $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+          git pull --rebase origin develop
+          git push origin HEAD:develop

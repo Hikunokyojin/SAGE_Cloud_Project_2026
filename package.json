@@ -28,7 +28,8 @@
     "load-test": "node scripts/load-test.mjs",
     "catalogue:ingest": "tsx scripts/catalogue-ingest.ts",
     "catalogue:import": "tsx scripts/catalogue-import.ts",
-    "catalogue:workbook": "python scripts/catalogue-workbook.py"
+    "catalogue:workbook": "python scripts/catalogue-workbook.py",
+    "catalogue:probe": "tsx scripts/catalogue-probe.ts"
   },
   "workspaces": [
     "apps/*",

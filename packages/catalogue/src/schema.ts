@@ -14,6 +14,9 @@ export interface CatalogueServiceV2 {
   capability: string;
   // HTTPS base URL of the API.
   endpoint: string;
+  // Where the QoS probe (T3.3) checks reachability when `endpoint` is per-customer (for example
+  // Azure's <account>.blob.core.windows.net) and has no shared host to call. Defaults to endpoint.
+  probeUrl?: string;
   pricing: {
     amount: number;
     // What the amount is for, for example "per email" or "per GB-month".
@@ -60,6 +63,7 @@ export function validateService(s: CatalogueServiceV2): string[] {
     p.push(`capability "${s.capability}" is not one of SERVICE_CATEGORIES (add the category there first)`);
   }
   if (!isHttpsUrl(s.endpoint)) p.push(`endpoint "${s.endpoint}" must be an https URL`);
+  if (s.probeUrl !== undefined && !isHttpsUrl(s.probeUrl)) p.push(`probeUrl "${s.probeUrl}" must be an https URL`);
   if (!num(s.pricing?.amount) || s.pricing.amount < 0) p.push("pricing.amount must be a number of at least 0");
   if (!s.pricing?.unit?.trim()) p.push("pricing.unit is required (for example \"per email\")");
   if (!/^[A-Z]{3}$/.test(s.pricing?.currency ?? "")) p.push("pricing.currency must be a 3-letter upper-case code (for example USD)");

@@ -2,6 +2,7 @@
 // documents), so the catalogue can move to v2 without changing any agent. Measured values
 // (T3.3 probes) take precedence over advertised ones.
 import type { CatalogueServiceV2 } from "./schema";
+import { blendQos } from "./probe";
 
 export interface ServiceV1 {
   serviceId: string;
@@ -20,20 +21,20 @@ export interface ServiceV1 {
   currency: string;
   sourceUrl: string;
   retrievedAt: string;
-  qosBasis: "measured" | "advertised";
+  qosBasis: "blended" | "advertised";
   synthetic?: boolean;
 }
 
 export function toV1(s: CatalogueServiceV2): ServiceV1 {
-  const m = s.measured;
-  const latencyMs = m?.latencyMs ?? s.advertised.latencyMs;
+  const q = blendQos(s.advertised, s.measured);
+  const latencyMs = q.latencyMs;
   return {
     serviceId: s.serviceId,
     name: s.name,
     description: s.description,
     capability: s.capability,
     price: s.pricing.amount,
-    uptime: m?.uptime ?? s.advertised.uptime,
+    uptime: q.uptime,
     ...(latencyMs !== undefined ? { latencyMs } : {}),
     dependencies: [],
     constraints: [],
@@ -43,7 +44,7 @@ export function toV1(s: CatalogueServiceV2): ServiceV1 {
     currency: s.pricing.currency,
     sourceUrl: s.source.url,
     retrievedAt: s.source.retrievedAt,
-    qosBasis: m ? "measured" : "advertised",
+    qosBasis: q.basis,
     ...(s.synthetic ? { synthetic: true } : {}),
   };
 }
