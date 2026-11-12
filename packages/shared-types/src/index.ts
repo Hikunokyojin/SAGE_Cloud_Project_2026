@@ -65,6 +65,9 @@ export interface ServiceCandidate {
   latencyMs?: number;
   // Catalog category (one of SERVICE_CATEGORIES), checked against Intent.category.
   capability?: string;
+  // How `price` was derived (T3.4), e.g. "estimated USD/month at 100,000 emails/month"; absent
+  // for the original synthetic catalogue, whose price is a per-request figure.
+  priceBasis?: string;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────

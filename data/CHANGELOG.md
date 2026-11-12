@@ -2,6 +2,15 @@
 
 This dataset (`services.json`) is versioned independently of the application code, since its content and schema directly affect Broker's retrieval quality and the reproducibility of any example or test request run against it.
 
+## v2.0.0 — 2026-11-12 (live)
+
+**`services.v2.json` is now what the live system loads.** The 213 real services were seeded into MongoDB (`seed-services --v2 --prune`) and re-embedded into Qdrant; the 21 synthetic services were deleted from both and stay in the file for offline evaluation (`synthetic: true`).
+
+- Seeded `price` is an **estimated USD per month** at a fixed usage profile (`packages/catalogue/src/normalise.ts`); the provider's own price is kept as `listPrice`, and `priceBasis` says how the estimate was made.
+- Seeded `uptime`/`latencyMs` blend measured probe results with advertised values (`qosBasis: "blended"`).
+- Retrieval re-calibrated on v2: cut-off 0.38 kept (recall@5 0.952). See `docs/EVALUATION.md`.
+- Rollback: `npm run seed-services` (v1) then `reembed-services`.
+
 ## v2.0.0-alpha — 2026-11-11 (`services.v2.json`)
 
 **New schema (T3.1), in a new file; `services.json` (v1.1.0) is unchanged and still what the agents load.** Each record now states where its numbers came from and when:

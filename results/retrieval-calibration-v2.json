@@ -1,0 +1,1080 @@
+{
+  "generatedAt": "2026-11-12T10:33:27.781Z",
+  "model": "Xenova/all-MiniLM-L6-v2",
+  "inCatalogueQueries": 105,
+  "outOfCatalogueQueries": 15,
+  "current": {
+    "threshold": 0.38,
+    "recallAt5": 0.9523809523809523,
+    "outOfCatalogueRefused": 0.6
+  },
+  "chosen": {
+    "threshold": 0.38,
+    "recallAt5": 0.9523809523809523,
+    "outOfCatalogueRefused": 0.6
+  },
+  "scores": [
+    {
+      "kind": "in",
+      "best": 0.584,
+      "query": "image resizing service",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.533,
+      "query": "resize and convert images",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.448,
+      "query": "thumbnail generation for photos",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.703,
+      "query": "video transcoding",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.571,
+      "query": "convert videos to H.265",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.544,
+      "query": "encode video files",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.675,
+      "query": "speech to text transcription",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.607,
+      "query": "transcribe audio recordings",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.638,
+      "query": "voice transcription API",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.651,
+      "query": "object storage",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.531,
+      "query": "store files durably",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.665,
+      "query": "archive storage for backups",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.816,
+      "query": "content delivery network",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.636,
+      "query": "CDN with edge caching",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.296,
+      "query": "serve static assets globally",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.62,
+      "query": "email delivery service",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.661,
+      "query": "send transactional emails",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.631,
+      "query": "email API with bounce tracking",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.692,
+      "query": "SMS messaging",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.552,
+      "query": "send WhatsApp messages",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.625,
+      "query": "text message API",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.625,
+      "query": "user authentication",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.494,
+      "query": "single sign-on and OAuth",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.619,
+      "query": "identity and login service",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.597,
+      "query": "payment processing",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.632,
+      "query": "accept card payments",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.669,
+      "query": "payment gateway",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.573,
+      "query": "machine learning model inference",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.512,
+      "query": "host ML models for predictions",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.417,
+      "query": "model serving with autoscaling",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.426,
+      "query": "text embedding generation",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.551,
+      "query": "vector embeddings for semantic search",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.334,
+      "query": "generate image embeddings",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.642,
+      "query": "product analytics",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.472,
+      "query": "event analytics dashboard",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.541,
+      "query": "track user events",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.686,
+      "query": "message queue",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.488,
+      "query": "queue with dead-letter handling",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.554,
+      "query": "asynchronous job queue",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.6,
+      "query": "full-text search",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.738,
+      "query": "search index with typo tolerance",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.626,
+      "query": "text search engine",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.54,
+      "query": "PDF generation",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.553,
+      "query": "generate documents from HTML templates",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.499,
+      "query": "create invoices as PDF",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.255,
+      "query": "compute instances",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.407,
+      "query": "virtual machines for batch jobs",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.548,
+      "query": "cloud servers",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.728,
+      "query": "IP geolocation",
+      "category": "geolocation"
+    },
+    {
+      "kind": "in",
+      "best": 0.69,
+      "query": "reverse geocoding addresses",
+      "category": "geolocation"
+    },
+    {
+      "kind": "in",
+      "best": 0.572,
+      "query": "location lookup API",
+      "category": "geolocation"
+    },
+    {
+      "kind": "in",
+      "best": 0.523,
+      "query": "a managed database for my app's records",
+      "category": "database"
+    },
+    {
+      "kind": "in",
+      "best": 0.699,
+      "query": "serverless key-value store with fast reads",
+      "category": "database"
+    },
+    {
+      "kind": "in",
+      "best": 0.543,
+      "query": "hosted PostgreSQL or MySQL database",
+      "category": "database"
+    },
+    {
+      "kind": "in",
+      "best": 0.596,
+      "query": "DNS hosting for my domain",
+      "category": "dns"
+    },
+    {
+      "kind": "in",
+      "best": 0.605,
+      "query": "resolve domain names with high availability",
+      "category": "dns"
+    },
+    {
+      "kind": "in",
+      "best": 0.686,
+      "query": "authoritative DNS service with an API",
+      "category": "dns"
+    },
+    {
+      "kind": "in",
+      "best": 0.66,
+      "query": "stream real-time events into analytics",
+      "category": "data-streaming"
+    },
+    {
+      "kind": "in",
+      "best": 0.685,
+      "query": "managed Kafka for event streaming",
+      "category": "data-streaming"
+    },
+    {
+      "kind": "in",
+      "best": 0.551,
+      "query": "ingest a high-volume stream of log events",
+      "category": "data-streaming"
+    },
+    {
+      "kind": "in",
+      "best": 0.586,
+      "query": "store API keys and passwords securely",
+      "category": "secrets-management"
+    },
+    {
+      "kind": "in",
+      "best": 0.324,
+      "query": "rotate database credentials automatically",
+      "category": "secrets-management"
+    },
+    {
+      "kind": "in",
+      "best": 0.631,
+      "query": "manage encryption keys for my application",
+      "category": "secrets-management"
+    },
+    {
+      "kind": "in",
+      "best": 0.695,
+      "query": "convert text into natural sounding speech",
+      "category": "text-to-speech"
+    },
+    {
+      "kind": "in",
+      "best": 0.553,
+      "query": "generate a voiceover from a script",
+      "category": "text-to-speech"
+    },
+    {
+      "kind": "in",
+      "best": 0.75,
+      "query": "text to speech API with many voices",
+      "category": "text-to-speech"
+    },
+    {
+      "kind": "in",
+      "best": 0.413,
+      "query": "translate product descriptions into French and Spanish",
+      "category": "translation"
+    },
+    {
+      "kind": "in",
+      "best": 0.637,
+      "query": "machine translation API for user messages",
+      "category": "translation"
+    },
+    {
+      "kind": "in",
+      "best": 0.633,
+      "query": "translate documents between languages",
+      "category": "translation"
+    },
+    {
+      "kind": "in",
+      "best": 0.636,
+      "query": "extract text from scanned invoices",
+      "category": "document-ocr"
+    },
+    {
+      "kind": "in",
+      "best": 0.774,
+      "query": "OCR for receipts and forms",
+      "category": "document-ocr"
+    },
+    {
+      "kind": "in",
+      "best": 0.622,
+      "query": "read handwritten text from PDF scans",
+      "category": "document-ocr"
+    },
+    {
+      "kind": "in",
+      "best": 0.453,
+      "query": "detect objects and labels in photos",
+      "category": "image-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.465,
+      "query": "moderate uploaded images for unsafe content",
+      "category": "image-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.59,
+      "query": "face detection in pictures",
+      "category": "image-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.561,
+      "query": "put an API gateway in front of my microservices",
+      "category": "api-gateway"
+    },
+    {
+      "kind": "in",
+      "best": 0.529,
+      "query": "rate limiting and API keys for my public API",
+      "category": "api-gateway"
+    },
+    {
+      "kind": "in",
+      "best": 0.649,
+      "query": "managed gateway to route HTTP requests to backends",
+      "category": "api-gateway"
+    },
+    {
+      "kind": "in",
+      "best": 0.562,
+      "query": "orchestrate a multi-step business workflow with retries",
+      "category": "workflow-orchestration"
+    },
+    {
+      "kind": "in",
+      "best": 0.601,
+      "query": "run durable background jobs in sequence",
+      "category": "workflow-orchestration"
+    },
+    {
+      "kind": "in",
+      "best": 0.342,
+      "query": "coordinate several services in a state machine",
+      "category": "workflow-orchestration"
+    },
+    {
+      "kind": "in",
+      "best": 0.697,
+      "query": "collect logs and metrics from my servers",
+      "category": "monitoring"
+    },
+    {
+      "kind": "in",
+      "best": 0.478,
+      "query": "error tracking for my web app",
+      "category": "monitoring"
+    },
+    {
+      "kind": "in",
+      "best": 0.804,
+      "query": "distributed tracing across microservices",
+      "category": "monitoring"
+    },
+    {
+      "kind": "in",
+      "best": 0.495,
+      "query": "sentiment analysis of customer reviews",
+      "category": "text-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.491,
+      "query": "detect toxic or harmful text in comments",
+      "category": "text-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.626,
+      "query": "extract entities and key phrases from text",
+      "category": "text-analysis"
+    },
+    {
+      "kind": "in",
+      "best": 0.553,
+      "query": "product recommendations for my online shop",
+      "category": "recommendations"
+    },
+    {
+      "kind": "in",
+      "best": 0.574,
+      "query": "personalised suggestions based on user behaviour",
+      "category": "recommendations"
+    },
+    {
+      "kind": "in",
+      "best": 0.604,
+      "query": "recommend similar items to customers",
+      "category": "recommendations"
+    },
+    {
+      "kind": "in",
+      "best": 0.669,
+      "query": "detect fraudulent payments",
+      "category": "fraud-detection"
+    },
+    {
+      "kind": "in",
+      "best": 0.548,
+      "query": "score sign-ups for account fraud risk",
+      "category": "fraud-detection"
+    },
+    {
+      "kind": "in",
+      "best": 0.562,
+      "query": "screen card transactions for fraud",
+      "category": "fraud-detection"
+    },
+    {
+      "kind": "in",
+      "best": 0.55,
+      "query": "shared network file system for my servers",
+      "category": "file-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.697,
+      "query": "managed NFS file shares",
+      "category": "file-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.534,
+      "query": "mountable file storage for containers",
+      "category": "file-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.696,
+      "query": "store and distribute Docker images",
+      "category": "container-registry"
+    },
+    {
+      "kind": "in",
+      "best": 0.815,
+      "query": "private container image registry",
+      "category": "container-registry"
+    },
+    {
+      "kind": "in",
+      "best": 0.668,
+      "query": "host container images for deployment",
+      "category": "container-registry"
+    },
+    {
+      "kind": "in",
+      "best": 0.457,
+      "query": "host my website with automatic deploys",
+      "category": "web-hosting"
+    },
+    {
+      "kind": "in",
+      "best": 0.388,
+      "query": "deploy a web app with a custom domain",
+      "category": "web-hosting"
+    },
+    {
+      "kind": "in",
+      "best": 0.558,
+      "query": "hosting for a Node.js web application",
+      "category": "web-hosting"
+    },
+    {
+      "kind": "in",
+      "best": 0.451,
+      "query": "run SQL queries over data in object storage",
+      "category": "data-query"
+    },
+    {
+      "kind": "in",
+      "best": 0.791,
+      "query": "serverless data warehouse for analytics",
+      "category": "data-query"
+    },
+    {
+      "kind": "in",
+      "best": 0.619,
+      "query": "query large datasets with SQL without servers",
+      "category": "data-query"
+    },
+    {
+      "kind": "out",
+      "best": 0.442,
+      "query": "domain name registration"
+    },
+    {
+      "kind": "out",
+      "best": 0.278,
+      "query": "weather forecast data"
+    },
+    {
+      "kind": "out",
+      "best": 0.407,
+      "query": "code repository hosting"
+    },
+    {
+      "kind": "out",
+      "best": 0.371,
+      "query": "load balancer"
+    },
+    {
+      "kind": "out",
+      "best": 0.347,
+      "query": "web application firewall"
+    },
+    {
+      "kind": "out",
+      "best": 0.277,
+      "query": "calendar scheduling"
+    },
+    {
+      "kind": "out",
+      "best": 0.395,
+      "query": "chat bot builder"
+    },
+    {
+      "kind": "out",
+      "best": 0.546,
+      "query": "container orchestration with Kubernetes"
+    },
+    {
+      "kind": "out",
+      "best": 0.52,
+      "query": "electronic signatures for contracts"
+    },
+    {
+      "kind": "out",
+      "best": 0.25,
+      "query": "flight booking"
+    },
+    {
+      "kind": "out",
+      "best": 0.223,
+      "query": "stock market price feed"
+    },
+    {
+      "kind": "out",
+      "best": 0.423,
+      "query": "video conferencing rooms"
+    },
+    {
+      "kind": "out",
+      "best": 0.338,
+      "query": "CRM for sales teams"
+    },
+    {
+      "kind": "out",
+      "best": 0.316,
+      "query": "VPN for remote employees"
+    },
+    {
+      "kind": "out",
+      "best": 0.356,
+      "query": "online form builder"
+    }
+  ],
+  "curve": [
+    {
+      "threshold": 0.1,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.11,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.12,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.13,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.14,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.15,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.16,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.17,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.18,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.19,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.2,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.21,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.22,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.23,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.24,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.25,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.26,
+      "recallAt5": 0.9904761904761905,
+      "outOfCatalogueRefused": 0.13333333333333333
+    },
+    {
+      "threshold": 0.27,
+      "recallAt5": 0.9904761904761905,
+      "outOfCatalogueRefused": 0.13333333333333333
+    },
+    {
+      "threshold": 0.28,
+      "recallAt5": 0.9904761904761905,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.29,
+      "recallAt5": 0.9904761904761905,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.3,
+      "recallAt5": 0.9809523809523809,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.31,
+      "recallAt5": 0.9809523809523809,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.32,
+      "recallAt5": 0.9809523809523809,
+      "outOfCatalogueRefused": 0.3333333333333333
+    },
+    {
+      "threshold": 0.33,
+      "recallAt5": 0.9714285714285714,
+      "outOfCatalogueRefused": 0.3333333333333333
+    },
+    {
+      "threshold": 0.34,
+      "recallAt5": 0.9619047619047619,
+      "outOfCatalogueRefused": 0.4
+    },
+    {
+      "threshold": 0.35,
+      "recallAt5": 0.9523809523809523,
+      "outOfCatalogueRefused": 0.4666666666666667
+    },
+    {
+      "threshold": 0.36,
+      "recallAt5": 0.9523809523809523,
+      "outOfCatalogueRefused": 0.5333333333333333
+    },
+    {
+      "threshold": 0.37,
+      "recallAt5": 0.9523809523809523,
+      "outOfCatalogueRefused": 0.5333333333333333
+    },
+    {
+      "threshold": 0.38,
+      "recallAt5": 0.9523809523809523,
+      "outOfCatalogueRefused": 0.6
+    },
+    {
+      "threshold": 0.39,
+      "recallAt5": 0.9428571428571428,
+      "outOfCatalogueRefused": 0.6
+    },
+    {
+      "threshold": 0.4,
+      "recallAt5": 0.9428571428571428,
+      "outOfCatalogueRefused": 0.6666666666666666
+    },
+    {
+      "threshold": 0.41,
+      "recallAt5": 0.9333333333333333,
+      "outOfCatalogueRefused": 0.7333333333333333
+    },
+    {
+      "threshold": 0.42,
+      "recallAt5": 0.9142857142857143,
+      "outOfCatalogueRefused": 0.7333333333333333
+    },
+    {
+      "threshold": 0.43,
+      "recallAt5": 0.9047619047619048,
+      "outOfCatalogueRefused": 0.8
+    },
+    {
+      "threshold": 0.44,
+      "recallAt5": 0.9047619047619048,
+      "outOfCatalogueRefused": 0.8
+    },
+    {
+      "threshold": 0.45,
+      "recallAt5": 0.8952380952380953,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.46,
+      "recallAt5": 0.8666666666666667,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.47,
+      "recallAt5": 0.8571428571428571,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.48,
+      "recallAt5": 0.8380952380952381,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.49,
+      "recallAt5": 0.8285714285714286,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.5,
+      "recallAt5": 0.7904761904761904,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.51,
+      "recallAt5": 0.7904761904761904,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.52,
+      "recallAt5": 0.780952380952381,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.53,
+      "recallAt5": 0.7619047619047619,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.54,
+      "recallAt5": 0.7238095238095238,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.55,
+      "recallAt5": 0.6666666666666666,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.56,
+      "recallAt5": 0.5904761904761905,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.57,
+      "recallAt5": 0.5619047619047619,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.58,
+      "recallAt5": 0.5238095238095238,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.59,
+      "recallAt5": 0.49523809523809526,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.6,
+      "recallAt5": 0.4666666666666667,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.61,
+      "recallAt5": 0.42857142857142855,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.62,
+      "recallAt5": 0.4,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.63,
+      "recallAt5": 0.3523809523809524,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.64,
+      "recallAt5": 0.2761904761904762,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.65,
+      "recallAt5": 0.2571428571428571,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.66,
+      "recallAt5": 0.24761904761904763,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.67,
+      "recallAt5": 0.19047619047619047,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.68,
+      "recallAt5": 0.18095238095238095,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.69,
+      "recallAt5": 0.14285714285714285,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.7,
+      "recallAt5": 0.08571428571428572,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.71,
+      "recallAt5": 0.0761904761904762,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.72,
+      "recallAt5": 0.0761904761904762,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.73,
+      "recallAt5": 0.06666666666666667,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.74,
+      "recallAt5": 0.05714285714285714,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.75,
+      "recallAt5": 0.05714285714285714,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.76,
+      "recallAt5": 0.047619047619047616,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.77,
+      "recallAt5": 0.047619047619047616,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.78,
+      "recallAt5": 0.0380952380952381,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.79,
+      "recallAt5": 0.0380952380952381,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.8,
+      "recallAt5": 0.02857142857142857,
+      "outOfCatalogueRefused": 1
+    }
+  ]
+}
