@@ -20,7 +20,7 @@ const args = Object.fromEntries(
 );
 const API = (args.api || process.env.SAGE_API_BASE || "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod").replace(/\/$/, "");
 const only = args.only ? new Set(args.only.split(",")) : undefined;
-const GAP_MS = Number(args.gap || 4000); // stays well inside the API throttle and the free LLM quota
+const GAP_MS = Number(args.gap || 20000); // Groq free tier: 8,000 tokens a minute (a 4 s gap hit 429s)
 
 const sandboxCalls: { category: string; inputs: string[] }[] = [];
 
