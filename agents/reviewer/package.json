@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-sns": "^3.600.0",
     "@sage/audit": "*",
+    "@sage/catalogue": "*",
     "@sage/shared-types": "*"
   },
   "devDependencies": {

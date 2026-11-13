@@ -190,6 +190,10 @@ export interface ReviewerAgentInput {
   requiredCategory?: string;
   // Signed link to the human review page; included in the escalation email (T2.3).
   reviewUrl?: string;
+  // T4.1c: the stated monthly volume, so the price and plan quota are re-checked independently.
+  volume?: UsageVolume;
+  // T4.1c: chain requests. Each step's own limits; `constraints` then limit the whole chain.
+  steps?: { capability: string; constraints: Constraint[]; requiredCategory?: string; volume?: UsageVolume; dependsOn: number[] }[];
   decisionId?: string;
   parentDecisionId?: string;
 }

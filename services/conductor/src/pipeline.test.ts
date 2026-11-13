@@ -193,6 +193,7 @@ describe("runPipeline", () => {
     await runPipeline("req-1", "about 100k emails a month", invoker);
 
     expect(vi.mocked(invoker.negotiator).mock.calls[0][0].volume).toEqual({ amount: 100000, unit: "emails" });
+    expect(vi.mocked(invoker.reviewer).mock.calls[0][0].volume).toEqual({ amount: 100000, unit: "emails" });
   });
 
   it("passes Intent's soft preferences to the Negotiator", async () => {
