@@ -14,6 +14,8 @@ export interface ExplanationFacts {
   rejectedNames: string[];
   // The cheaper-plan sentence, when the chosen plan is the provider's cheaper one (T4.1b).
   cheaperPlan?: string;
+  // L17: volume notes (unit conversions, quota notes) and the sentence that states each one.
+  volumeNotes?: { note: string; sentence: string }[];
 }
 
 const NUMBER = /\d+(?:\.\d+)?/g;
