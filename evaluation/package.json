@@ -9,7 +9,8 @@
     "experiment": "tsx src/run-experiments.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "calibrate:retrieval": "tsx src/retrieval/calibrate.ts"
+    "calibrate:retrieval": "tsx src/retrieval/calibrate.ts",
+    "rt11": "tsx src/rt11/run.ts"
   },
   "dependencies": {
     "@sage/shared-types": "*",
