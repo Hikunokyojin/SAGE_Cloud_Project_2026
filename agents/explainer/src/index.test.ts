@@ -588,3 +588,27 @@ describe("chain explanations and volume notes (T4.1e)", () => {
     expect(out.explanationSource).toBe("facts");
   });
 });
+
+describe("volume notes survive the model's wording (L17)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("adds back a volume note the wording left out, and keeps one it included", async () => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, volumeNote: "5,000 pages counted as 5,000 images" };
+    fetchMock.mockResolvedValue(groqResponse("We picked FastResize over SlowResize."));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: c });
+    expect(out.explanationSource).toBe("model");
+    expect(out.explanation).toBe("We picked FastResize over SlowResize. Volume: 5,000 pages counted as 5,000 images.");
+
+    vi.resetModules();
+    fetchMock.mockResolvedValue(groqResponse("We picked FastResize over SlowResize; 5,000 pages counted as 5,000 images."));
+    const again = await (await import("./index")).handler({ requestId: "req-1", composition: c });
+    expect(again.explanation).toBe("We picked FastResize over SlowResize; 5,000 pages counted as 5,000 images.");
+  });
+});

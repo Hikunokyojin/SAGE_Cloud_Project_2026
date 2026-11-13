@@ -136,6 +136,11 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
     alsoChosen: chain ? chain.steps.slice(1).map((st) => st.chosen.service.name) : [],
     rejectedNames: rejected.map((r) => r.name),
     cheaperPlan,
+    volumeNotes: chain
+      ? chain.steps.flatMap((st, i) => (st.chosen.service.volumeNote ? [{ note: st.chosen.service.volumeNote, sentence: `Step ${i + 1}: ${st.chosen.service.volumeNote}.` }] : []))
+      : s.volumeNote
+        ? [{ note: s.volumeNote, sentence: `Volume: ${s.volumeNote}.` }]
+        : [],
   };
 }
 
@@ -178,8 +183,13 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
     lastProblems = checkClaims(candidateText, facts);
     if (lastProblems.length === 0) {
       // The cheaper-plan rule must always be stated (T4.1b): add it back if the wording dropped it.
-      explanation =
-        facts.cheaperPlan && !/cheaper plan/i.test(candidateText) ? `${candidateText} ${facts.cheaperPlan}` : candidateText;
+      const added: string[] = [];
+      // L17: so must every volume note (a unit conversion or assumption behind a price).
+      for (const v of facts.volumeNotes ?? []) {
+        if (!candidateText.toLowerCase().includes(v.note.toLowerCase())) added.push(v.sentence);
+      }
+      if (facts.cheaperPlan && !/cheaper plan/i.test(candidateText)) added.push(facts.cheaperPlan);
+      explanation = [candidateText, ...added].join(" ");
       explanationSource = "model";
       break;
     }
