@@ -424,3 +424,90 @@ describe("plainReason", () => {
     expect(plainReason("already plain")).toBe("already plain");
   });
 });
+
+describe("chain requests (T4.1d)", () => {
+  const chainIntent = (overrides: Partial<{ secondCategory?: string }> = {}) =>
+    vi.fn(async (input: { requestId: string; rawInput: string }) => ({
+      requestId: input.requestId,
+      capability: "ocr",
+      category: "document-ocr",
+      constraints: [{ field: "price", operator: "lte", value: 50, mandatory: true }] as Constraint[],
+      steps: [
+        { capability: "ocr", category: "document-ocr", constraints: [] as Constraint[], dependsOn: [] },
+        { capability: "translation", category: "secondCategory" in overrides ? overrides.secondCategory : "translation", constraints: [] as Constraint[], volume: { amount: 1_000_000, unit: "characters" as const }, dependsOn: [0] },
+      ],
+      rawInput: input.rawInput,
+    }));
+  const chainComposition = (input: { iteration: number }) => {
+    const c = composition(choice({ serviceId: "svc-ocr" }), [], input.iteration);
+    c.chain = {
+      steps: [
+        { capability: "ocr", chosen: choice({ serviceId: "svc-ocr" }), dependsOn: [] },
+        { capability: "translation", chosen: choice({ serviceId: "svc-tr" }), dependsOn: [0] },
+      ],
+      totals: { price: 10, uptime: 99 },
+      score: 0.8,
+      combinationsCompared: 1,
+      combinationsValid: 1,
+    };
+    return c;
+  };
+
+  it("runs the Broker once per step, each as its own decision under the Intent decision", async () => {
+    const invoker = makeInvoker({
+      intent: chainIntent(),
+      broker: vi.fn(async (input) => [service({ serviceId: input.category === "translation" ? "svc-tr" : "svc-ocr" })]),
+      negotiator: vi.fn(async (input) => chainComposition(input)),
+    });
+    await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    const calls = vi.mocked(invoker.broker).mock.calls.map((c) => c[0]);
+    expect(calls.map((c) => c.category)).toEqual(["document-ocr", "translation"]);
+    expect(new Set(calls.map((c) => c.decisionId)).size).toBe(2);
+    const intentId = vi.mocked(invoker.intent).mock.calls[0][0].decisionId;
+    expect(calls.every((c) => c.parentDecisionId === intentId)).toBe(true);
+  });
+
+  it("gives the Negotiator and Reviewer the steps, each with its own candidates", async () => {
+    const invoker = makeInvoker({
+      intent: chainIntent(),
+      broker: vi.fn(async (input) => [service({ serviceId: input.category === "translation" ? "svc-tr" : "svc-ocr" })]),
+      negotiator: vi.fn(async (input) => chainComposition(input)),
+    });
+    await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    const neg = vi.mocked(invoker.negotiator).mock.calls[0][0];
+    expect(neg.steps?.map((s) => s.candidates.map((c) => c.serviceId))).toEqual([["svc-ocr"], ["svc-tr"]]);
+    expect(neg.steps?.[1]).toMatchObject({ requiredCategory: "translation", volume: { amount: 1_000_000, unit: "characters" }, dependsOn: [0] });
+    const rev = vi.mocked(invoker.reviewer).mock.calls[0][0];
+    expect(rev.steps?.map((s) => s.capability)).toEqual(["ocr", "translation"]);
+    expect(rev.constraints).toEqual([{ field: "price", operator: "lte", value: 50, mandatory: true }]);
+  });
+
+  it("hands the Explainer the chain as a graph of services", async () => {
+    const invoker = makeInvoker({
+      intent: chainIntent(),
+      negotiator: vi.fn(async (input) => chainComposition(input)),
+    });
+    await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    const exp = vi.mocked(invoker.explainer).mock.calls[0][0];
+    expect(exp.composition.chain?.edges).toEqual([{ from: "svc-ocr", to: "svc-tr" }]);
+  });
+
+  it("pauses for a human, naming the step, when a step has no catalogue category", async () => {
+    const invoker = makeInvoker({ intent: chainIntent({ secondCategory: undefined }) });
+    const r = await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    expect(r.status).toBe("paused_for_review");
+    expect(vi.mocked(invoker.escalateUnsatisfiable).mock.calls[0][0].reason).toMatch(/step 2 "translation"/);
+    expect(invoker.broker).not.toHaveBeenCalled();
+  });
+
+  it("pauses, naming the step, when one step finds no services", async () => {
+    const invoker = makeInvoker({
+      intent: chainIntent(),
+      broker: vi.fn(async (input) => (input.category === "translation" ? [] : [service({ serviceId: "svc-ocr" })])),
+    });
+    const r = await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    expect(r.status).toBe("paused_for_review");
+    expect(vi.mocked(invoker.escalateUnsatisfiable).mock.calls[0][0].reason).toMatch(/step 2 \("translation"\)/);
+    expect(invoker.negotiator).not.toHaveBeenCalled();
+  });
+});

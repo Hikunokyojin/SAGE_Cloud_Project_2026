@@ -412,6 +412,8 @@ export interface ChainComposition {
   // How many combinations were compared, and how many met the chain-wide limits.
   combinationsCompared: number;
   combinationsValid: number;
+  // T4.1d: the composition graph, one edge per dependency (output of `from` feeds `to`).
+  edges?: { from: string; to: string }[];
 }
 
 export interface Composition extends CompositionBlueprint {
