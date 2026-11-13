@@ -12,6 +12,7 @@ import type {
   Violation,
   UnsatisfiableEscalationInput,
   StageTiming,
+  NegotiatorStep,
 } from "@sage/shared-types";
 
 // One typed method per agent -- both the local (in-process) and Lambda-backed
@@ -52,6 +53,7 @@ export interface AgentInvoker {
     requiredCategory?: string;
     preferences?: Intent["preferences"];
     volume?: Intent["volume"];
+    steps?: NegotiatorStep[];
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<Composition>;
@@ -61,6 +63,7 @@ export interface AgentInvoker {
     constraints: Constraint[];
     requiredCategory?: string;
     volume?: Intent["volume"];
+    steps?: { capability: string; constraints: Constraint[]; requiredCategory?: string; volume?: Intent["volume"]; dependsOn: number[] }[];
     reviewUrl?: string;
     decisionId?: string;
     parentDecisionId?: string;
@@ -221,7 +224,24 @@ async function fromIntent(
   // Without this check retrieval returns the nearest neighbour from an unrelated category
   // (found live: a request for a database service was answered with a message queue), so
   // it goes straight to a human instead, before any search.
-  if (!intent.category) {
+  const chainSteps = intent.steps && intent.steps.length >= 2 ? intent.steps : undefined;
+  const missing = chainSteps?.findIndex((s) => !s.category) ?? -1;
+  if (chainSteps && missing >= 0) {
+    const reason = `capability_not_in_catalogue: step ${missing + 1} "${chainSteps[missing].capability}" does not match any service category in the catalogue`;
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        kind: "capability_not_in_catalogue",
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: intentDecisionId,
+      })
+    );
+  }
+
+  if (!chainSteps && !intent.category) {
     const reason = `capability_not_in_catalogue: "${intent.capability}" does not match any service category in the catalogue`;
     return paused(reason, [], (decisionId) =>
       invoker.escalateUnsatisfiable({
@@ -236,20 +256,27 @@ async function fromIntent(
     );
   }
 
-  const brokerDecisionId = randomUUID();
-  const candidates = await invoker.broker({
-    requestId,
-    capability: intent.capability,
-    constraints: intent.constraints,
-    category: intent.category,
-    decisionId: brokerDecisionId,
-    parentDecisionId: intentDecisionId,
-  });
+  // T4.1d: a chain runs one Broker search per step (each its own audited decision, all
+  // children of the Intent decision); a single request runs one.
+  const searches = chainSteps
+    ? chainSteps.map((s) => ({ capability: s.capability, constraints: s.constraints, category: s.category }))
+    : [{ capability: intent.capability, constraints: intent.constraints, category: intent.category }];
+  const brokerDecisionIds = searches.map(() => randomUUID());
+  const perStep = await Promise.all(
+    searches.map((s, i) =>
+      invoker.broker({ requestId, ...s, decisionId: brokerDecisionIds[i], parentDecisionId: intentDecisionId })
+    )
+  );
+  const brokerDecisionId = brokerDecisionIds[brokerDecisionIds.length - 1];
+  const candidates = perStep.flat();
+  const emptyStep = perStep.findIndex((c) => c.length === 0);
 
   // Retrieval finding nothing is still an unresolved request, so it goes to a human
   // like any other no-valid-solution outcome rather than ending as a bare failure.
-  if (candidates.length === 0) {
-    const reason = "no matching services were found in the catalog for this request";
+  if (emptyStep >= 0) {
+    const reason = chainSteps
+      ? `no matching services were found in the catalog for step ${emptyStep + 1} ("${chainSteps[emptyStep].capability}")`
+      : "no matching services were found in the catalog for this request";
     return paused(reason, [], (decisionId) =>
       invoker.escalateUnsatisfiable({
         requestId,
@@ -283,6 +310,18 @@ async function fromIntent(
         preferences: intent.preferences,
         // T4.1b: price at, and check plan quotas against, the stated monthly volume.
         ...(intent.volume ? { volume: intent.volume } : {}),
+        ...(chainSteps
+          ? {
+              steps: chainSteps.map((s, i) => ({
+                capability: s.capability,
+                candidates: perStep[i],
+                constraints: s.constraints,
+                requiredCategory: s.category,
+                ...(s.volume ? { volume: s.volume } : {}),
+                dependsOn: s.dependsOn,
+              })),
+            }
+          : {}),
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
       });
@@ -316,6 +355,17 @@ async function fromIntent(
       constraints: intent.constraints,
       requiredCategory: intent.category,
       ...(intent.volume ? { volume: intent.volume } : {}),
+      ...(chainSteps
+        ? {
+            steps: chainSteps.map((s) => ({
+              capability: s.capability,
+              constraints: s.constraints,
+              requiredCategory: s.category,
+              ...(s.volume ? { volume: s.volume } : {}),
+              dependsOn: s.dependsOn,
+            })),
+          }
+        : {}),
       reviewUrl,
       decisionId: reviewerDecisionId,
       parentDecisionId: negotiatorDecisionId,
@@ -332,7 +382,7 @@ async function fromIntent(
     if (reviewResult.approved) {
       const explained = await invoker.explainer({
         requestId,
-        composition: reviewResult.composition,
+        composition: withGraph(reviewResult.composition),
         negotiationHistory: history,
         decisionId: randomUUID(),
         parentDecisionId: reviewerDecisionId,
@@ -362,4 +412,13 @@ async function fromIntent(
     requestId,
     error: "Reviewer did not approve or escalate within the safety attempt limit.",
   };
+}
+
+// T4.1d: the approved chain as a graph of services, one edge per step dependency.
+export function withGraph(composition: Composition): Composition {
+  const chain = composition.chain;
+  if (!chain) return composition;
+  const ids = chain.steps.map((s) => s.chosen.service.serviceId);
+  const edges = chain.steps.flatMap((s, i) => s.dependsOn.map((d) => ({ from: ids[d], to: ids[i] })));
+  return { ...composition, chain: { ...chain, edges } };
 }
