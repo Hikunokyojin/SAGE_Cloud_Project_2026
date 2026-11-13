@@ -9,6 +9,8 @@ export interface ExplanationFacts {
   // The deterministic fact sheet; every number allowed in the explanation appears here.
   text: string;
   chosenName: string;
+  // T4.1e: the services chosen for the other steps of a chain; each must be named too.
+  alsoChosen?: string[];
   rejectedNames: string[];
   // The cheaper-plan sentence, when the chosen plan is the provider's cheaper one (T4.1b).
   cheaperPlan?: string;
@@ -34,6 +36,11 @@ export function checkClaims(text: string, facts: ExplanationFacts): string[] {
   const lower = text.toLowerCase();
   if (!lower.includes(facts.chosenName.toLowerCase())) {
     problems.push(`chosen service ${facts.chosenName} is not named`);
+  }
+  for (const name of facts.alsoChosen ?? []) {
+    if (!lower.includes(name.toLowerCase())) {
+      problems.push(`chosen service ${name} is not named`);
+    }
   }
   for (const name of facts.rejectedNames) {
     if (!lower.includes(name.toLowerCase())) {

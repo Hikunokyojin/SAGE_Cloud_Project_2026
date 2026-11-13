@@ -246,3 +246,17 @@ button:disabled {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* T4.1e: chain graph and step table */
+.chain { margin: 0.5rem 0 1rem; }
+.chain-graph { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.chain-column-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.chain-column { display: flex; flex-direction: column; gap: 0.5rem; }
+.chain-node { display: flex; flex-direction: column; padding: 0.5rem 0.75rem; border: 1px solid #3a4160; border-radius: 6px; background: #1a1e2b; min-width: 9rem; }
+.chain-step { font-size: 0.75rem; color: #8b93b0; }
+.chain-cap { font-size: 0.8rem; color: #aab2cf; }
+.chain-arrow { font-size: 1.4rem; color: #8b93b0; }
+.chain-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.chain-table th, .chain-table td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid #232735; vertical-align: top; }
+.chain-totals { margin-top: 0.5rem; font-weight: 600; }
+@media (max-width: 600px) { .chain-table { display: block; overflow-x: auto; } }

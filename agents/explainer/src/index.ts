@@ -47,6 +47,22 @@ Return ONLY the explanation text, no markdown formatting, no preamble.`;
 // How many times the model may try before the deterministic fact sheet is used instead.
 const MAX_WORDING_ATTEMPTS = 2;
 
+type ChosenService = ExplainerAgentInput["composition"]["chosen"]["service"];
+
+// Price, uptime and latency of one service. A single service keeps its existing wording
+// ("price about $X a month, ..."); a chain step reads "about $X a month at ...".
+function serviceFacts(s: ChosenService, single = false): string {
+  const basis = s.priceBasis?.replace(/^estimated USD\/month /, "");
+  const price = s.priceBasis?.startsWith("estimated")
+    ? single
+      ? `price about $${s.price.toFixed(2)} a month, ${basis}`
+      : `about $${s.price.toFixed(2)} a month ${basis}`
+    : single
+      ? `price $${s.price}`
+      : `$${s.price}`;
+  return `${price}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}`;
+}
+
 // The decision as deterministic sentences: the only source of facts for the explanation.
 function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   const { composition, negotiationHistory } = input;
@@ -54,24 +70,50 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   const rejected = composition.rejected ?? [];
   const s = chosen.service;
 
-  const parts: string[] = [
-    `${s.name} was selected (price ${s.priceBasis?.startsWith("estimated") ? `about $${s.price.toFixed(2)} a month, ${s.priceBasis.replace(/^estimated USD\/month /, "")}` : `$${s.price}`}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}).`,
-  ];
-  // T4.1 (L1): what the flat plan covers, and the catalogue's cheaper-plan rule.
-  if (s.volumeBasis === "quota" && s.includedUnits) {
-    parts.push(`The plan includes ${s.includedUnits.amount.toLocaleString("en-US")} ${s.includedUnits.unit} a month.`);
-  }
-  const cheaperPlan = s.otherPlans ? `This is the cheaper plan; ${s.name} also offers other plans for other usage levels.` : undefined;
-  if (cheaperPlan) parts.push(cheaperPlan);
-  if (scoreBreakdown.soleSurvivor) {
-    parts.push("It was the only candidate that met every requirement.");
-  } else if (alternatives.length > 0) {
+  const parts: string[] = [];
+  const cheaper: string[] = [];
+  const planFacts = (svc: ChosenService) => {
+    // T4.1 (L1): what the flat plan covers, and the catalogue's cheaper-plan rule.
+    if (svc.volumeBasis === "quota" && svc.includedUnits) {
+      parts.push(`The plan includes ${svc.includedUnits.amount.toLocaleString("en-US")} ${svc.includedUnits.unit} a month.`);
+    }
+    if (svc.otherPlans) cheaper.push(`This is the cheaper plan; ${svc.name} also offers other plans for other usage levels.`);
+  };
+
+  const chain = composition.chain;
+  if (chain) {
+    // T4.1e: one sentence per step (with how it uses earlier steps), then the chain totals.
+    parts.push(`This request is a chain of ${chain.steps.length} steps.`);
+    chain.steps.forEach((step, i) => {
+      const svc = step.chosen.service;
+      const uses = step.dependsOn.length
+        ? `, using the output of step ${step.dependsOn.map((d) => d + 1).join(" and step ")}`
+        : "";
+      parts.push(`Step ${i + 1} (${step.capability}${uses}): ${svc.name}, ${serviceFacts(svc)}${svc.volumeNote ? `; ${svc.volumeNote}` : ""}.`);
+      planFacts(svc);
+    });
+    const t = chain.totals;
     parts.push(
-      `It scored ${chosen.score.toFixed(3)} out of 1, ahead of ${alternatives
-        .map((a) => `${a.service.name} (${a.score.toFixed(3)})`)
-        .join(", ")}.`
+      `Together: about $${t.price.toFixed(2)} a month, combined uptime ${t.uptime}%${t.latencyMs !== undefined ? `, total latency ${t.latencyMs} ms` : ""}.`,
+      `${chain.combinationsCompared} combinations of services were compared and ${chain.combinationsValid} met every limit.`
     );
+  } else {
+    parts.push(`${s.name} was selected (${serviceFacts(s, true)}).`);
+    // L13, L15, L16: how the stated volume was (or could not be) applied to this service.
+    if (s.volumeNote) parts.push(`Volume: ${s.volumeNote}.`);
+    planFacts(s);
+    if (scoreBreakdown.soleSurvivor) {
+      parts.push("It was the only candidate that met every requirement.");
+    } else if (alternatives.length > 0) {
+      parts.push(
+        `It scored ${chosen.score.toFixed(3)} out of 1, ahead of ${alternatives
+          .map((a) => `${a.service.name} (${a.score.toFixed(3)})`)
+          .join(", ")}.`
+      );
+    }
   }
+  const cheaperPlan = cheaper.length ? cheaper.join(" ") : undefined;
+  if (cheaperPlan) parts.push(cheaperPlan);
   if (rejected.length > 0) {
     parts.push(`Not chosen: ${rejected.map((r) => `${r.name} (${r.reason})`).join("; ")}.`);
   }
@@ -88,7 +130,13 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
     parts.push(`Earlier: ${earlier}.`);
   }
 
-  return { text: parts.join(" "), chosenName: s.name, rejectedNames: rejected.map((r) => r.name), cheaperPlan };
+  return {
+    text: parts.join(" "),
+    chosenName: s.name,
+    alsoChosen: chain ? chain.steps.slice(1).map((st) => st.chosen.service.name) : [],
+    rejectedNames: rejected.map((r) => r.name),
+    cheaperPlan,
+  };
 }
 
 function addUsage(a: LlmUsage | undefined, b: LlmUsage | undefined): LlmUsage | undefined {
