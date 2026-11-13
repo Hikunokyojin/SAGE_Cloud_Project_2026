@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { monthlyCost, USAGE, FX_TO_USD } from "./normalise";
+import { monthlyCost, priceAtVolume, USAGE, FX_TO_USD, CHARS_PER_PAGE } from "./normalise";
 import type { CatalogueServiceV2 } from "./schema";
 
 const p = (amount: number, unit: string, currency = "USD") => ({ amount, unit, currency });
@@ -66,5 +66,30 @@ describe("monthlyCost at a stated volume (T4.1b)", () => {
   });
   it("leaves a flat monthly plan unchanged", () => {
     expect(monthlyCost(p(19.95, "per month"), { emails: 250_000 }).usd).toBe(19.95);
+  });
+});
+
+// L15/L16: a volume stated in one unit prices a service billed in a related unit.
+describe("priceAtVolume: the stated volume, converted to the unit the price is in", () => {
+  const p = (amount: number, unit: string) => ({ amount, unit, currency: "USD" });
+  it("uses the volume directly when the units match, with no note", () => {
+    const r = priceAtVolume(p(15, "per 1,000 pages"), { amount: 5000, unit: "pages" })!;
+    expect(r.usd).toBeCloseTo(75, 6);
+    expect(r.note).toBeUndefined();
+  });
+  it("L15: counts each page as one image (and each image as one page)", () => {
+    const r = priceAtVolume(p(1.5, "per 1,000 images"), { amount: 5000, unit: "pages" })!;
+    expect(r.usd).toBeCloseTo(7.5, 6);
+    expect(r.note).toBe("5,000 pages counted as 5,000 images");
+    expect(priceAtVolume(p(1.5, "per 1,000 pages"), { amount: 2000, unit: "images" })!.usd).toBeCloseTo(3, 6);
+  });
+  it("L16: converts pages to characters at a stated rate per page", () => {
+    const r = priceAtVolume(p(15, "per 1,000,000 characters"), { amount: 5000, unit: "pages" })!;
+    expect(r.usd).toBeCloseTo((15 * 5000 * CHARS_PER_PAGE) / 1e6, 6);
+    expect(r.note).toBe(`5,000 pages counted as ${(5000 * CHARS_PER_PAGE).toLocaleString("en-US")} characters, at about ${CHARS_PER_PAGE.toLocaleString("en-US")} characters a page`);
+  });
+  it("is undefined when the volume cannot price the service (unrelated unit or flat plan)", () => {
+    expect(priceAtVolume(p(0.09, "per GB"), { amount: 5000, unit: "pages" })).toBeUndefined();
+    expect(priceAtVolume(p(25, "per month"), { amount: 5000, unit: "pages" })).toBeUndefined();
   });
 });

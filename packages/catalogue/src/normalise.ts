@@ -108,3 +108,43 @@ export function monthlyCost(
   }
   throw new Error(`cannot read price unit "${raw}"`);
 }
+
+// L16: characters in one page of text, for translating OCR output (a dense invoice page).
+export const CHARS_PER_PAGE = 2_000;
+
+// L15/L16: related units a stated volume can be counted in. For OCR a scanned page is one
+// image, and a page of extracted text is about CHARS_PER_PAGE characters.
+const EQUIVALENTS: Partial<Record<keyof typeof USAGE, [keyof typeof USAGE, number, string?][]>> = {
+  pages: [["images", 1], ["characters", CHARS_PER_PAGE, `at about ${CHARS_PER_PAGE.toLocaleString("en-US")} characters a page`]],
+  images: [["pages", 1]],
+};
+
+export interface VolumePrice extends MonthlyCost {
+  // Set when the volume was converted to the unit the price is in.
+  note?: string;
+}
+
+// The monthly price at a stated volume, converting the volume to a related unit when the
+// service is priced in that unit. Undefined when the volume does not change the price
+// (a flat plan, or a unit with no conversion), so the standard estimate stands.
+export function priceAtVolume(
+  pricing: { amount: number; unit: string; currency: string },
+  volume: { amount: number; unit: string }
+): VolumePrice | undefined {
+  const fmt = (n: number) => n.toLocaleString("en-US");
+  const unit = volume.unit as keyof typeof USAGE;
+  const tries: [keyof typeof USAGE, number, string | undefined][] = [
+    [unit, 1, undefined],
+    ...(EQUIVALENTS[unit] ?? []).map(([u, f, how]) => [u, f, how] as [keyof typeof USAGE, number, string | undefined]),
+  ];
+  for (const [u, factor, how] of tries) {
+    const amount = volume.amount * factor;
+    const at = monthlyCost(pricing, { [u]: amount });
+    // The volume was used if changing it changes the price (a volume equal to the standard
+    // profile gives the same assumption text, so that cannot be the test).
+    if (monthlyCost(pricing, { [u]: amount + 1 }).usd === at.usd) continue;
+    if (u === unit) return at;
+    return { ...at, note: `${fmt(volume.amount)} ${volume.unit} counted as ${fmt(amount)} ${u}${how ? `, ${how}` : ""}` };
+  }
+  return undefined;
+}

@@ -351,3 +351,27 @@ describe("Negotiator chain mode (T4.1b)", () => {
     await expect(handler(baseInput({ steps: [step("ocr", [ocrA]), step("translation", [])] }))).rejects.toThrow(/step 2 \(translation\)/);
   });
 });
+
+describe("Negotiator converts a volume to the unit a service is priced in (L15, L16)", () => {
+  const pages = { amount: 5000, unit: "pages" as const };
+  const vision = candidate({
+    serviceId: "svc-vision", name: "Vision", capability: "document-ocr", price: 15, uptime: 99.9,
+    listPrice: 1.5, priceUnit: "per 1,000 images", currency: "USD",
+  });
+  const translate = candidate({
+    serviceId: "svc-translate", name: "Translate", capability: "translation", price: 15, uptime: 99.9,
+    listPrice: 15, priceUnit: "per 1,000,000 characters", currency: "USD",
+  });
+
+  it("L15: prices a per-image OCR service at the stated pages, and notes the conversion", async () => {
+    const r = await handler(baseInput({ candidates: [vision], volume: pages }));
+    expect(r.chosen.service.price).toBe(7.5);
+    expect(r.chosen.service.volumeNote).toBe("5,000 pages counted as 5,000 images");
+  });
+
+  it("L16: prices a per-character service at the pages' characters, and notes the rate", async () => {
+    const r = await handler(baseInput({ candidates: [translate], volume: pages }));
+    expect(r.chosen.service.price).toBe(150);
+    expect(r.chosen.service.volumeNote).toBe("5,000 pages counted as 10,000,000 characters, at about 2,000 characters a page");
+  });
+});
