@@ -523,3 +523,68 @@ describe("cheaper-plan wording (T4.1, L1)", () => {
     expect(explanation).not.toContain("cheaper plan");
   });
 });
+
+describe("chain explanations and volume notes (T4.1e)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  const svc = (serviceId: string, name: string, price: number, uptime: number, latencyMs: number, extra: object = {}) => ({
+    serviceId, name, description: "", endpoint: "https://x", evidence: [], price, uptime, latencyMs,
+    priceBasis: "estimated USD/month at 5,000 pages/month", ...extra,
+  });
+  function chainComposition(): Composition {
+    const c = composition();
+    const ocr = { service: svc("svc-vision", "Vision OCR", 7.5, 99.9, 900, { volumeNote: "5,000 pages counted as 5,000 images" }), score: 0.8, reason: "" };
+    const tr = { service: svc("svc-translate", "Translate", 150, 99.95, 648, {
+      volumeNote: "5,000 pages counted as 10,000,000 characters, at about 2,000 characters a page", otherPlans: true }), score: 0.7, reason: "" };
+    c.chosen = ocr;
+    c.alternatives = [];
+    c.rejected = [{ serviceId: "svc-veryfi", name: "Veryfi", reason: "step 1: over the budget" }];
+    c.chain = {
+      steps: [
+        { capability: "extract text from scanned invoices", chosen: ocr, dependsOn: [] },
+        { capability: "translate the text into Spanish", chosen: tr, dependsOn: [0] },
+      ],
+      totals: { price: 157.5, uptime: 99.85, latencyMs: 1548 },
+      score: 0.75,
+      combinationsCompared: 5,
+      combinationsValid: 3,
+      edges: [{ from: "svc-vision", to: "svc-translate" }],
+    };
+    return c;
+  }
+
+  it("states a single service's volume note (L13, L15, L16)", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, volumeNote: "plan quota is in requests, so 5,000 emails could not be checked" };
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: c });
+    expect(explanation).toContain("Volume: plan quota is in requests, so 5,000 emails could not be checked.");
+  });
+
+  it("describes every step, its volume note, the totals and the comparison", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: chainComposition() });
+    expect(explanation).toContain("This request is a chain of 2 steps.");
+    expect(explanation).toContain("Step 1 (extract text from scanned invoices): Vision OCR, about $7.50 a month at 5,000 pages/month, uptime 99.9%, latency 900 ms; 5,000 pages counted as 5,000 images.");
+    expect(explanation).toContain("Step 2 (translate the text into Spanish, using the output of step 1): Translate, about $150.00 a month");
+    expect(explanation).toContain("at about 2,000 characters a page.");
+    expect(explanation).toContain("Together: about $157.50 a month, combined uptime 99.85%, total latency 1548 ms.");
+    expect(explanation).toContain("5 combinations of services were compared and 3 met every limit.");
+    expect(explanation).toContain("Not chosen: Veryfi (step 1: over the budget).");
+    expect(explanation).toContain("This is the cheaper plan; Translate also offers other plans for other usage levels.");
+  });
+
+  it("rejects model wording that leaves out a step's service", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Vision OCR was chosen, and Veryfi was not."));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: chainComposition() });
+    expect(out.explanationSource).toBe("facts");
+  });
+});

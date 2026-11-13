@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import { ReviewPage } from "./ReviewPage";
 import { parseReviewHash } from "./review";
+import { chainView, type ChainResult } from "./chain";
 import {
   initiateAuthRequest, parseAuthResponse, isValid, requestUrl, requestHeaders,
   loadSession, saveSession, type Session,
@@ -67,7 +68,7 @@ interface AuditStep {
 interface PipelineResponse {
   requestId: string;
   status?: "completed" | "paused_for_review" | "failed";
-  result?: { explanation: string; chosen: { service: { name: string; price: number; uptime: number } } };
+  result?: ChainResult & { explanation: string };
   escalation?: { explanation: string };
   error?: string;
 }
@@ -91,6 +92,47 @@ function loadApiBase(): string {
 function formatTimestamp(ts: string): string {
   const d = new Date(ts);
   return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+}
+
+// T4.1e: a chain result as a graph (columns by dependency depth) and a step table.
+function ChainPanel({ result }: { result: ChainResult }) {
+  const view = chainView(result);
+  if (!view) return null;
+  return (
+    <div className="chain">
+      <div className="chain-graph" aria-label="Service chain graph">
+        {view.columns.map((col, c) => (
+          <div className="chain-column-wrap" key={c}>
+            {c > 0 && <span className="chain-arrow" aria-hidden="true">&rarr;</span>}
+            <div className="chain-column">
+              {col.map((s) => (
+                <div className="chain-node" key={s.step}>
+                  <span className="chain-step">Step {s.step}</span>
+                  <strong>{s.name}</strong>
+                  <span className="chain-cap">{s.capability}</span>
+                  {s.uses.length > 0 && <span className="chain-cap">uses step {s.uses.join(", ")}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <table className="chain-table">
+        <thead>
+          <tr><th>Step</th><th>Service</th><th>Price / month</th><th>Uptime</th><th>Latency</th><th>Volume</th></tr>
+        </thead>
+        <tbody>
+          {view.steps.map((s) => (
+            <tr key={s.step}>
+              <td>{s.step}</td><td>{s.name}</td><td>{s.price}</td><td>{s.uptime}</td>
+              <td>{s.latency ?? "-"}</td><td>{s.note ?? "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="chain-totals">Chain total: {view.totals}</p>
+    </div>
+  );
 }
 
 function JsonBlock({ label, value }: { label: string; value: unknown }) {
@@ -287,7 +329,9 @@ export function App() {
               <strong>Request ID:</strong> {pipelineResult.requestId} &nbsp;
               <strong>Status:</strong> {pipelineResult.status}
             </p>
-            {pipelineResult.result && (
+            {pipelineResult.result?.chain && <ChainPanel result={pipelineResult.result} />}
+            {pipelineResult.result?.chain && <p>{pipelineResult.result.explanation}</p>}
+            {pipelineResult.result && !pipelineResult.result.chain && (
               <p>
                 Chosen: <strong>{pipelineResult.result.chosen.service.name}</strong> (
                 {pipelineResult.result.chosen.service.price}, {pipelineResult.result.chosen.service.uptime}% uptime)
