@@ -10,6 +10,8 @@ export interface ExplanationFacts {
   text: string;
   chosenName: string;
   // T4.1e: the services chosen for the other steps of a chain; each must be named too.
+  // Internal ranking scores: written to the audit trail only, never shown to the client.
+  scoreNote?: string;
   alsoChosen?: string[];
   rejectedNames: string[];
   // The cheaper-plan sentence, when the chosen plan is the provider's cheaper one (T4.1b).

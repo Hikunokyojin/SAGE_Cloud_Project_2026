@@ -94,6 +94,34 @@ describe("monthly price wording (WP3.5 L9)", () => {
   });
 });
 
+describe("internal scores stay out of the client's explanation", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("does not show the out-of-1 scores to the client, but records them in the audit trail", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1", composition: composition() });
+    expect(result.explanation).not.toMatch(/out of 1|0\.870|0\.600/);
+    expect(result.explanation).toContain("ahead of SlowResize");
+    const reasoning: string = recordDecisionMock.mock.calls[0][0].reasoning;
+    expect(reasoning).toContain("Scores (out of 1): FastResize 0.870; SlowResize 0.600.");
+  });
+
+  it("does not pass the scores to the model, so it cannot repeat them", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen ahead of SlowResize."));
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-1", composition: composition() });
+    const userMessage: string = JSON.parse(fetchMock.mock.calls[0][1].body).messages[1].content;
+    expect(userMessage).not.toMatch(/out of 1|0\.870/);
+  });
+});
+
 describe("Explainer Agent handler", () => {
   beforeEach(() => {
     vi.resetModules();

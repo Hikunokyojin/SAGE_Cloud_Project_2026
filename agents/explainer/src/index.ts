@@ -72,6 +72,7 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
 
   const parts: string[] = [];
   const cheaper: string[] = [];
+  let scoreNote: string | undefined;
   const planFacts = (svc: ChosenService) => {
     // T4.1 (L1): what the flat plan covers, and the catalogue's cheaper-plan rule.
     if (svc.volumeBasis === "quota" && svc.includedUnits) {
@@ -105,11 +106,11 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
     if (scoreBreakdown.soleSurvivor) {
       parts.push("It was the only candidate that met every requirement.");
     } else if (alternatives.length > 0) {
-      parts.push(
-        `It scored ${chosen.score.toFixed(3)} out of 1, ahead of ${alternatives
-          .map((a) => `${a.service.name} (${a.score.toFixed(3)})`)
-          .join(", ")}.`
-      );
+      // The out-of-1 scores are internal: the client sees the ranking, the audit trail the scores.
+      parts.push(`It ranked ahead of ${alternatives.map((a) => a.service.name).join(", ")}.`);
+      scoreNote = `Scores (out of 1): ${[chosen, ...alternatives]
+        .map((a) => `${a.service.name} ${a.score.toFixed(3)}`)
+        .join("; ")}.`;
     }
   }
   const cheaperPlan = cheaper.length ? cheaper.join(" ") : undefined;
@@ -136,6 +137,7 @@ function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
     alsoChosen: chain ? chain.steps.slice(1).map((st) => st.chosen.service.name) : [],
     rejectedNames: rejected.map((r) => r.name),
     cheaperPlan,
+    scoreNote,
     volumeNotes: chain
       ? chain.steps.flatMap((st, i) => (st.chosen.service.volumeNote ? [{ note: st.chosen.service.volumeNote, sentence: `Step ${i + 1}: ${st.chosen.service.volumeNote}.` }] : []))
       : s.volumeNote
@@ -211,9 +213,10 @@ export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlue
       input,
       output,
       reasoning:
-        explanationSource === "model"
+        (explanationSource === "model"
           ? explanation
-          : `${explanation} (Plain facts used: the model's wording failed the fact check: ${lastProblems.join("; ")}.)`,
+          : `${explanation} (Plain facts used: the model's wording failed the fact check: ${lastProblems.join("; ")}.)`) +
+        (facts.scoreNote ? ` ${facts.scoreNote}` : ""),
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: composition.iteration,
