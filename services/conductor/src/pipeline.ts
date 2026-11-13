@@ -60,6 +60,7 @@ export interface AgentInvoker {
     composition: Composition;
     constraints: Constraint[];
     requiredCategory?: string;
+    volume?: Intent["volume"];
     reviewUrl?: string;
     decisionId?: string;
     parentDecisionId?: string;
@@ -314,6 +315,7 @@ async function fromIntent(
       composition,
       constraints: intent.constraints,
       requiredCategory: intent.category,
+      ...(intent.volume ? { volume: intent.volume } : {}),
       reviewUrl,
       decisionId: reviewerDecisionId,
       parentDecisionId: negotiatorDecisionId,
