@@ -251,3 +251,26 @@ describe("Reviewer independent price, quota and chain checks (T4.1c)", () => {
     expect(r.violations[0]).toMatchObject({ constraint: "step 2: price", affectedCandidate: "tr-a" });
   });
 });
+
+describe("Reviewer recomputes prices with the same unit conversions (L15, L16)", () => {
+  const vision = { serviceId: "svc-vision", name: "Vision", description: "", endpoint: "https://x", evidence: [], uptime: 99.9,
+    capability: "document-ocr", listPrice: 1.5, priceUnit: "per 1,000 images", currency: "USD" };
+  const withService = (svc: object) => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, ...svc } as Composition["chosen"]["service"];
+    return c;
+  };
+  const volume = { amount: 5000, unit: "pages" as const };
+
+  it("approves an OCR price converted from pages to images", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...vision, price: 7.5 }), constraints: [], volume });
+    expect(r.violations).toEqual([]);
+  });
+
+  it("rejects the standard estimate when the converted volume gives another price", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...vision, price: 15 }), constraints: [], volume });
+    expect(r.violations[0]).toMatchObject({ constraint: "price", actualValue: 15, requiredValue: 7.5 });
+  });
+});

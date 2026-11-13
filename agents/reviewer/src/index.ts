@@ -11,7 +11,7 @@ import type {
 import { recordDecision, warmUp } from "@sage/audit";
 import { isWarmup, WARMED, USAGE_UNITS } from "@sage/shared-types";
 import type { UsageVolume } from "@sage/shared-types";
-import { monthlyCost } from "@sage/catalogue/src/normalise";
+import { monthlyCost, priceAtVolume } from "@sage/catalogue/src/normalise";
 
 // Hard circuit breaker: once iteration reaches this, we escalate to a human
 // instead of letting the pipeline retry indefinitely.
@@ -68,8 +68,9 @@ function independentPrice(s: Service, volume?: UsageVolume): number | undefined 
   const pricing = listed(s);
   if (!pricing) return undefined;
   try {
-    const usage = volume && !s.volumeBasis ? { [volume.unit]: volume.amount } : {};
-    return round2(monthlyCost(pricing, usage).usd);
+    // L15/L16: the same conversion the Negotiator uses (pages to images or characters).
+    const atVolume = volume && !s.volumeBasis ? priceAtVolume(pricing, volume) : undefined;
+    return round2((atVolume ?? monthlyCost(pricing)).usd);
   } catch {
     return undefined;
   }

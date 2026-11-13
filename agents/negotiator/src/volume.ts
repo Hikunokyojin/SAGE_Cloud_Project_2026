@@ -2,7 +2,7 @@
 // quotas against it (L1), and give a per-unit price for limits stated per unit (L2).
 import type { ServiceCandidateWithEvidence, UsageVolume } from "@sage/shared-types";
 import { USAGE_UNITS } from "@sage/shared-types";
-import { monthlyCost } from "@sage/catalogue/src/normalise";
+import { monthlyCost, priceAtVolume as volumePrice } from "@sage/catalogue/src/normalise";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -42,16 +42,19 @@ export function priceAtVolume(c: ServiceCandidateWithEvidence, volume?: UsageVol
   const pricing = listed(c);
   if (!pricing) return { candidate: c };
   try {
-    const atVolume = monthlyCost(pricing, { [volume.unit]: volume.amount });
-    // The volume was used if changing it changes the price (a volume equal to the standard
-    // profile gives the same assumption text, so that cannot be the test).
-    const probe = monthlyCost(pricing, { [volume.unit]: volume.amount + 1 });
-    if (probe.usd === atVolume.usd) {
+    // L15/L16: the shared helper also converts pages to images or characters, and says so.
+    const atVolume = volumePrice(pricing, volume);
+    if (!atVolume) {
       // Priced in another unit (for example per GB): the standard estimate stays.
       return { candidate: { ...c, volumeNote: `priced ${pricing.unit}, so the standard estimate is kept` } };
     }
     return {
-      candidate: { ...c, price: round2(atVolume.usd), priceBasis: `estimated USD/month ${atVolume.assumption}` },
+      candidate: {
+        ...c,
+        price: round2(atVolume.usd),
+        priceBasis: `estimated USD/month ${atVolume.assumption}`,
+        ...(atVolume.note ? { volumeNote: atVolume.note } : {}),
+      },
     };
   } catch {
     return { candidate: c };
