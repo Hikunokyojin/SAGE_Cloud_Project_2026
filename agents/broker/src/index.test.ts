@@ -275,6 +275,25 @@ describe("Broker category filter", () => {
     });
   });
 
+  it("L19: when nothing in the known category clears the threshold, keeps that category's closest services", async () => {
+    qdrantSearchMock.mockResolvedValueOnce([]).mockResolvedValueOnce([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.31)]);
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r", capability: "Query events with SQL", constraints: [], category: "image-resizing" } as BrokerAgentInput);
+    expect(qdrantSearchMock).toHaveBeenCalledTimes(2);
+    const retry = qdrantSearchMock.mock.calls[1][1];
+    expect(retry.score_threshold).toBeUndefined();
+    expect(retry.filter).toEqual({ must: [{ key: "capability", match: { value: "image-resizing" } }] });
+    expect(out.map((c) => c.serviceId)).toEqual(["svc-1"]);
+  });
+
+  it("L19: without a category, an empty search stays empty (out-of-catalogue requests are still refused)", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r", capability: "e-signatures", constraints: [] } as BrokerAgentInput);
+    expect(qdrantSearchMock).toHaveBeenCalledTimes(1);
+    expect(out).toEqual([]);
+  });
+
   it("searches without a filter when there is no category", async () => {
     const { handler } = await import("./index");
     await handler({ requestId: "r", capability: "resize images", constraints: [] } as BrokerAgentInput);
