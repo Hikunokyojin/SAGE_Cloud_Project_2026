@@ -131,13 +131,23 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   // With a category, only that category's services are searched (payload filter on the
   // "capability" field written by scripts/reembed-services.ts). Anything below the
   // calibrated cut-off is dropped; an empty result escalates to a human downstream.
-  const searchResult = await qdrant.search("services", {
+  const categoryFilter = input.category ? { filter: { must: [{ key: "capability", match: { value: input.category } }] } } : {};
+  let searchResult = await qdrant.search("services", {
     vector: queryVector,
     limit: TOP_N * 3,
     score_threshold: MIN_SIMILARITY,
     with_payload: true,
-    ...(input.category ? { filter: { must: [{ key: "capability", match: { value: input.category } }] } } : {}),
+    ...categoryFilter,
   });
+  // L19: a short chain step ("Query events with SQL") can score under the cut-off against
+  // every service in its own, already-identified category. The category already confines the
+  // search to the right services, so keep its closest ones. Without a category the cut-off
+  // stands, so out-of-catalogue requests are still refused.
+  let categoryFallback = false;
+  if (searchResult.length === 0 && input.category) {
+    searchResult = await qdrant.search("services", { vector: queryVector, limit: TOP_N * 3, with_payload: true, ...categoryFilter });
+    categoryFallback = searchResult.length > 0;
+  }
 
   const serviceIds = searchResult.map((r) => String((r.payload as { serviceId?: string } | null)?.serviceId));
 
@@ -209,7 +219,9 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}${input.category ? ` in category ${input.category}` : " (no category filter)"}.`,
+      reasoning: categoryFallback
+        ? `No candidate in category ${input.category} cleared similarity threshold ${MIN_SIMILARITY}; kept the category's ${output.length} closest service(s) (L19).`
+        : `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}${input.category ? ` in category ${input.category}` : " (no category filter)"}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,
