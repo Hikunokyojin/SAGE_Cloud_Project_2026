@@ -1,16 +1,16 @@
 {
-  "ranAt": "2026-11-13T11:36:03.933Z",
+  "ranAt": "2026-11-15T10:28:31.721Z",
   "api": "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod",
   "cases": 30,
-  "passed": 26,
-  "sandboxCalls": 44,
+  "passed": 29,
+  "sandboxCalls": 56,
   "rows": [
     {
       "id": "rt11-01",
       "expect": "approved",
-      "requestId": "845cde1a-dec2-4c15-9005-d7ac94cd59e0",
+      "requestId": "2d8db42d-f705-4070-a13d-20029f120dbb",
       "status": "completed",
-      "ms": 1178,
+      "ms": 6291,
       "steps": [
         {
           "capability": "document-ocr",
@@ -51,9 +51,9 @@
     {
       "id": "rt11-02",
       "expect": "approved",
-      "requestId": "6b195bba-2dba-439d-8599-c6a261f54f27",
+      "requestId": "d3f490a8-0169-484a-86d0-eaefa374fe0d",
       "status": "completed",
-      "ms": 2746,
+      "ms": 2047,
       "steps": [
         {
           "capability": "speech-transcription",
@@ -94,9 +94,9 @@
     {
       "id": "rt11-03",
       "expect": "approved",
-      "requestId": "f4915c34-a366-4afd-b508-9dde3c49d572",
+      "requestId": "42bf35bd-eae1-472f-9b78-438ef2af39dd",
       "status": "completed",
-      "ms": 2324,
+      "ms": 1607,
       "steps": [
         {
           "capability": "object-storage",
@@ -137,9 +137,9 @@
     {
       "id": "rt11-04",
       "expect": "approved",
-      "requestId": "f0addc66-259a-4077-8229-d630ee53d6d2",
+      "requestId": "25b12522-2da8-4226-9adf-cef7eb20a7c0",
       "status": "completed",
-      "ms": 1696,
+      "ms": 1363,
       "steps": [
         {
           "capability": "payment-processing",
@@ -180,9 +180,9 @@
     {
       "id": "rt11-05",
       "expect": "approved",
-      "requestId": "b5c0986f-e47f-47ea-bd99-461d79102b90",
+      "requestId": "afa10fbf-5e1b-4f1c-b78e-5ef9b618e381",
       "status": "completed",
-      "ms": 1691,
+      "ms": 1111,
       "steps": [
         {
           "capability": "authentication",
@@ -223,23 +223,52 @@
     {
       "id": "rt11-06",
       "expect": "approved",
-      "requestId": "73d0e026-3259-4ac3-ad65-d3685fd21556",
-      "status": "paused_for_review",
-      "ms": 1240,
+      "requestId": "59c35598-a78b-4a4d-904e-1283a2323a39",
+      "status": "completed",
+      "ms": 2257,
+      "steps": [
+        {
+          "capability": "translation",
+          "service": "Azure AI Translator",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 192
+        },
+        {
+          "capability": "text-to-speech",
+          "service": "Google Cloud Text-to-Speech",
+          "price": 4,
+          "uptime": 99.908,
+          "latencyMs": 229
+        }
+      ],
+      "totals": {
+        "price": 14,
+        "uptime": 99.8161,
+        "latencyMs": 421
+      },
       "limits": {
         "price": 250
       },
-      "pass": false,
-      "problems": [
-        "no chain was approved (status paused_for_review)"
-      ]
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
     },
     {
       "id": "rt11-07",
       "expect": "approved",
-      "requestId": "100fbf4f-1ee7-4b91-bd94-521a18adf2fa",
+      "requestId": "d1626988-e8bd-4960-9612-7867c7ecbeb0",
       "status": "completed",
-      "ms": 1635,
+      "ms": 1690,
       "steps": [
         {
           "capability": "fraud-detection",
@@ -280,9 +309,9 @@
     {
       "id": "rt11-08",
       "expect": "approved",
-      "requestId": "a106013a-bcf3-4eda-b31c-615ee08f0fd6",
+      "requestId": "a365912c-9672-4b1b-a8f6-09d8d836ee29",
       "status": "completed",
-      "ms": 7025,
+      "ms": 1793,
       "steps": [
         {
           "capability": "message-queue",
@@ -323,9 +352,9 @@
     {
       "id": "rt11-09",
       "expect": "approved",
-      "requestId": "9977f21e-5967-45c0-9f80-e71f29dce9a4",
+      "requestId": "f1d7c470-16bf-470e-8390-4c58e4165e0e",
       "status": "completed",
-      "ms": 6116,
+      "ms": 1333,
       "steps": [
         {
           "capability": "image-analysis",
@@ -366,9 +395,9 @@
     {
       "id": "rt11-10",
       "expect": "approved",
-      "requestId": "61436ecf-ed75-40df-8635-2d81d055cbee",
+      "requestId": "6e9a7c40-6cc3-4959-9a74-61fd7811450f",
       "status": "completed",
-      "ms": 1478,
+      "ms": 1390,
       "steps": [
         {
           "capability": "document-generation",
@@ -409,9 +438,9 @@
     {
       "id": "rt11-11",
       "expect": "approved",
-      "requestId": "e9044b52-608e-424a-aeec-f595df0828aa",
+      "requestId": "113545e4-22a7-4428-a03c-7a84a08fb185",
       "status": "completed",
-      "ms": 1370,
+      "ms": 1597,
       "steps": [
         {
           "capability": "video-transcoding",
@@ -452,9 +481,9 @@
     {
       "id": "rt11-12",
       "expect": "approved",
-      "requestId": "effe67df-b47c-421e-b46e-504e184ff8bf",
+      "requestId": "9d6628f6-689f-4ab0-8c78-86531cb91fc3",
       "status": "completed",
-      "ms": 1213,
+      "ms": 1338,
       "steps": [
         {
           "capability": "embedding-generation",
@@ -490,15 +519,14 @@
         }
       ],
       "pass": true,
-      "problems": [],
-      "rerun": "20 s gap after a Groq 429"
+      "problems": []
     },
     {
       "id": "rt11-13",
       "expect": "approved",
-      "requestId": "ac4109ef-617c-42fd-8b2f-90e59d3d3ab2",
+      "requestId": "34b7155f-6789-40f2-aa9f-20eb8c3ddda0",
       "status": "completed",
-      "ms": 2028,
+      "ms": 1434,
       "steps": [
         {
           "capability": "geolocation",
@@ -539,24 +567,52 @@
     {
       "id": "rt11-14",
       "expect": "approved",
-      "requestId": "69ed22d4-45ce-4d9c-80a0-0e60573247ff",
-      "status": "paused_for_review",
-      "ms": 1467,
+      "requestId": "b14a8af8-7907-4bc0-a655-4cf6e685f189",
+      "status": "completed",
+      "ms": 1514,
+      "steps": [
+        {
+          "capability": "data-streaming",
+          "service": "Azure Event Hubs (Standard)",
+          "price": 0.03,
+          "uptime": 99.954,
+          "latencyMs": 223
+        },
+        {
+          "capability": "data-query",
+          "service": "Google BigQuery",
+          "price": 6.25,
+          "uptime": 99.991,
+          "latencyMs": 174
+        }
+      ],
+      "totals": {
+        "price": 6.28,
+        "uptime": 99.945,
+        "latencyMs": 397
+      },
       "limits": {
         "price": 300
       },
-      "pass": false,
-      "problems": [
-        "no chain was approved (status paused_for_review)"
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
       ],
-      "rerun": "20 s gap after a Groq 429"
+      "pass": true,
+      "problems": []
     },
     {
       "id": "rt11-15",
       "expect": "approved",
-      "requestId": "49f8a095-506d-4519-b92e-fface4553da7",
+      "requestId": "ed7411b7-81b6-466d-983f-60bcc0c893c0",
       "status": "completed",
-      "ms": 2384,
+      "ms": 1854,
       "steps": [
         {
           "capability": "ml-inference",
@@ -597,9 +653,9 @@
     {
       "id": "rt11-16",
       "expect": "approved",
-      "requestId": "ccba2de9-3e3c-4e63-b9e4-b0cd095db8b9",
+      "requestId": "514e374d-7531-4cf9-a9a7-cc77aefae7b9",
       "status": "completed",
-      "ms": 13674,
+      "ms": 2118,
       "steps": [
         {
           "capability": "document-ocr",
@@ -640,9 +696,9 @@
     {
       "id": "rt11-17",
       "expect": "approved",
-      "requestId": "1de4ab60-4a28-4cdf-a000-c5cdb2001d54",
+      "requestId": "61474654-7251-4e0a-98e6-ed0c5dca0d18",
       "status": "completed",
-      "ms": 8354,
+      "ms": 5613,
       "steps": [
         {
           "capability": "speech-transcription",
@@ -694,9 +750,9 @@
     {
       "id": "rt11-18",
       "expect": "approved",
-      "requestId": "9a974a02-73af-422d-a44f-90e682b416fe",
+      "requestId": "dbacf0d2-21d4-4c1c-b14d-2813b54b27bc",
       "status": "completed",
-      "ms": 9460,
+      "ms": 2006,
       "steps": [
         {
           "capability": "authentication",
@@ -748,9 +804,9 @@
     {
       "id": "rt11-19",
       "expect": "approved",
-      "requestId": "591e84e0-3a23-4aa7-af75-562abb7fec41",
+      "requestId": "18b51a3a-8181-4c0b-acd4-ac1b4ffb7dff",
       "status": "completed",
-      "ms": 2071,
+      "ms": 1441,
       "steps": [
         {
           "capability": "fraud-detection",
@@ -802,9 +858,9 @@
     {
       "id": "rt11-20",
       "expect": "approved",
-      "requestId": "dc2f1cec-1742-42ba-bad2-cafd33c9e262",
+      "requestId": "9c7f80e1-7856-43e2-906e-e4d2552b632a",
       "status": "completed",
-      "ms": 13013,
+      "ms": 1260,
       "steps": [
         {
           "capability": "object-storage",
@@ -856,9 +912,9 @@
     {
       "id": "rt11-21",
       "expect": "approved",
-      "requestId": "c3fc183d-fae4-48dc-8137-322ec7104d69",
+      "requestId": "c1eae916-4716-4831-804e-9b3cb06154c4",
       "status": "completed",
-      "ms": 2172,
+      "ms": 1322,
       "steps": [
         {
           "capability": "message-queue",
@@ -899,9 +955,9 @@
     {
       "id": "rt11-22",
       "expect": "approved",
-      "requestId": "582fdf7e-e87f-4dfe-9d74-6086d5bb8396",
+      "requestId": "f77e3ea5-46c6-417e-9205-1483c6c2e0c6",
       "status": "completed",
-      "ms": 1933,
+      "ms": 1377,
       "steps": [
         {
           "capability": "secrets-management",
@@ -937,15 +993,14 @@
         }
       ],
       "pass": true,
-      "problems": [],
-      "rerun": "20 s gap after a Groq 429"
+      "problems": []
     },
     {
       "id": "rt11-23",
       "expect": "approved",
-      "requestId": "94bb5dd2-88eb-4ec2-b622-9606cdf10cd9",
+      "requestId": "e94c8821-5095-4a4a-945e-21cff32d173a",
       "status": "completed",
-      "ms": 2112,
+      "ms": 1131,
       "steps": [
         {
           "capability": "web-hosting",
@@ -986,9 +1041,9 @@
     {
       "id": "rt11-24",
       "expect": "approved",
-      "requestId": "a4b0744e-a9f9-460e-ab2d-2708d5634156",
+      "requestId": "681ee9df-1e25-4d81-a65a-5e11f3e31d3b",
       "status": "completed",
-      "ms": 1567,
+      "ms": 1137,
       "limits": {
         "price": 300
       },
@@ -1000,9 +1055,9 @@
     {
       "id": "rt11-25",
       "expect": "approved",
-      "requestId": "34140847-9f06-48cf-8e51-a37bfabb69ba",
+      "requestId": "e3d21da7-8913-490d-a388-3c53e6d99fdb",
       "status": "completed",
-      "ms": 3087,
+      "ms": 1410,
       "steps": [
         {
           "capability": "recommendations",
@@ -1038,29 +1093,57 @@
         }
       ],
       "pass": true,
-      "problems": [],
-      "rerun": "20 s gap after a Groq 429"
+      "problems": []
     },
     {
       "id": "rt11-26",
       "expect": "approved",
-      "requestId": "251000b8-be1e-4552-9bd0-d8ae2b2a3bec",
-      "status": "paused_for_review",
-      "ms": 1598,
+      "requestId": "4f455ceb-f32e-4a6e-b356-1feebde9d970",
+      "status": "completed",
+      "ms": 1834,
+      "steps": [
+        {
+          "capability": "speech-transcription",
+          "service": "Speechmatics",
+          "price": 4,
+          "uptime": 99.908,
+          "latencyMs": 675
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Amazon SES",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 772
+        }
+      ],
+      "totals": {
+        "price": 14,
+        "uptime": 99.8161,
+        "latencyMs": 1447
+      },
       "limits": {
         "price": 100
       },
-      "pass": false,
-      "problems": [
-        "no chain was approved (status paused_for_review)"
-      ]
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
     },
     {
       "id": "rt11-27",
       "expect": "approved",
-      "requestId": "63b22702-6409-42d1-8bd2-35c501973910",
+      "requestId": "517cf791-e7fc-4ead-bc95-2dd06fa54a29",
       "status": "completed",
-      "ms": 1326,
+      "ms": 1272,
       "steps": [
         {
           "capability": "image-resizing",
@@ -1101,9 +1184,9 @@
     {
       "id": "rt11-28",
       "expect": "refused",
-      "requestId": "efa03b7d-10fd-4174-8617-f7ffa35b9ca0",
+      "requestId": "2db072b3-d3ec-4a1e-b552-5a854b3614e4",
       "status": "paused_for_review",
-      "ms": 458,
+      "ms": 949,
       "limits": {
         "price": 1
       },
@@ -1113,9 +1196,9 @@
     {
       "id": "rt11-29",
       "expect": "refused",
-      "requestId": "e87956bd-c73f-42e3-95ba-481bb1637353",
+      "requestId": "9c7d979f-c0da-4dbf-a4c2-593d82da4b5f",
       "status": "paused_for_review",
-      "ms": 1026,
+      "ms": 857,
       "limits": {
         "uptime": 99.999
       },
@@ -1125,16 +1208,14 @@
     {
       "id": "rt11-30",
       "expect": "refused",
-      "requestId": "a29e969a-39c7-4c91-b73f-f666874d5038",
+      "requestId": "d67f1945-6697-4fff-b91a-a6cda06160ce",
       "status": "paused_for_review",
-      "ms": 1498,
+      "ms": 754,
       "limits": {
         "price": 0.5
       },
       "pass": true,
-      "problems": [],
-      "rerun": "20 s gap after a Groq 429"
+      "problems": []
     }
-  ],
-  "note": "Cases rt11-12,14,22,25,30 failed on the Groq free-tier limit (8,000 tokens/min) at a 4 s gap and were re-run at a 20 s gap; the re-run result is recorded."
+  ]
 }
