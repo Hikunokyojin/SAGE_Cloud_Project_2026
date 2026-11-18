@@ -1,0 +1,138 @@
+{
+ "generatedAt": "2026-11-18T22:10:43.159Z",
+ "note": "Padding is synthetic (flagged). LLM-only tokens are prompt chars / 4, not a tokenizer count. SAGE tokens are the live mean per call x 1.74 calls.",
+ "rows": [
+  {
+   "size": 21,
+   "padded": 0,
+   "sage": {
+    "answerableCsr": 1,
+    "escalationRecall": 1,
+    "bestServiceRetrieved": 1,
+    "tokensPerRequest": 1380
+   },
+   "llmOnly": {
+    "promptTokensPerRequest": 1693,
+    "fitsFreeTierMinute": true,
+    "fitsContext": true,
+    "tokenRatioVsSage": 1.2268115942028985
+   }
+  },
+  {
+   "size": 100,
+   "padded": 79,
+   "sage": {
+    "answerableCsr": 0.95,
+    "escalationRecall": 1,
+    "bestServiceRetrieved": 1,
+    "tokensPerRequest": 1380
+   },
+   "llmOnly": {
+    "promptTokensPerRequest": 5496,
+    "fitsFreeTierMinute": true,
+    "fitsContext": true,
+    "tokenRatioVsSage": 3.982608695652174
+   }
+  },
+  {
+   "size": 500,
+   "padded": 479,
+   "sage": {
+    "answerableCsr": 0.85,
+    "escalationRecall": 1,
+    "bestServiceRetrieved": 0.9,
+    "tokensPerRequest": 1380
+   },
+   "llmOnly": {
+    "promptTokensPerRequest": 25866,
+    "fitsFreeTierMinute": false,
+    "fitsContext": true,
+    "tokenRatioVsSage": 18.743478260869566
+   }
+  },
+  {
+   "size": 2000,
+   "padded": 1979,
+   "sage": {
+    "answerableCsr": 0.65,
+    "escalationRecall": 1,
+    "bestServiceRetrieved": 0.65,
+    "tokensPerRequest": 1380
+   },
+   "llmOnly": {
+    "promptTokensPerRequest": 104028,
+    "fitsFreeTierMinute": false,
+    "fitsContext": true,
+    "tokenRatioVsSage": 75.38260869565218
+   }
+  }
+ ],
+ "misses": [
+  {
+   "size": 100,
+   "case": "SS-1",
+   "outcome": "approved",
+   "chosen": "pad-72"
+  },
+  {
+   "size": 500,
+   "case": "SS-1",
+   "outcome": "approved",
+   "chosen": "pad-283"
+  },
+  {
+   "size": 500,
+   "case": "MC-3",
+   "outcome": "escalated",
+   "chosen": null
+  },
+  {
+   "size": 500,
+   "case": "PO-4",
+   "outcome": "approved",
+   "chosen": "pad-106"
+  },
+  {
+   "size": 2000,
+   "case": "SS-1",
+   "outcome": "approved",
+   "chosen": "pad-283"
+  },
+  {
+   "size": 2000,
+   "case": "CO-2",
+   "outcome": "approved",
+   "chosen": "pad-147"
+  },
+  {
+   "size": 2000,
+   "case": "PO-2",
+   "outcome": "approved",
+   "chosen": "pad-147"
+  },
+  {
+   "size": 2000,
+   "case": "RO-2",
+   "outcome": "escalated",
+   "chosen": null
+  },
+  {
+   "size": 2000,
+   "case": "MC-3",
+   "outcome": "escalated",
+   "chosen": null
+  },
+  {
+   "size": 2000,
+   "case": "RN-2",
+   "outcome": "escalated",
+   "chosen": null
+  },
+  {
+   "size": 2000,
+   "case": "PO-4",
+   "outcome": "approved",
+   "chosen": "pad-106"
+  }
+ ]
+}
