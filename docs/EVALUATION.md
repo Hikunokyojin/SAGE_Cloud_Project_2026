@@ -11,7 +11,8 @@ Final run: 2026-10-04 (`evaluation/results/raw-results.json`, `evaluation/result
 
 ### Metrics
 
-- **CSR / CVR** (constraint satisfaction / violation rate): share of all 27 requests where the condition *approved* a service that does / does not satisfy the request. Satisfying means the service is in the requested capability and meets every mandatory constraint stated in the request ("under $0.05", "at least 99.5% uptime"). This is checked against real catalog values by `ground-truth.ts`, independently of the condition's own verdict. Correct escalations count in neither, so **the maximum achievable CSR is 20/27 = 74.1%**. A unit test (`ground-truth.test.ts`) verifies that every expected answer satisfies its ground truth and that the 7 escalation cases have no valid answer in the catalog.
+- **CSR / CVR** (constraint satisfaction / violation rate): share of all 27 requests where the condition *approved* a service that does / does not satisfy the request. Satisfying means the service is in the requested capability and meets every mandatory constraint stated in the request ("under $0.05", "at least 99.5% uptime"). This is checked against real catalog values by `ground-truth.ts`, independently of the condition's own verdict. Correct escalations count in neither, so whole-batch CSR cannot exceed 20/27; that is why the split below (T4.4) is the headline measure. A unit test (`ground-truth.test.ts`) verifies that every expected answer satisfies its ground truth and that the 7 escalation cases have no valid answer in the catalog.
+- **Answerable CSR and escalation recall (T4.4):** the two halves of the job, scored separately. *Answerable CSR* is valid approvals among the 20 cases that have a valid answer (100% is achievable). *Escalation recall* is the share of the 7 unanswerable cases that were handed to a human; approving one or failing with an error is a miss.
 - **Selection accuracy:** the outcome matches the expected outcome (approve or escalate) and, where the case names one, the expected best service. A valid but non-optimal pick (e.g. not the cheapest when the request asks for the cheapest) lowers selection accuracy but is *not* a violation.
 - **HITL%:** share of requests where the condition's code path actually invoked the human-escalation route. Only Full SAGE and ablation F run that route. The other conditions return an "escalated" outcome without notifying anyone, so they score 0% even when they escalate correctly; use selection accuracy to compare escalation correctness.
 - **Audit completeness:** share of requests that produced a decision-provenance chain in the harness (not a DynamoDB persistence check; that was verified live against the deployed system).
@@ -27,10 +28,29 @@ Final run: 2026-10-04 (`evaluation/results/raw-results.json`, `evaluation/result
 | Baseline 3: SAGE without Reviewer | 70.4% | 3.7% | 88.9% | 0.74 | 0.0% | 1,361 | 1.74 | 74.1% | 74.1% | 0.0% |
 | Proposed: full SAGE (with capability check) | 74.1% | 0.0% | 88.9% | 0.74 | 22.2% | 1,619 | 1.74 | 96.3% | 100.0% | 3.7% |
 
-- **Full SAGE now matches the best condition on constraint safety.** With the capability check, it reaches the maximum possible CSR (74.1%) with no violations, the same as Baseline 1. It is the only condition that also keeps a decision-provenance chain for its requests.
+- **Full SAGE now matches the best condition on constraint safety.** With the capability check, it approves a valid service for all 20 answerable cases (whole-batch CSR 74.1%) with no violations, the same as Baseline 1. It is the only condition that also keeps a decision-provenance chain for its requests.
 - **Baseline 1 is still the most accurate at choosing the *best* option** (100% against 88.9%). The likely reason is that the whole 21-service catalog fits in a single prompt, so the model sees every option at once. That approach does not scale to a realistic marketplace, and it has no decision provenance or deterministic scoring.
 - **Full SAGE's three remaining misses.** Two (CO-1, CO-3) picked a valid but not the cheapest service: Intent read "the cheapest possible …; performance and uptime are a low priority" without a strong price preference. That is an Intent extraction-quality limit, not a violation. The third (NVS-3, "compute under $0.001") **failed instead of escalating**: in this run Broker's search returned no candidates at all, and the pipeline's "no candidates found" path returns a bare failure without notifying a human. That path predates the capability check; it has since been fixed and deployed (see below), after this run. It also accounts for the one error and the one incomplete audit chain.
 - **Baseline 2 is the least safe condition.** Its 18.5% CVR comes from picking services from the wrong capability, or ones that break stated constraints, with no checking step.
+
+## Answerable vs. unanswerable (T4.4, 2026-11-19)
+
+Recomputed from the same run (`raw-results.json`, no new model calls) with `answerableCsr` and `escalationRecall` in `evaluation/src/metrics.ts`. This table replaces the old "maximum achievable 74.1%" framing.
+
+| Condition | Answerable CSR (of 20) | Invalid approvals (of 20) | Escalation recall (of 7) | Unanswerable approved / failed |
+|---|---|---|---|---|
+| Baseline 1: LLM only | 100% (20) | 0 | 100% (7) | 0 / 0 |
+| Baseline 2: retrieval + LLM | 75% (15) | 5 | 100% (7) | 0 / 0 |
+| Full SAGE (A, with capability check) | **100% (20)** | **0** | 85.7% (6) | 0 / 1 (NVS-3, path since fixed) |
+| B: without Reviewer | 95% (19) | 1 | 100% (7) | 0 / 0 |
+| C: without re-negotiation | 95% (19) | 1 | 100% (7) | 0 / 0 |
+| D: LLM-based Negotiator | 95% (19) | 0 | 14.3% (1) | 0 / 6 |
+| E: without scoped payloads | 100% (20) | 0 | 85.7% (6) | 1 / 0 |
+| F: without provenance | 90% (18) | 1 | 100% (7) | 0 / 0 |
+
+- Full SAGE gets every answerable case right with no invalid approvals. Its one escalation miss is NVS-3, which failed instead of escalating on the old "no candidates" path, fixed and deployed after this run.
+- D's weakness is now plain: it answers well but escalates only 1 of 7 impossible requests.
+- With 20 and 7 cases these are single runs with wide uncertainty; T4.3 adds 5 runs per condition and 95% intervals, and moves the scoring to the 160-case T4.2 set once its labels are agreed.
 
 ## Ablation study
 

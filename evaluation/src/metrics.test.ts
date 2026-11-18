@@ -12,6 +12,8 @@ import {
   explanationConsistency,
   errorRate,
   summarize,
+  answerableCsr,
+  escalationRecall,
   type RunResult,
 } from "./metrics";
 import type { TestCase } from "./test-cases";
@@ -147,5 +149,38 @@ describe("summarize", () => {
     expect(summary.totalRequests).toBe(1);
     expect(summary.selectionAccuracy).toBe(1);
     expect(summary.constraintSatisfactionRate).toBe(1);
+  });
+});
+
+describe("answerable / unanswerable split (T4.4)", () => {
+  const results = [
+    result({ testCaseId: "a1", expectedOutcome: "approved", actualOutcome: "approved", constraintsSatisfied: true }),
+    result({ testCaseId: "a2", expectedOutcome: "approved", actualOutcome: "approved", constraintsSatisfied: false }),
+    result({ testCaseId: "a3", expectedOutcome: "approved", actualOutcome: "escalated" }),
+    result({ testCaseId: "a4", expectedOutcome: "approved", actualOutcome: "approved", constraintsSatisfied: true }),
+    result({ testCaseId: "u1", expectedOutcome: "escalated", actualOutcome: "escalated" }),
+    result({ testCaseId: "u2", expectedOutcome: "escalated", actualOutcome: "approved", constraintsSatisfied: false }),
+    result({ testCaseId: "u3", expectedOutcome: "escalated", actualOutcome: "failed", error: "x" }),
+  ];
+
+  it("answerable CSR counts valid approvals among answerable cases only", () => {
+    expect(answerableCsr(results)).toBeCloseTo(2 / 4);
+  });
+
+  it("escalation recall counts escalations among unanswerable cases only", () => {
+    expect(escalationRecall(results)).toBeCloseTo(1 / 3);
+  });
+
+  it("returns 0 when a group is empty", () => {
+    expect(answerableCsr([results[4]])).toBe(0);
+    expect(escalationRecall([results[0]])).toBe(0);
+  });
+
+  it("summarize reports both rates and the group sizes", () => {
+    const s = summarize("x", results, []);
+    expect(s.answerableCount).toBe(4);
+    expect(s.unanswerableCount).toBe(3);
+    expect(s.answerableCsr).toBeCloseTo(0.5);
+    expect(s.escalationRecall).toBeCloseTo(1 / 3);
   });
 });

@@ -50,6 +50,14 @@ export interface MetricsSummary {
   auditCompleteness: number;
   explanationConsistency: number;
   errorRate: number;
+  /** T4.4: cases whose ground truth is "approved" (a valid service exists). */
+  answerableCount: number;
+  /** T4.4: valid approvals among the answerable cases only. 100% is achievable. */
+  answerableCsr: number;
+  /** T4.4: cases whose ground truth is "escalated" (no valid service exists). */
+  unanswerableCount: number;
+  /** T4.4: share of the unanswerable cases that were escalated to a human. */
+  escalationRecall: number;
 }
 
 function mean(values: number[]): number {
@@ -161,6 +169,26 @@ export function errorRate(results: RunResult[]): number {
   return results.filter((r) => r.actualOutcome === "failed" && r.error !== undefined).length / results.length;
 }
 
+/**
+ * T4.4. CSR over the answerable cases only (expectedOutcome "approved"), so a perfect
+ * condition scores 100% rather than the old whole-batch ceiling.
+ */
+export function answerableCsr(results: RunResult[]): number {
+  const answerable = results.filter((r) => r.expectedOutcome === "approved");
+  if (answerable.length === 0) return 0;
+  return answerable.filter((r) => r.actualOutcome === "approved" && r.constraintsSatisfied === true).length / answerable.length;
+}
+
+/**
+ * T4.4. Escalation recall: share of the unanswerable cases (expectedOutcome "escalated")
+ * that the condition escalated. Approving one, or failing with an error, is a miss.
+ */
+export function escalationRecall(results: RunResult[]): number {
+  const unanswerable = results.filter((r) => r.expectedOutcome === "escalated");
+  if (unanswerable.length === 0) return 0;
+  return unanswerable.filter((r) => r.actualOutcome === "escalated").length / unanswerable.length;
+}
+
 export function summarize(conditionName: string, results: RunResult[], testCases: TestCase[]): MetricsSummary {
   return {
     conditionName,
@@ -176,6 +204,10 @@ export function summarize(conditionName: string, results: RunResult[], testCases
     auditCompleteness: auditCompleteness(results),
     explanationConsistency: explanationConsistency(results),
     errorRate: errorRate(results),
+    answerableCount: results.filter((r) => r.expectedOutcome === "approved").length,
+    answerableCsr: answerableCsr(results),
+    unanswerableCount: results.filter((r) => r.expectedOutcome === "escalated").length,
+    escalationRecall: escalationRecall(results),
   };
 }
 
@@ -185,11 +217,13 @@ function pct(n: number): string {
 
 /** Renders a fixed-width plain-text table of MetricsSummary rows for console output. */
 export function formatSummaryTable(summaries: MetricsSummary[]): string {
-  const headers = ["Condition", "N", "CSR", "CVR", "SelAcc", "AvgAttempts", "HITL%", "AvgLatMs", "LLMcalls", "Audit%", "ExplCons%", "Err%"];
+  const headers = ["Condition", "N", "CSR", "CSR(ans)", "EscRecall", "CVR", "SelAcc", "AvgAttempts", "HITL%", "AvgLatMs", "LLMcalls", "Audit%", "ExplCons%", "Err%"];
   const rows = summaries.map((s) => [
     s.conditionName,
     String(s.totalRequests),
     pct(s.constraintSatisfactionRate),
+    `${pct(s.answerableCsr)} of ${s.answerableCount}`,
+    `${pct(s.escalationRecall)} of ${s.unanswerableCount}`,
     pct(s.constraintViolationRate),
     pct(s.selectionAccuracy),
     s.averageNegotiationAttempts.toFixed(2),
