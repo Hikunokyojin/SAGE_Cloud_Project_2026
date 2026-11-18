@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "calibrate:retrieval": "tsx src/retrieval/calibrate.ts",
-    "rt11": "tsx src/rt11/run.ts"
+    "rt11": "tsx src/rt11/run.ts",
+    "faults": "node -e \"process.env.FAULT_REPORT='1';require('child_process').execSync('npx vitest run evaluation/faults',{stdio:'inherit',cwd:'..'})\""
   },
   "dependencies": {
     "@sage/shared-types": "*",

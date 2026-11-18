@@ -188,6 +188,24 @@ The live system now searches 213 real services in 35 categories. The 21 syntheti
 
 Gaps found in this stage are tracked in [LOOPHOLES.md](LOOPHOLES.md).
 
+## Reviewer fault injection (T4.5, 2026-11-19)
+
+Does the Reviewer catch a buggy Negotiator? `evaluation/faults/` takes each of the 211 real catalogue services, applies seven plausible Negotiator bugs, and runs the real Reviewer handler on the corrupted pick (audit and SNS mocked). Every fault describes a pick the request should not get, so an approval is a miss. Reproduce with `npm run faults -w @sage/evaluation` (no model calls, under a second); results in `evaluation/results/t45-faults.json`.
+
+| Injected fault | Example | Injected | Caught |
+|---|---|---|---|
+| Off-by-one price limit (`<` checked as `<=`) | "price under 0.1" passes a service at 0.1 | 207 | **100%** |
+| Off-by-one uptime limit (`>` checked as `>=`) | "uptime above 99.954" passes 99.954 | 211 | **100%** |
+| Wrong unit (list amount reported as the monthly price) | 0.035 per 10,000 calls reported as $0.035/month | 115 | **100%** |
+| Stale price (monthly price 20% low) | 0.08 reported instead of 0.10 | 194 | **100%** |
+| Wrong category | an api-gateway service offered for email-delivery | 211 | **100%** |
+| Stale uptime (inflated to 99.99%) | 99.954 reported as 99.99 | 165 | 0% |
+| Stale list price (list and monthly price both 20% low) | consistent but out-of-date figures | 194 | 1% |
+| **All** | | **1,297** | **72.5%** |
+
+- The Reviewer catches every fault it has an independent check for: the limit arithmetic, the category, and the price, which it recomputes from the provider's list price and unit.
+- It cannot catch a wrong value that arrives in the service record itself (uptime, or a list price changed together with the price), because it checks the service object the Negotiator hands it rather than reading the catalogue again. Logged as L22.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
