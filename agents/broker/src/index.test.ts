@@ -241,6 +241,20 @@ describe("Broker Agent handler", () => {
     expect(result).toHaveLength(5);
   });
 
+  it("returns every match in a known category, not just the top 5 (L23)", async () => {
+    const hits = Array.from({ length: 8 }, (_, i) =>
+      qdrantHit(`00000000-0000-0000-0000-00000000000${i}`, `svc-${i}`, 0.9 - i * 0.01)
+    );
+    qdrantSearchMock.mockResolvedValue(hits);
+    mongoFindToArrayMock.mockResolvedValue(hits.map((h) => MONGO_DOC({ serviceId: h.payload.serviceId })));
+
+    const { handler, CATEGORY_LIMIT } = await import("./index");
+    const result = await handler({ requestId: "req-l23", capability: "anything", category: "email", constraints: [] } as BrokerAgentInput);
+
+    expect(result).toHaveLength(8);
+    expect(qdrantSearchMock.mock.calls[0][1].limit).toBe(CATEGORY_LIMIT);
+  });
+
   it("resolves Mongo/Qdrant secrets via @sage/secrets (env locally, SSM once deployed)", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);

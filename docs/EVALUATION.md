@@ -210,22 +210,23 @@ Does the Reviewer catch a buggy Negotiator? `evaluation/faults/` takes each of t
 
 How do accuracy and token use change as the catalogue grows from 21 to 100, 500 and 2,000 services? `evaluation/scale/` pads the 21-service test catalogue with **synthetic** services (flagged `synthetic: true`, ids `pad-*`), whose wording is borrowed from the real v2 catalogue. Padding inside one of the 21's categories is strictly worse than every original there (dearer, slower, less reliable), so the 27 test cases keep the same right answers at every size. Reproduce with `npm run scale -w @sage/evaluation` (local embeddings, no model calls, about 10 s); results in `evaluation/results/t47-scale.json`.
 
-- **SAGE (retrieval first):** the Broker's search run locally (same MiniLM model, category filter, top 15, 0.38 cut-off), then the real Negotiator. Intent is held at the ground truth because it never sees the catalogue, so its accuracy does not change with size. Its real soft-preference rules are applied. Tokens per request are measured: 793 tokens per model call (mean of 169 live audit records) × 1.74 calls.
+- **SAGE (retrieval first):** the Broker's search run locally (same MiniLM model, category filter, every category match up to 100, 0.38 cut-off), then the real Negotiator. Intent is held at the ground truth because it never sees the catalogue, so its accuracy does not change with size. Its real soft-preference rules are applied. Tokens per request are measured: 793 tokens per model call (mean of 169 live audit records) × 1.74 calls.
 - **LLM only:** the whole catalogue goes into every prompt, as in Baseline 1. The prompt is sized, not sent (characters ÷ 4, an approximation); at 500 and above, a single request already exceeds the free tier's 8,000 tokens a minute.
 
 | Services | Padding | SAGE answerable CSR (of 20) | SAGE escalation recall (of 7) | Best service retrieved | SAGE tokens/request | LLM-only prompt tokens/request | LLM only ÷ SAGE |
 |---|---|---|---|---|---|---|---|
 | 21 | 0 | 100% | 100% | 100% | 1,380 | 1,693 | 1.2× |
-| 100 | 79 | 95% | 100% | 100% | 1,380 | 5,496 | 4.0× |
-| 500 | 479 | 85% | 100% | 90% | 1,380 | 25,866 (over the free-tier minute) | 18.7× |
-| 2,000 | 1,979 | 65% | 100% | 65% | 1,380 | 104,028 (close to the 131k context) | 75.4× |
+| 100 | 79 | 100% (95% before the L23/L24 fix) | 100% | 100% | 1,380 | 5,496 | 4.0× |
+| 500 | 479 | 100% (85%) | 100% | 100% (90%) | 1,380 | 25,866 (over the free-tier minute) | 18.7× |
+| 2,000 | 1,979 | 100% (65%) | 100% | 100% (65%) | 1,380 | 104,028 (close to the 131k context) | 75.4× |
 
 ![Tokens per request against catalogue size](img/t47-scale-tokens.svg)
 
 - **Cost:** SAGE's tokens per request stay flat, while LLM only grows in a straight line with the catalogue. SAGE is already cheaper at 21 services (1.2×) and 75× cheaper at 2,000. LLM only stops being runnable on the free tier somewhere between 100 and 500 services, and runs out of context at about 2,500. Dollar cost is tokens × the provider's price; the Groq price page could not be read automatically, so no dollar figure is given.
-- **Accuracy:** SAGE escalates every impossible request at every size, but its answerable accuracy falls from 100% to 65% as same-category padding crowds in. There are two causes, both logged:
-  - **L23:** the Broker keeps only the 15 closest matches *before* any scoring, so in a crowded category the best-value service can be cut. At 2,000 the best service was cut in all 7 misses: 3 then escalate wrongly and 4 pick a worse service.
-  - **L24:** the Negotiator gives text similarity a fixed weight of 0.5, so a closer-worded service can beat one that is cheaper, faster *and* more reliable. SS-1, "the cheapest email service", picks a padded SparkPost from 100 services up.
+- **Accuracy:** SAGE escalates every impossible request at every size. Before the fix, answerable accuracy fell from 100% to 65% as same-category padding crowded in, for two logged reasons, both now fixed:
+  - **L23:** the Broker kept only the closest text matches before any scoring (the live Broker returned 5), so in a crowded category the best-value service could be cut. With a known category it now returns every match up to 100, and the Negotiator decides.
+  - **L24:** the Negotiator gave text similarity a fixed weight of 0.5, so a closer-worded service could beat a cheaper, faster and more reliable one (SS-1, "the cheapest email service", picked a padded SparkPost). Similarity now only breaks ties. A second cause showed up while fixing it: absolute scores clamp at 1, so every service better than the category's reference best tied; tied services are now compared with each other on price, uptime and latency before similarity.
+  - After the fix SAGE scores 100% answerable at every size, up to 2,000 services.
 - **Limits of this study:** the padding text is real provider copy, often a closer match than the 21 hand-written test descriptions, so the drop is probably larger than on a real catalogue of the same size. LLM-only accuracy at 100 and above is not measured; doing so needs a paid tier or a slow free fallback (another plan). The accuracy crossover therefore isn't shown; the token and cost crossover is shown.
 
 ## Limitations
