@@ -248,6 +248,8 @@ export interface EscalationExplanation {
   requestId: string;
   explanation: string;
   attemptedOptions: ServiceCandidateWithEvidence[];
+  // L25: "model" when the model's wording passed the claim check, "facts" for the plain fact text.
+  explanationSource?: "model" | "facts";
 }
 
 // ── Audit Trail ──────────────────────────────────────────────
