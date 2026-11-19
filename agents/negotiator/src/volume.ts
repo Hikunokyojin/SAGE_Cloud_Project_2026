@@ -12,6 +12,8 @@ function listed(c: ServiceCandidateWithEvidence) {
   return { amount: c.listPrice, unit: c.priceUnit, currency: c.currency };
 }
 
+const ONE_REQUEST_EACH = new Set<string>(["emails", "sms", "payments", "images", "pages", "events"]);
+
 export interface Priced {
   candidate: ServiceCandidateWithEvidence;
   // Set when the plan cannot serve the volume; the candidate is then not eligible.
@@ -24,6 +26,20 @@ export function priceAtVolume(c: ServiceCandidateWithEvidence, volume?: UsageVol
 
   if (c.volumeBasis === "quota" && c.includedUnits) {
     const inc = c.includedUnits;
+    // L13: countable items (emails, messages, payments...) need at most one API request each,
+    // so a request quota at least as large as the volume is certainly enough. A smaller one may
+    // still do if several items go in one request, so it is kept with a note, not rejected.
+    if (inc.unit === "requests" && ONE_REQUEST_EACH.has(volume.unit)) {
+      if (inc.amount >= volume.amount) {
+        return { candidate: { ...c, volumeNote: `plan covers ${fmt(inc.amount)} requests a month, enough for ${needed} at one request each` } };
+      }
+      return {
+        candidate: {
+          ...c,
+          volumeNote: `plan covers ${fmt(inc.amount)} requests a month, enough for ${needed} only if several go in one request`,
+        },
+      };
+    }
     if (inc.unit !== volume.unit) {
       return { candidate: { ...c, volumeNote: `plan quota is in ${inc.unit}, so ${needed} could not be checked` } };
     }
