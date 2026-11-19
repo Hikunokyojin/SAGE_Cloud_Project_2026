@@ -46,6 +46,7 @@ Convert the user's request into a JSON object with exactly these fields:
 }
 Each entry of "steps" is { "capability", "category", "constraints", "volume", "dependsOn": [<indexes of earlier steps whose output it uses>] } with the same meaning as above, in the order the services are used.
 When there are steps: the top-level "capability" and "category" repeat the first step, and the top-level "constraints" are limits on the WHOLE chain (total monthly price, overall uptime, total latency); limits on one service go in that step's "constraints".
+A second catalogue service named in passing is still its own step when the user needs it as a service, for example as the source the first one is fed from or the place its output goes. "Run our containers on a compute service pulled from a container registry" is two steps: container-registry, then compute (dependsOn [0]). Do not add a step for something that is only a feature of the one service.
 Rules for "constraints":
 - Use "mandatory": true for a hard requirement explicitly stated (e.g. "must be under $0.05", "at least 99% uptime", "under 100ms").
 - Use "mandatory": false with a "priority" from 1-10 (higher = more important) for a softer preference (e.g. "prefer cheap", "ideally fast", "reliability matters most").
@@ -90,7 +91,7 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
 
 const GROQ_SEED = 42;
 // Bump when the prompt or schema changes so the shared cache stops serving old parses.
-const CACHE_VERSION = `${GROQ_MODEL}|intent-v2`;
+const CACHE_VERSION = `${GROQ_MODEL}|intent-v3`;
 
 const CONSTRAINTS_SCHEMA = {
   type: "array",

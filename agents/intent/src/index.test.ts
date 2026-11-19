@@ -221,6 +221,14 @@ describe("Intent reproducibility", () => {
     expect(body.response_format.json_schema.schema.required).toEqual(["capability", "category", "constraints"]);
   });
 
+  it("L20: tells the model that a service named in passing is its own step", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    const system: string = JSON.parse(fetchMock.mock.calls[0][1].body).messages[0].content;
+    expect(system).toMatch(/named in passing/);
+    expect(system).toContain("container-registry");
+  });
+
   it("reuses the parse for the same request, ignoring case and spacing", async () => {
     const { handler } = await import("./index");
     const a = await handler({ requestId: "r1", rawInput: "Send  emails" } as IntentAgentInput);
