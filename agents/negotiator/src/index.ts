@@ -19,7 +19,9 @@ import { priceAtVolume, unitPrice } from "./volume";
 // violations always produce the same composition.
 
 const DEFAULT_WEIGHT = 1;
-const CAPABILITY_WEIGHT = 0.5; // fixed secondary factor: strength of the semantic match
+// L24: similarity only breaks ties. With a fixed weight a closer-worded but dominated service
+// (dearer, less reliable) could win. It is still reported as a dimension.
+const CAPABILITY_WEIGHT = 0;
 
 function evaluateConstraint(actual: number, constraint: Constraint): boolean {
   switch (constraint.operator) {
@@ -225,9 +227,21 @@ function negotiate(input: NegotiatorAgentInput): { output: Composition; scored: 
 
   // Step 5: select the highest-scoring valid candidate, deterministic
   // tie-break by serviceId so equal scores don't depend on input ordering.
+  // Absolute dimensions clamp at 1, so services better than the category's reference best
+  // all tie; compare them with each other on the weighted dimensions before similarity.
+  const relativeOf = (c: ServiceCandidateWithEvidence): number =>
+    normalizedDimension(c.price, priceValues, false) * priceWeight +
+    normalizedDimension(c.uptime, uptimeValues, true) * uptimeWeight +
+    (latencyDimensionPresent ? normalizedDimension(c.latencyMs as number, latencyValues, false) * latencyWeight : 0);
   const scored = eligible
-    .map((candidate) => ({ candidate, ...scoreOf(candidate) }))
-    .sort((a, b) => b.total - a.total || a.candidate.serviceId.localeCompare(b.candidate.serviceId));
+    .map((candidate) => ({ candidate, ...scoreOf(candidate), relative: relativeOf(candidate) }))
+    .sort(
+      (a, b) =>
+        b.total - a.total ||
+        b.relative - a.relative ||
+        (b.candidate.similarityScore ?? 0) - (a.candidate.similarityScore ?? 0) ||
+        a.candidate.serviceId.localeCompare(b.candidate.serviceId)
+    );
 
   const [best, ...rest] = scored;
 

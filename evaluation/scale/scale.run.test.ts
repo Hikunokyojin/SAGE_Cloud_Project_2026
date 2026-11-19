@@ -1,6 +1,6 @@
 // T4.7 scale study. Skipped unless SCALE_RUN is set (it downloads and runs the embedding model):
 //   npm run scale -w @sage/evaluation
-// Retrieval-first SAGE: local MiniLM embeddings with the Broker's category filter, top 15 and 0.38
+// Retrieval-first SAGE: local MiniLM embeddings with the Broker's category filter, every category match up to 100 and 0.38
 // cut-off (query: the request text, standing in for Intent's capability phrase), then the real Negotiator handler with the ground-truth constraints. Intent is held at
 // the ground truth: it never sees the catalogue, so its accuracy does not change with size.
 // LLM-only: the whole catalogue goes in the prompt; its size is counted, not sent.
@@ -19,7 +19,7 @@ vi.mock("@sage/audit", () => ({ recordDecision: vi.fn(async () => undefined), wa
 
 const ROOT = join(__dirname, "..", "..");
 const SIZES = [21, 100, 500, 2000];
-const TOP = 15; // Broker: TOP_N * 3
+const TOP = 100; // Broker: CATEGORY_LIMIT (category known)
 const MIN_SIMILARITY = 0.38;
 // Measured: mean tokens per LLM call over 169 live audit records (2026-11-19); SAGE makes 1.74 calls a request (D8).
 const SAGE_TOKENS_PER_REQUEST = Math.round(793 * 1.74);

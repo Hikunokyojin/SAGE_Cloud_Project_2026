@@ -101,6 +101,10 @@ async function warm() {
 }
 
 const TOP_N = 5;
+// L23: with a known category the Negotiator, not text closeness, picks the best value, so
+// return every match in the category up to this cap (keeps the state payload well under
+// Step Functions' 256 KB; the largest live category has 14 services).
+export const CATEGORY_LIMIT = 100;
 // The cut-off is chosen from labelled data, not by hand: see
 // evaluation/src/retrieval/calibrate.ts and results/retrieval-calibration.json.
 // History: 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
@@ -134,7 +138,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   const categoryFilter = input.category ? { filter: { must: [{ key: "capability", match: { value: input.category } }] } } : {};
   let searchResult = await qdrant.search("services", {
     vector: queryVector,
-    limit: TOP_N * 3,
+    limit: input.category ? CATEGORY_LIMIT : TOP_N * 3,
     score_threshold: MIN_SIMILARITY,
     with_payload: true,
     ...categoryFilter,
@@ -145,7 +149,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   // stands, so out-of-catalogue requests are still refused.
   let categoryFallback = false;
   if (searchResult.length === 0 && input.category) {
-    searchResult = await qdrant.search("services", { vector: queryVector, limit: TOP_N * 3, with_payload: true, ...categoryFilter });
+    searchResult = await qdrant.search("services", { vector: queryVector, limit: CATEGORY_LIMIT, with_payload: true, ...categoryFilter });
     categoryFallback = searchResult.length > 0;
   }
 
@@ -209,7 +213,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
     // the architecture spec's division of labor -- never Broker.
     .filter((c): c is ServiceCandidateWithEvidence => c !== null);
 
-  const output = candidates.slice(0, TOP_N);
+  const output = input.category ? candidates : candidates.slice(0, TOP_N);
 
   try {
     await recordDecision({

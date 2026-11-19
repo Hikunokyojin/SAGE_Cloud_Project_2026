@@ -375,3 +375,27 @@ describe("Negotiator converts a volume to the unit a service is priced in (L15, 
     expect(r.chosen.service.volumeNote).toBe("5,000 pages counted as 10,000,000 characters, at about 2,000 characters a page");
   });
 });
+
+describe("similarity only breaks ties (L24)", () => {
+  it("picks the cheaper, more reliable, faster service over a closer-worded one", async () => {
+    const closer = candidate({ serviceId: "svc-closer", price: 0.04, uptime: 99.6, latencyMs: 90, similarityScore: 0.9, capability: "image-resizing" });
+    const better = candidate({ serviceId: "svc-better", price: 0.01, uptime: 99.9, latencyMs: 50, similarityScore: 0.4, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [closer, better], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-better");
+  });
+
+  it("separates services that all beat the category's references on their own values", async () => {
+    // Both are cheaper and faster than the image-resizing reference best, so both score 1.
+    const dear = candidate({ serviceId: "svc-dear", price: 0.004, uptime: 99.95, latencyMs: 40, similarityScore: 0.9, capability: "image-resizing" });
+    const cheap = candidate({ serviceId: "svc-cheap", price: 0.001, uptime: 99.95, latencyMs: 40, similarityScore: 0.4, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [dear, cheap], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-cheap");
+  });
+
+  it("uses similarity to break an exact tie", async () => {
+    const a = candidate({ serviceId: "svc-a", price: 0.02, uptime: 99.8, latencyMs: 80, similarityScore: 0.5, capability: "image-resizing" });
+    const b = candidate({ serviceId: "svc-b", price: 0.02, uptime: 99.8, latencyMs: 80, similarityScore: 0.7, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [a, b], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-b");
+  });
+});
