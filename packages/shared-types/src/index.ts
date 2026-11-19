@@ -180,6 +180,8 @@ export interface NegotiatorAgentInput {
   steps?: NegotiatorStep[];
   decisionId?: string;
   parentDecisionId?: string;
+  // L14: other decisions this one also used (a chain's other Broker step searches).
+  relatedDecisionIds?: string[];
 }
 
 export interface ReviewerAgentInput {
@@ -502,6 +504,8 @@ export interface StageTiming {
 export interface DecisionProvenance extends AuditRecord {
   decisionId: string;
   parentDecisionId?: string;
+  // L14: further inputs besides the parent (a chain's other Broker decisions).
+  relatedDecisionIds?: string[];
   iteration: number;
   // Latency and cost evidence: how long the agent's own work took, the language-model
   // tokens it used (LLM agents only), and whether this was the first record written by

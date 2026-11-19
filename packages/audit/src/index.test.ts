@@ -61,6 +61,15 @@ describe("recordDecision", () => {
     expect(JSON.parse(putCommand.input.Item.output.S)).toEqual({ capability: "image resizing", constraints: {} });
   });
 
+  it("L14: writes relatedDecisionIds as a list when given", async () => {
+    const { recordDecision } = await import("./index");
+    await recordDecision({ ...record(), decisionId: "d", iteration: 1, relatedDecisionIds: ["a", "b"] } as never);
+    expect(puts()[0].input.Item.relatedDecisionIds).toEqual({ L: [{ S: "a" }, { S: "b" }] });
+    sendMock.mockClear();
+    await recordDecision(record());
+    expect(puts()[0].input.Item.relatedDecisionIds).toBeUndefined();
+  });
+
   it("includes reasoning as an S attribute when provided, and omits it entirely when absent", async () => {
     const { recordDecision } = await import("./index");
 

@@ -56,6 +56,7 @@ export interface AgentInvoker {
     steps?: NegotiatorStep[];
     decisionId?: string;
     parentDecisionId?: string;
+    relatedDecisionIds?: string[];
   }): Promise<Composition>;
   reviewer(input: {
     requestId: string;
@@ -324,6 +325,8 @@ async function fromIntent(
           : {}),
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
+        // L14: on the first try the other steps' Broker searches fed this decision too.
+        ...(iteration === 1 && brokerDecisionIds.length > 1 ? { relatedDecisionIds: brokerDecisionIds.slice(0, -1) } : {}),
       });
     } catch (err) {
       // Negotiator throws when no candidate satisfies the mandatory constraints

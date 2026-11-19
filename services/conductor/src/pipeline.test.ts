@@ -467,6 +467,19 @@ describe("chain requests (T4.1d)", () => {
     expect(calls.every((c) => c.parentDecisionId === intentId)).toBe(true);
   });
 
+  it("L14: links every step's Broker decision to the Negotiator, not only the last", async () => {
+    const invoker = makeInvoker({
+      intent: chainIntent(),
+      broker: vi.fn(async (input) => [service({ serviceId: input.category === "translation" ? "svc-tr" : "svc-ocr" })]),
+      negotiator: vi.fn(async (input) => chainComposition(input)),
+    });
+    await runPipeline("req-chain", "scan invoices then translate them", invoker);
+    const brokerIds = vi.mocked(invoker.broker).mock.calls.map((c) => c[0].decisionId);
+    const neg = vi.mocked(invoker.negotiator).mock.calls[0][0];
+    expect(neg.parentDecisionId).toBe(brokerIds[1]);
+    expect(neg.relatedDecisionIds).toEqual([brokerIds[0]]);
+  });
+
   it("gives the Negotiator and Reviewer the steps, each with its own candidates", async () => {
     const invoker = makeInvoker({
       intent: chainIntent(),
