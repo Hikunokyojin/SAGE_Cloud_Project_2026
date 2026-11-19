@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand, QueryCommand, ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, PutItemCommand, QueryCommand, ConditionalCheckFailedException, type AttributeValue } from "@aws-sdk/client-dynamodb";
 import { GENESIS, hashItem, type Item } from "./chain";
 export { verifyChain, hashItem, GENESIS } from "./chain";
 import type { AuditRecord, DecisionProvenance } from "@sage/shared-types";
@@ -53,6 +53,9 @@ export async function recordDecision(record: AuditRecord | DecisionProvenance): 
     ...(provenance.decisionId !== undefined ? { decisionId: { S: provenance.decisionId } } : {}),
     ...(provenance.parentDecisionId !== undefined
       ? { parentDecisionId: { S: provenance.parentDecisionId } }
+      : {}),
+    ...(provenance.relatedDecisionIds?.length
+      ? { relatedDecisionIds: { L: provenance.relatedDecisionIds.map((id): AttributeValue => ({ S: id })) } as AttributeValue }
       : {}),
     ...(provenance.iteration !== undefined ? { iteration: { N: String(provenance.iteration) } } : {}),
     ...(provenance.status !== undefined ? { status: { S: provenance.status } } : {}),

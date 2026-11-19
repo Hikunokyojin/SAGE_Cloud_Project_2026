@@ -387,6 +387,7 @@ export async function handler(input: NegotiatorAgentInput): Promise<Composition>
       reasoning: `Chose ${chosen.service.name} (score ${chosen.score.toFixed(3)}) over ${alternatives.length} alternative(s) on iteration ${input.iteration}, deterministically -- no LLM call.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
+      ...(input.relatedDecisionIds?.length ? { relatedDecisionIds: input.relatedDecisionIds } : {}),
       iteration: input.iteration,
       status: "success",
       score: output.scoreBreakdown,
