@@ -123,7 +123,8 @@ app.post("/requests/:requestId/resolve", async (req, res) => {
 });
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "sage-conductor" });
+  // L18: the source fingerprint stamped in by `npm run conductor:bundle` ("dev" when run from source).
+  res.json({ status: "ok", service: "sage-conductor", build: process.env.SAGE_CONDUCTOR_BUILD ?? "dev" });
 });
 
 app.post("/request", requestLimiter, async (req, res) => {
