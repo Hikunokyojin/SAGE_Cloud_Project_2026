@@ -229,6 +229,21 @@ How do accuracy and token use change as the catalogue grows from 21 to 100, 500 
   - After the fix SAGE scores 100% answerable at every size, up to 2,000 services.
 - **Limits of this study:** the padding text is real provider copy, often a closer match than the 21 hand-written test descriptions, so the drop is probably larger than on a real catalogue of the same size. LLM-only accuracy at 100 and above is not measured; doing so needs a paid tier or a slow free fallback (another plan). The accuracy crossover therefore isn't shown; the token and cost crossover is shown.
 
+## Explanation faithfulness and rating (T4.6, 2026-11-19)
+
+**Faithfulness (automatic).** `evaluation/explain/faithfulness.ts` re-checks every live Explainer audit record against the raw decision the Explainer was given, not against its own fact sheet. Every number must come from the decision (rounded is fine), no internal ranking score may be shown, the chosen service(s) and every rejected candidate must be named, and "no alternatives" must not be claimed when there were some. Run: `npm run explain -w @sage/evaluation -- <explainer-scan.json> [intent-scan.json]` (read-only DynamoDB scans). Results: `results/t46-faithfulness.json`.
+
+| Explanations | Faithful | Ranking score shown to the client |
+|---|---|---|
+| Before T1.4 (model wrote freely) | 23 / 43 (53%) | 20 |
+| T1.4 to 2026-11-13 (claim check, scores still in the fact sheet) | 53 / 73 (73%) | 20 |
+| Current, model wording | 24 / 24 (100%) | 0 |
+| Current, plain fact sheet (model wording failed the check) | 5 / 5 (100%) | 0 |
+
+Every failure since T1.4 was an internal 0-to-1 ranking score passed on to the client, which the 2026-11-13 change removed. No current explanation contains an invented number or leaves out a chosen or rejected service. RT14 asks for 200 live requests; 29 exist since the fix, so the target is not yet met in volume (another 171 live requests is about 236k tokens, over one day of Groq's free tier).
+
+**Human rating.** A rating page (https://claude.ai/artifact/FnQLwYtBdFDhmX793K271X, share as Contributor) shows the 20 most recent current explanations next to their requests (`results/t46-rating-sample.json`), rated 1 to 5 for clarity and correctness. Raters see only their own answers. Summarise with `tsx explain/ratings.ts <folder>`. Results: pending raters.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.

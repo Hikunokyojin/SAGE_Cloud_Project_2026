@@ -1,0 +1,202 @@
+[
+  {
+    "id": "d42fb884-4f51-4c85-8b38-a88e3d64292b",
+    "requestId": "56b21f6d-b2de-47e0-9ab9-3bcc08c027fb",
+    "request": "i need a image resize service",
+    "timestamp": "2026-11-15T19:20:13.694Z",
+    "group": "current (model wording)",
+    "explanation": "Cloudflare Images was chosen for the image hosting service. It costs about $5.00 a month for up to 10,000 images per month, with 100% uptime and a latency of 375 ms. It was ranked ahead of ImageKit.",
+    "chosen": "Cloudflare Images",
+    "faithful": true
+  },
+  {
+    "id": "0faeb5ed-e739-425b-a94b-27cfcaf73d8d",
+    "requestId": "517cf791-e7fc-4ead-bc95-2dd06fa54a29",
+    "request": "Resize uploaded images and then analyse them to detect unsafe content. Keep combined uptime at least 99%.",
+    "timestamp": "2026-11-15T10:27:32.226Z",
+    "group": "current (model wording)",
+    "explanation": "The chosen setup has two parts. First, Cloudflare Images handles resizing, costing about $5.00 a month for 10,000 images and providing 100% uptime with 375 ms latency. Second, Sightengine analyzes images for unsafe content, costing about $29.00 a month on its flat plan for 10,000 requests, with 99.908% uptime and 807 ms latency. Together the total cost is about $34.00 a month, combined uptime 99.908%, and total latency 1182 ms. Six service combinations were tested, and all six met the required limits. Sightengine also offers other plans for different usage levels. This is the cheaper plan; Sightengine also offers other plans for other usage levels.",
+    "chosen": "Cloudflare Images",
+    "faithful": true
+  },
+  {
+    "id": "88f8dd8e-86e8-42ad-8eda-59100f5f1a10",
+    "requestId": "4f455ceb-f32e-4a6e-b356-1feebde9d970",
+    "request": "Transcribe customer voicemails and then send each transcript to the team by email. Total under $100 a month.",
+    "timestamp": "2026-11-15T10:27:10.955Z",
+    "group": "current (plain facts)",
+    "explanation": "This request is a chain of 2 steps. Step 1 (Transcribe customer voicemails): Speechmatics, about $4.00 a month at 1,000 minutes/month, uptime 99.908%, latency 675 ms. Step 2 (Send transcripts via email, using the output of step 1): Amazon SES, about $10.00 a month at 100,000 emails/month, uptime 99.908%, latency 772 ms. Together: about $14.00 a month, combined uptime 99.8161%, total latency 1447 ms. 20 combinations of services were compared and 14 met every limit.",
+    "chosen": "Speechmatics",
+    "faithful": true
+  },
+  {
+    "id": "d4b77b52-5f0f-4ee5-a238-c956d7eff080",
+    "requestId": "e3d21da7-8913-490d-a388-3c53e6d99fdb",
+    "request": "Generate product recommendations for each user, then email them a weekly digest. Total under $300 a month.",
+    "timestamp": "2026-11-15T10:26:49.110Z",
+    "group": "current (model wording)",
+    "explanation": "You will use Algolia Recommend for Step 1, costing about $60.00 a month, supporting 100,000 requests/month with 99.991 % uptime and 260 ms latency. Step 2 uses Mailgun for the weekly digest, costing about $180.00 a month, supporting 100,000 emails/month with 99.991 % uptime and 1018 ms latency. Together the two services cost about $240.00 a month, have a combined uptime of 99.982 % and a total latency of 1278 ms. Four combinations of services were compared and all four met every limit.",
+    "chosen": "Algolia Recommend",
+    "faithful": true
+  },
+  {
+    "id": "0a48538e-df72-44e9-a1f6-773eb8ce142d",
+    "requestId": "681ee9df-1e25-4d81-a65a-5e11f3e31d3b",
+    "request": "Run our containers on a compute service pulled from a container registry. Total under $300 a month.",
+    "timestamp": "2026-11-15T10:26:27.682Z",
+    "group": "current (model wording)",
+    "explanation": "Google Cloud Run was chosen with a price of about $0.04 a month for 100,000 requests per month. It offers an uptime of 99.954% and an average latency of 239 ms. Google Cloud Run ranked ahead of Azure Container Apps.",
+    "chosen": "Google Cloud Run",
+    "faithful": true
+  },
+  {
+    "id": "62ec6b8d-c51f-4c6b-aed5-8b7a2133a6d9",
+    "requestId": "e94c8821-5095-4a4a-945e-21cff32d173a",
+    "request": "Host our web app on a web hosting service and monitor it with a monitoring service. Total under $100 a month.",
+    "timestamp": "2026-11-15T10:26:06.548Z",
+    "group": "current (model wording)",
+    "explanation": "The plan hosts the web app on Vercel for about $20.00 a month, giving 99.991% uptime and 263 ms latency. Monitoring is handled by Sentry for about $26.00 a month, with 99.908% uptime, 386 ms latency, and 50,000 events per month. Together the services cost roughly $46.00 a month, achieve combined uptime of 99.899%, and total latency of 649 ms. Out of 15 service combinations, 10 met every limit, making this the cheapest acceptable option; both Vercel and Sentry offer higher‑tier plans for larger usage. This is the cheaper plan; Vercel also offers other plans for other usage levels. This is the cheaper plan; Sentry also offers other plans for other usage levels.",
+    "chosen": "Vercel",
+    "faithful": true
+  },
+  {
+    "id": "0c1c48a8-19e4-40a9-a6b8-454e00b9736f",
+    "requestId": "f77e3ea5-46c6-417e-9205-1483c6c2e0c6",
+    "request": "Keep API keys in a secrets manager and expose our backend through an API gateway. Total under $60 a month.",
+    "timestamp": "2026-11-15T10:25:45.405Z",
+    "group": "current (model wording)",
+    "explanation": "Keep your API keys in a secrets manager: Azure Key Vault (Standard), about $0.30 a month at 100,000 requests/month, uptime 99.991%, latency 263 ms. Expose your backend through an API gateway, using the output of step 1: Amazon API Gateway REST API, about $0.35 a month at 100,000 requests/month, uptime 99.954%, latency 725 ms. Together, this solution costs about $0.65 a month, provides a combined uptime of 99.945%, and a total latency of 988 ms. We compared 25 combinations of services and found 25 that met every limit.",
+    "chosen": "Azure Key Vault (Standard)",
+    "faithful": true
+  },
+  {
+    "id": "7c8b750d-11d2-478b-9545-f44d528cc060",
+    "requestId": "c1eae916-4716-4831-804e-9b3cb06154c4",
+    "request": "Queue incoming jobs in a message queue, then orchestrate them with a workflow orchestration service. Total under $100 a month.",
+    "timestamp": "2026-11-15T10:25:24.016Z",
+    "group": "current (model wording)",
+    "explanation": "You can queue jobs with Upstash QStash for about $1.00 a month at 100,000 requests per month, with 99.991% uptime and 645 ms latency. Then orchestrate those jobs with Azure Logic Apps (Consumption) for about $2.50 a month at 100,000 requests per month, 99.908% uptime and 199 ms latency. Together the pair costs about $3.50 a month, offers combined uptime of 99.899% and total latency of 844 ms. Out of 20 service combinations tested, 20 met every limit.",
+    "chosen": "Upstash QStash",
+    "faithful": true
+  },
+  {
+    "id": "a931f509-5607-44e0-8d9a-e08726fcaff0",
+    "requestId": "9c7f80e1-7856-43e2-906e-e4d2552b632a",
+    "request": "Store product images in object storage, resize them, and serve them through a CDN. Total budget $150 a month.",
+    "timestamp": "2026-11-15T10:25:02.668Z",
+    "group": "current (model wording)",
+    "explanation": "You can store product images in Google Cloud Storage Standard for about $2.60 a month at 100 GB, with 99.954% uptime and 207 ms latency. Resizing those images with Cloudflare Images costs roughly $5.00 a month at 10,000 images/month, offers 100% uptime and 375 ms latency. Finally, serve the resized images through Bunny CDN for about $1.00 a month at 100 GB/month, giving 99.991% uptime and 507 ms latency. Together the three services cost about $8.60 a month, have combined uptime 99.945%, and total latency 1089 ms. In total, 20 combinations of services were compared and 20 met every limit.",
+    "chosen": "Google Cloud Storage Standard",
+    "faithful": true
+  },
+  {
+    "id": "4ec91e08-76b4-40e9-ba20-14fce4401192",
+    "requestId": "18b51a3a-8181-4c0b-acd4-ac1b4ffb7dff",
+    "request": "Check each payment for fraud, process it, then email a receipt. All three together need at least 99% combined uptime.",
+    "timestamp": "2026-11-15T10:24:41.418Z",
+    "group": "current (model wording)",
+    "explanation": "Check payment for fraud with Stripe Radar at about $12.00 a month for 200 transactions, giving 99.991% uptime and 378 ms latency. Next, process payment using Stripe Payments at about $40.00 a month for 200 payments worth $10,000, also with 99.991% uptime and 301 ms latency. Finally, email the receipt via Mailgun for about $180.00 a month for 100,000 emails, with 99.991% uptime and 1018 ms latency. All three services together cost roughly $232.00 a month, deliver 99.973% uptime, and total latency of 1697 ms, and 12 combinations met every limit.",
+    "chosen": "Stripe Radar",
+    "faithful": true
+  },
+  {
+    "id": "724b7eec-92a7-4514-b608-babf0c67354e",
+    "requestId": "dbacf0d2-21d4-4c1c-b14d-2813b54b27bc",
+    "request": "Authenticate users, store their files in object storage, and email them when an upload finishes. Total under $200 a month.",
+    "timestamp": "2026-11-15T10:24:19.958Z",
+    "group": "current (model wording)",
+    "explanation": "The solution uses WorkOS AuthKit to authenticate users, costing about $2.50 a month for 1,000 monthly active users with 99.991% uptime and 342 ms latency. It stores files in Google Cloud Storage Standard at about $2.60 a month for 100 GB stored, 99.954% uptime, and 207 ms latency. When uploads finish, Mailgun sends emails at about $180.00 a month for 100,000 emails/month, 99.991% uptime, and 1018 ms latency. Together the three services cost about $185.10 a month, offer combined uptime of 99.936%, and total latency of 1567 ms, with 15 of 25 combinations meeting all limits.",
+    "chosen": "WorkOS AuthKit",
+    "faithful": true
+  },
+  {
+    "id": "0e8cb597-9f32-40fa-ac90-1d38eebb5a0f",
+    "requestId": "61474654-7251-4e0a-98e6-ed0c5dca0d18",
+    "request": "Transcribe podcast audio, translate the transcript into German, then turn it into speech. Total under $400 a month.",
+    "timestamp": "2026-11-15T10:23:57.920Z",
+    "group": "current (plain facts)",
+    "explanation": "This request is a chain of 3 steps. Step 1 (Transcribe podcast audio): AssemblyAI, about $2.50 a month at 1,000 minutes/month, uptime 99.908%, latency 1500 ms. Step 2 (Translate transcript into German, using the output of step 1): Azure AI Translator, about $10.00 a month at 1,000,000 characters/month, uptime 99.908%, latency 192 ms. Step 3 (Turn translated text into speech, using the output of step 2): Google Cloud Text-to-Speech, about $4.00 a month at 1,000,000 characters/month, uptime 99.908%, latency 229 ms. Together: about $16.50 a month, combined uptime 99.7243%, total latency 1921 ms. 75 combinations of services were compared and 75 met every limit.",
+    "chosen": "AssemblyAI",
+    "faithful": true
+  },
+  {
+    "id": "c35e8fee-3900-4b30-9fae-6c5dde785023",
+    "requestId": "514e374d-7531-4cf9-a9a7-cc77aefae7b9",
+    "request": "Extract text from scanned contracts with OCR, then run text analysis to pull out key entities. Total under $250 a month.",
+    "timestamp": "2026-11-15T10:23:32.328Z",
+    "group": "current (plain facts)",
+    "explanation": "This request is a chain of 2 steps. Step 1 (Extract text from scanned contracts): Google Cloud Vision OCR, about $15.00 a month at 10,000 images/month, uptime 99.908%, latency 227 ms. Step 2 (Pull out key entities from extracted text, using the output of step 1): Amazon Comprehend Entities, about $1.00 a month at 1,000,000 characters/month, uptime 99.908%, latency 1005 ms. Together: about $16.00 a month, combined uptime 99.8161%, total latency 1232 ms. 5 combinations of services were compared and 4 met every limit.",
+    "chosen": "Google Cloud Vision OCR",
+    "faithful": true
+  },
+  {
+    "id": "8219f749-da4f-43cd-8526-a8345cae8756",
+    "requestId": "ed7411b7-81b6-466d-983f-60bcc0c893c0",
+    "request": "Run ML model inference on each request, then send the prediction as a push or SMS message. Total under $250 a month.",
+    "timestamp": "2026-11-15T10:23:10.196Z",
+    "group": "current (model wording)",
+    "explanation": "Run ML model inference on each request using Fireworks AI, costing about $0.50 a month for 10,000,000 tokens/month, with 99.908% uptime and 381 ms latency. Send the prediction as a push or SMS message via Telnyx Messaging, costing about $40.00 a month for 10,000 SMS/month, with 99.999% uptime and 535 ms latency. Together the two services cost about $40.50 a month, provide combined uptime of 99.907%, and total latency of 916 ms. Fifteen combinations of services were compared, and all fifteen met every limit.",
+    "chosen": "Fireworks AI",
+    "faithful": true
+  },
+  {
+    "id": "bb382832-f267-4f5e-bf25-7a0b66e38515",
+    "requestId": "b14a8af8-7907-4bc0-a655-4cf6e685f189",
+    "request": "Stream clickstream events through a data streaming service and query them with an SQL query service. Total under $300 a month.",
+    "timestamp": "2026-11-15T10:22:48.345Z",
+    "group": "current (model wording)",
+    "explanation": "You can stream click‑stream events with Azure Event Hubs (Standard) for about $0.03 a month at 1,000,000 events/month, with 99.954% uptime and 223 ms latency. Then you can query those events in Google BigQuery for about $6.25 a month at 1 TB/month, with 99.991% uptime and 174 ms latency. Together the two services cost roughly $6.28 a month, have combined uptime of 99.945%, and total latency of 397 ms. Six combinations of services were compared, and four of them met all limits.",
+    "chosen": "Azure Event Hubs (Standard)",
+    "faithful": true
+  },
+  {
+    "id": "2a2ed892-3176-4e56-8f15-6d0dc5c70b1f",
+    "requestId": "34b7155f-6789-40f2-aa9f-20eb8c3ddda0",
+    "request": "Look up each visitor's location from their IP address, then record it in product analytics. Total budget $100 a month.",
+    "timestamp": "2026-11-15T10:22:26.810Z",
+    "group": "current (model wording)",
+    "explanation": "The plan uses MaxMind GeoIP2 Precision to find each visitor’s location, costing about $10.00 a month for 100,000 requests, with 99.991% uptime and 376 ms latency. Then it records that location in PostHog for analytics, costing about $50.00 a month for 1,000,000 events, with 99.908% uptime and 830 ms latency. Combined, the services cost roughly $60.00 a month, give 99.899% uptime, and have a total latency of 1206 ms. Three service combinations were evaluated and all three met every limit.",
+    "chosen": "MaxMind GeoIP2 Precision",
+    "faithful": true
+  },
+  {
+    "id": "99428c27-9932-4379-816e-31ae92f14b27",
+    "requestId": "9d6628f6-689f-4ab0-8c78-86531cb91fc3",
+    "request": "Generate text embeddings for our help articles, then index them in a full-text search service. Total under $150 a month.",
+    "timestamp": "2026-11-15T10:22:05.379Z",
+    "group": "current (model wording)",
+    "explanation": "The plan uses Voyage AI Embeddings to create text embeddings for help articles at about $0.60 per month for 10,000,000 tokens, with 99.908 % uptime and 401 ms latency. Those embeddings are then indexed in Algolia Search for $50.00 a month, 100,000 requests, 99.991 % uptime and 319 ms latency. Together the cost is about $50.60 a month, combined uptime 99.899 % and total latency 720 ms. Five service combinations were tested, and four met every limit.",
+    "chosen": "Voyage AI Embeddings",
+    "faithful": true
+  },
+  {
+    "id": "8b20cf08-45c5-4e82-8963-f044ddbe3d8e",
+    "requestId": "113545e4-22a7-4428-a03c-7a84a08fb185",
+    "request": "Transcode uploaded videos for streaming and serve them through a content delivery network. Total under $500 a month.",
+    "timestamp": "2026-11-15T10:21:44.035Z",
+    "group": "current (model wording)",
+    "explanation": "You can transcode videos for streaming with Bunny Stream at about $0.50 a month for 100 GB, giving an uptime of 99.991 % and latency of 373 ms. Then you can serve those videos via Bunny CDN at about $1.00 a month for 100 GB, with the same uptime of 99.991 % and latency of 507 ms. Together the two services cost about $1.50 a month, provide a combined uptime of 99.982 % and a total latency of 880 ms. Four service combinations were compared and all four met every limit.",
+    "chosen": "Bunny Stream",
+    "faithful": true
+  },
+  {
+    "id": "e3efc55c-3cdf-4f00-a4fc-15b28e99eef2",
+    "requestId": "6e9a7c40-6cc3-4959-9a74-61fd7811450f",
+    "request": "Generate PDF invoices from HTML and email them to customers. Keep the total under $120 a month.",
+    "timestamp": "2026-11-15T10:21:22.433Z",
+    "group": "current (model wording)",
+    "explanation": "You can generate PDF invoices from HTML using PDFShift for about $9.00 a month on its flat monthly plan, which offers 500 pages a month and has an uptime of 99.908% with a latency of 506 ms. Then you can email those invoices with SendGrid Email API for about $19.95 a month on its flat monthly plan, which includes 50,000 emails a month and has an uptime of 99.954% with a latency of 564 ms. Together the two services cost about $28.95 a month, have a combined uptime of 99.862% and a total latency of 1070 ms. Eight combinations of services were compared and six met every limit. This is the cheaper plan; PDFShift also offers other plans for other usage levels, and SendGrid Email API also offers other plans for other usage levels.",
+    "chosen": "PDFShift",
+    "faithful": true
+  },
+  {
+    "id": "b1115bd6-f98c-4786-bfa8-a2b1963c11bc",
+    "requestId": "f1d7c470-16bf-470e-8390-4c58e4165e0e",
+    "request": "Analyse uploaded images to detect objects, then store the results in a managed database. Total under $200 a month.",
+    "timestamp": "2026-11-15T10:21:01.037Z",
+    "group": "current (model wording)",
+    "explanation": "You’ll use Amazon Rekognition Image to scan each uploaded picture for objects, costing about $10.00 a month for 10,000 images and offering 99.908% uptime with a latency of 1014 ms. The results are then stored in MongoDB Atlas Flex, which costs about $8.00 a month on its flat plan and provides 99.954% uptime with a latency of 1271 ms. Combined, the services cost about $18.00 a month, deliver a combined uptime of 99.862%, and have a total latency of 2285 ms. This single combination met every limit and is the cheapest option, though MongoDB Atlas Flex offers other plans for different usage levels. This is the cheaper plan; MongoDB Atlas Flex also offers other plans for other usage levels.",
+    "chosen": "Amazon Rekognition Image",
+    "faithful": true
+  }
+]
