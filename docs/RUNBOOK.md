@@ -14,13 +14,13 @@ Order matters: infrastructure first, then the Conductor code.
    - `npx cdk diff`. Stop if anything says "replace" on the Conductor instance, a table or the user pool.
    - `npx cdk deploy --require-approval never`.
 4. **Conductor code:**
-   - Bundle: from `services/conductor`, run `npx esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=deploy-bundle.js "--external:@sage/agent-*"`.
+   - Bundle: from the repo root, run `npm run conductor:bundle` (writes `services/conductor/deploy-bundle.js` and stamps the source fingerprint that `/health` reports).
    - Build the dashboard: `VITE_COGNITO_CLIENT_ID=<PilotUserPoolClientId> npm run build:dashboard-api`.
    - Upload the bundle to `s3://<ConductorDeployBucketName>/conductor/index.js`.
    - Sync `apps/dashboard/dist` to `.../conductor/dashboard`, then **copy `index.html` explicitly**.
    - On the instance (SSM Run Command): copy the bundle to `/opt/conductor/index.js`, sync the dashboard to `/opt/conductor/dashboard` and copy `index.html` explicitly, then `systemctl restart conductor.service`.
 5. **Check:**
-   - `GET /prod/health` returns ok.
+   - `GET /prod/health` returns ok, and `npm run conductor:check -- <API base URL>` says the Conductor is current (L18). Run it after any `cdk deploy` too: CDK never updates the Conductor.
    - The dashboard page loads (check the browser console for missing assets).
    - One real request completes.
    - `npm run audit:verify <its requestId>` says INTACT.
