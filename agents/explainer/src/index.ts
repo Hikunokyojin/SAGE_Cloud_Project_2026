@@ -261,21 +261,54 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  let explanation: string;
+  // L25: the reviewer message gets the same claim check as client explanations. Every number
+  // must come from the attempts or constraints, and every attempted service must be named.
+  const constraintsText = constraints.map((c) => `${c.field} ${c.operator} ${c.value}`).join(", ");
+  const factsText =
+    `No option met all of your requirements (${attempts.length} attempt(s)), so the request has been passed to a human reviewer. ` +
+    `Requirements: ${constraintsText}. ` +
+    attempts
+      .map((a) => {
+        const { service } = a.composition.chosen;
+        const why = a.reviewerResult.violations.map((v) => `${v.constraint} was ${v.actualValue}, required ${v.requiredValue}`).join("; ");
+        return `${service.name} (price ${service.price}, uptime ${service.uptime}%): ${why}.`;
+      })
+      .join(" ") +
+    " Relaxing one of these requirements may let the marketplace find a match.";
+  const escalationFacts: ExplanationFacts = {
+    text: `${factsText}
+${attemptsText}
+${JSON.stringify(constraints)}`,
+    chosenName: "",
+    rejectedNames: attempts.map((a) => a.composition.chosen.service.name),
+  };
+
+  let explanation = factsText;
+  let explanationSource: "model" | "facts" = "facts";
   let usage: LlmUsage | undefined;
-  try {
-    ({ text: explanation, usage } = await callModel(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024));
-  } catch {
-    // No model answered: a plain fallback still tells the user what happened.
-    explanation =
-      "No option met all of your requirements, so the request has been passed to a human reviewer. " +
-      "Relaxing a limit such as price or uptime may let the marketplace find a match.";
+  let lastProblems: string[] = [];
+  for (let n = 1; n <= MAX_WORDING_ATTEMPTS; n++) {
+    let reply: { text: string; usage: LlmUsage | undefined };
+    try {
+      reply = await callModel(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
+    } catch (err) {
+      lastProblems = [`no language model answered (${err instanceof Error ? err.message : String(err)})`];
+      break;
+    }
+    usage = reply.usage;
+    lastProblems = checkClaims(reply.text, escalationFacts);
+    if (lastProblems.length === 0) {
+      explanation = reply.text;
+      explanationSource = "model";
+      break;
+    }
   }
 
   const output: EscalationExplanation = {
     requestId: input.requestId,
     explanation,
     attemptedOptions: attempts.map((a) => a.composition.chosen.service),
+    explanationSource,
   };
 
   try {
@@ -287,7 +320,9 @@ ${attemptsText}`;
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}`,
+      reasoning:
+        `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}` +
+        (explanationSource === "facts" ? ` (Plain facts used: ${lastProblems.join("; ")}.)` : ""),
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: attempts.length > 0 ? attempts[attempts.length - 1].iteration : 0,

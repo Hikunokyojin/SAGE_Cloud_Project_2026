@@ -377,6 +377,46 @@ describe("Explainer Agent explainEscalation", () => {
     expect(result.attemptedOptions.map((o) => o.serviceId)).toEqual(["svc-1", "svc-2"]);
   });
 
+  function priceAttempt(): NegotiationAttempt {
+    return attempt({
+      iteration: 1,
+      serviceId: "svc-1",
+      name: "FastResize",
+      price: 0.08,
+      uptime: 99.9,
+      violations: [
+        { constraint: "price", actualValue: 0.08, requiredValue: 0.05, severity: "hard", affectedCandidate: "svc-1", correctiveAction: "raise the budget" },
+      ],
+    });
+  }
+
+  it("L25: keeps the model's reviewer message when every number and service checks out", async () => {
+    const text = "FastResize costs $0.08, above your budget of $0.05. Raising the budget to $0.08 would allow it.";
+    fetchMock.mockResolvedValue(groqResponse(text));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanation).toBe(text);
+    expect(out.explanationSource).toBe("model");
+  });
+
+  it("L25: falls back to plain facts when the reviewer message invents a number", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize costs $0.12; raise the budget to $0.15."));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanationSource).toBe("facts");
+    expect(out.explanation).toContain("FastResize");
+    expect(out.explanation).toContain("0.08");
+    expect(out.explanation).toContain("0.05");
+    expect(out.explanation).not.toContain("0.12");
+  });
+
+  it("L25: falls back to plain facts when an attempted service is not named", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Nothing fit your budget of $0.05."));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanationSource).toBe("facts");
+  });
+
   it("tells Groq exactly which constraint each attempted option violated", async () => {
     fetchMock.mockResolvedValue(groqResponse("Explanation."));
 
