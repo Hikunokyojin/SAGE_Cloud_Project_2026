@@ -62,6 +62,41 @@ describe("chat with fallback", () => {
     expect(warn.mock.calls.flat().join(" ")).toContain("Groq API error (429)");
   });
 
+  it("L21: waits out a short Groq per-minute limit and retries Groq once", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const waits: number[] = [];
+    llm._setSleep(async (ms) => void waits.push(ms));
+    fetchMock
+      .mockResolvedValueOnce(fail(429, "Rate limit reached ... tokens per minute (TPM): Limit 8000. Please try again in 1.0875s."))
+      .mockResolvedValueOnce(ok("from groq"));
+    const out = await llm.chat(req);
+    expect(out).toMatchObject({ text: "from groq", provider: "groq" });
+    expect(out.fallbackFrom).toBeUndefined();
+    expect(waits).toHaveLength(1);
+    expect(waits[0]).toBeGreaterThanOrEqual(1087);
+    expect(waits[0]).toBeLessThanOrEqual(3000);
+  });
+
+  it("L21: falls back at once when Groq asks for a long wait (daily quota)", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const waits: number[] = [];
+    llm._setSleep(async (ms) => void waits.push(ms));
+    fetchMock.mockResolvedValueOnce(fail(429, "tokens per day (TPD). Please try again in 7m12.5s.")).mockResolvedValueOnce(ok("or"));
+    const out = await llm.chat(req);
+    expect(out.provider).toBe("openrouter");
+    expect(waits).toHaveLength(0);
+  });
+
+  it("L21: retries Groq only once", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    llm._setSleep(async () => {});
+    const limited = () => fail(429, "Please try again in 0.5s.");
+    fetchMock.mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited()).mockResolvedValueOnce(ok("or"));
+    const out = await llm.chat(req);
+    expect(out).toMatchObject({ provider: "openrouter", fallbackFrom: ["groq"] });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it("gives up on a provider that does not answer within the timeout", async () => {
     fetchMock.mockImplementationOnce((_u: string, init: RequestInit) =>
       new Promise((_r, reject) => init.signal!.addEventListener("abort", () => reject(new Error("aborted"))))

@@ -251,6 +251,26 @@ function stubAnswer(req: ChatRequest): ChatResult {
   return { text, provider: "stub", model: "stub", usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 } };
 }
 
+// ---------------------------------------------------------------- short rate limits (L21)
+// Groq's free tier allows 8,000 tokens a minute; a burst gets a 429 that says "Please try
+// again in 1.0875s". Waiting that long and asking Groq once more beats falling back to a
+// free model that often answers empty. Longer waits (the daily quota) fall back at once.
+const MAX_RETRY_WAIT_MS = 3000;
+let sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** For tests only. */
+export function _setSleep(fn: (ms: number) => Promise<void>): void {
+  sleep = fn;
+}
+
+export function retryWaitMs(message: string): number | undefined {
+  if (!/\((429)\)/.test(message)) return undefined;
+  const m = /try again in (?:(\d+)m)?(\d+(?:\.\d+)?)s/i.exec(message);
+  if (!m) return undefined;
+  const ms = Math.ceil((Number(m[1] ?? 0) * 60 + Number(m[2])) * 1000) + 100;
+  return ms <= MAX_RETRY_WAIT_MS ? ms : undefined;
+}
+
 // ---------------------------------------------------------------- chat
 export async function chat(req: ChatRequest): Promise<ChatResult> {
   if (isStubMode()) {
@@ -269,27 +289,38 @@ export async function chat(req: ChatRequest): Promise<ChatResult> {
     // By position in the configured order, not by attempt count: when the primary is
     // skipped (circuit open), the fallback still gets its longer limit (found in the drill).
     const limit = index === 0 ? (req.timeoutMs ?? 8000) : (req.fallbackTimeoutMs ?? req.timeoutMs ?? 8000);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), limit);
-    try {
-      const out = p.kind === "openai" ? await callOpenAiStyle(p, req, controller.signal) : await callBedrock(p, req, controller.signal);
-      recordSuccess(p.name);
-      return { ...out, provider: p.name, model: p.model, ...(failed.length ? { fallbackFrom: failed } : {}) };
-    } catch (err) {
-      const message = controller.signal.aborted
-        ? `${p.label} timed out after ${limit} ms`
-        : err instanceof Error
-          ? err.message
-          : String(err);
-      reasons.push(`${p.name}: ${message}`);
-      // A missing key is a configuration gap, not an outage: it never opens the circuit.
-      if (!(err instanceof MissingKey)) {
-        recordFailure(p.name);
-        failed.push(p.name);
-        console.warn(`LLM provider ${p.name} failed: ${message}`);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), limit);
+      try {
+        const out = p.kind === "openai" ? await callOpenAiStyle(p, req, controller.signal) : await callBedrock(p, req, controller.signal);
+        recordSuccess(p.name);
+        return { ...out, provider: p.name, model: p.model, ...(failed.length ? { fallbackFrom: failed } : {}) };
+      } catch (err) {
+        const message = controller.signal.aborted
+          ? `${p.label} timed out after ${limit} ms`
+          : err instanceof Error
+            ? err.message
+            : String(err);
+        // L21: a short per-minute limit is waited out once, without counting as a failure.
+        const wait = attempt === 1 && !controller.signal.aborted ? retryWaitMs(message) : undefined;
+        if (wait !== undefined) {
+          console.warn(`LLM provider ${p.name} rate limited, retrying in ${wait} ms: ${message}`);
+          clearTimeout(timer);
+          await sleep(wait);
+          continue;
+        }
+        reasons.push(`${p.name}: ${message}`);
+        // A missing key is a configuration gap, not an outage: it never opens the circuit.
+        if (!(err instanceof MissingKey)) {
+          recordFailure(p.name);
+          failed.push(p.name);
+          console.warn(`LLM provider ${p.name} failed: ${message}`);
+        }
+        break;
+      } finally {
+        clearTimeout(timer);
       }
-    } finally {
-      clearTimeout(timer);
     }
   }
   throw new Error(`No language model answered. ${reasons.join("; ")}`);
