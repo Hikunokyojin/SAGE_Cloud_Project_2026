@@ -274,3 +274,61 @@ describe("Reviewer recomputes prices with the same unit conversions (L15, L16)",
     expect(r.violations[0]).toMatchObject({ constraint: "price", actualValue: 15, requiredValue: 7.5 });
   });
 });
+
+describe("Reviewer catalogue re-read (L22)", () => {
+  beforeEach(() => {
+    sendMock.mockReset();
+    sendMock.mockResolvedValue({});
+    process.env.SNS_TOPIC_ARN = "arn:aws:sns:ap-south-1:123456789012:sage-hitl";
+  });
+
+  const catalogue = (records: Record<string, object>) => async (ids: string[]) =>
+    new Map(ids.filter((id) => records[id]).map((id) => [id, { serviceId: id, ...records[id] }]));
+
+  it("rejects a stated uptime that differs from the catalogue and checks the catalogue's figure", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    _setCatalogueLookup(catalogue({ "svc-1": { price: 0.02, uptime: 90 } }));
+    try {
+      const result = await handler({ requestId: "req-l22a", composition: composition({ uptime: 99.9 }), constraints: CONSTRAINTS });
+      expect(result.approved).toBe(false);
+      expect(result.violations.map((v) => v.constraint)).toEqual(["catalogue uptime", "uptime"]);
+      expect(result.violations[1].actualValue).toBe(90);
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+
+  it("rejects a list price changed together with the price", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    _setCatalogueLookup(catalogue({ "svc-1": { listPrice: 20, priceUnit: "per month", currency: "USD", uptime: 99.9 } }));
+    try {
+      const c = composition({ price: 2 });
+      Object.assign(c.chosen.service, { listPrice: 2, priceUnit: "per month", currency: "USD" });
+      const result = await handler({ requestId: "req-l22b", composition: c, constraints: [] });
+      expect(result.approved).toBe(false);
+      expect(result.violations.map((v) => v.constraint)).toContain("catalogue listPrice");
+      expect(result.violations.map((v) => v.constraint)).toContain("price");
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+
+  it("approves when the service matches the catalogue, and rejects one not in it or when the read fails", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    try {
+      _setCatalogueLookup(catalogue({ "svc-1": { price: 0.02, uptime: 99.9 } }));
+      expect((await handler({ requestId: "req-l22c", composition: composition(), constraints: CONSTRAINTS })).approved).toBe(true);
+      _setCatalogueLookup(catalogue({}));
+      const missing = await handler({ requestId: "req-l22d", composition: composition(), constraints: CONSTRAINTS });
+      expect(missing.violations.map((v) => v.constraint)).toEqual(["catalogue"]);
+      _setCatalogueLookup(async () => {
+        throw new Error("down");
+      });
+      const failed = await handler({ requestId: "req-l22e", composition: composition(), constraints: CONSTRAINTS });
+      expect(failed.approved).toBe(false);
+      expect(failed.violations[0].actualValue).toBe("unavailable");
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+});

@@ -1,9 +1,10 @@
 {
- "generatedAt": "2026-11-18T21:23:28.679Z",
+ "generatedAt": "2026-11-21T22:09:14.340Z",
  "services": 211,
+ "cleanFalseAlarms": 0,
  "injected": 1297,
- "caught": 940,
- "rate": 0.7247494217424827,
+ "caught": 1297,
+ "rate": 1,
  "byKind": {
   "off-by-one-price": {
    "injected": 207,
@@ -23,11 +24,11 @@
   },
   "stale-uptime": {
    "injected": 165,
-   "caught": 0
+   "caught": 165
   },
   "stale-list-price": {
    "injected": 194,
-   "caught": 2
+   "caught": 194
   },
   "wrong-unit-price": {
    "injected": 115,
@@ -146,40 +147,61 @@
    {
     "service": "svc-aws-api-gateway-http",
     "fault": "uptime 99.954 reported as 99.99",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
    },
    {
     "service": "svc-aws-api-gateway-rest",
     "fault": "uptime 99.954 reported as 99.99",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
    },
    {
     "service": "svc-azure-api-management",
     "fault": "uptime 99.954 reported as 99.99",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
    }
   ],
   "stale-list-price": [
    {
     "service": "svc-aws-api-gateway-http",
     "fault": "list price and monthly price both 20% low",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
    },
    {
     "service": "svc-aws-api-gateway-rest",
     "fault": "list price and monthly price both 20% low",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
    },
    {
     "service": "svc-azure-api-management",
     "fault": "list price and monthly price both 20% low",
-    "caught": false,
-    "violations": []
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
    }
   ],
   "wrong-unit-price": [
