@@ -13,7 +13,9 @@
     "@aws-sdk/client-sns": "^3.600.0",
     "@sage/audit": "*",
     "@sage/catalogue": "*",
-    "@sage/shared-types": "*"
+    "@sage/secrets": "*",
+    "@sage/shared-types": "*",
+    "mongodb": "^6.8.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.140",

@@ -12,6 +12,8 @@ import { recordDecision, warmUp } from "@sage/audit";
 import { isWarmup, WARMED, USAGE_UNITS } from "@sage/shared-types";
 import type { UsageVolume } from "@sage/shared-types";
 import { monthlyCost, priceAtVolume } from "@sage/catalogue/src/normalise";
+import { catalogueLookup, type CatalogueRecord } from "./catalogue";
+export { _setCatalogueLookup } from "./catalogue";
 
 // Hard circuit breaker: once iteration reaches this, we escalate to a human
 // instead of letting the pipeline retry indefinitely.
@@ -216,6 +218,117 @@ function checkChain(input: ReviewerAgentInput): Violation[] {
   return violations;
 }
 
+// L22: the catalogue's own figures for the fields the checks use. A stated value that differs
+// is a violation, and the checks below then run on the catalogue's value.
+const CATALOGUE_FIELDS = ["uptime", "latencyMs", "capability", "listPrice", "priceUnit", "currency", "volumeBasis"] as const;
+
+function same(a: unknown, b: unknown): boolean {
+  if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) < 1e-9;
+  return a === b;
+}
+
+function reconcile(service: Service, record: CatalogueRecord | undefined, label: string): { service: Service; violations: Violation[] } {
+  const at = label ? `${label}: ` : "";
+  if (!record) {
+    return {
+      service,
+      violations: [
+        {
+          constraint: `${at}catalogue`,
+          actualValue: service.serviceId,
+          requiredValue: "a service listed in the catalogue",
+          severity: "hard",
+          affectedCandidate: service.serviceId,
+          correctiveAction: "select a service that is listed in the catalogue",
+        },
+      ],
+    };
+  }
+  const violations: Violation[] = [];
+  const fresh = { ...service } as Record<string, unknown>;
+  const fields: string[] = [...CATALOGUE_FIELDS];
+  // Without a list price the stated monthly price is the catalogue's own figure.
+  if (typeof record.listPrice !== "number") fields.push("price");
+  for (const f of fields) {
+    const stated = (service as unknown as Record<string, unknown>)[f];
+    const listedValue = (record as unknown as Record<string, unknown>)[f];
+    // Only values the Broker would pass on (it drops nulls and unknown plan kinds).
+    if (listedValue === null || listedValue === undefined || (typeof listedValue !== "number" && typeof listedValue !== "string")) continue;
+    if (f === "volumeBasis" && !["quota", "unmetered", "unknown"].includes(listedValue as string)) continue;
+    if (!same(stated, listedValue)) {
+      violations.push({
+        constraint: `${at}catalogue ${f}`,
+        actualValue: stated === undefined ? "missing" : (stated as number | string),
+        requiredValue: listedValue as number | string,
+        severity: "hard",
+        affectedCandidate: service.serviceId,
+        correctiveAction: `the stated ${f} does not match the catalogue; re-read the service from the catalogue`,
+      });
+    }
+    fresh[f] = listedValue;
+  }
+  const inc = record.includedUnits;
+  if (inc && typeof inc.amount === "number") {
+    const stated = service.includedUnits;
+    if (!stated || stated.amount !== inc.amount || stated.unit !== inc.unit) {
+      violations.push({
+        constraint: `${at}catalogue includedUnits`,
+        actualValue: stated ? `${stated.amount} ${stated.unit}` : "missing",
+        requiredValue: `${inc.amount} ${inc.unit}`,
+        severity: "hard",
+        affectedCandidate: service.serviceId,
+        correctiveAction: "the stated plan allowance does not match the catalogue; re-read the service from the catalogue",
+      });
+    }
+    fresh.includedUnits = inc;
+  }
+  return { service: fresh as unknown as Service, violations };
+}
+
+// Reads every chosen service from the catalogue and returns the input with the catalogue's
+// figures in place, plus a violation for every figure that differed. A failed read is a
+// violation too: the Reviewer does not approve what it could not check.
+async function withCatalogue(input: ReviewerAgentInput): Promise<{ input: ReviewerAgentInput; violations: Violation[]; checked: boolean }> {
+  const lookup = catalogueLookup();
+  if (!lookup) return { input, violations: [], checked: false };
+  const chain = input.composition.chain;
+  const services = chain ? chain.steps.map((s) => s.chosen.service) : [input.composition.chosen.service];
+  let records: Map<string, CatalogueRecord>;
+  try {
+    records = await lookup([...new Set(services.map((s) => s.serviceId))]);
+  } catch (err) {
+    console.error("Reviewer Agent: catalogue read failed", err);
+    const s = services[0];
+    return {
+      input,
+      checked: true,
+      violations: [
+        {
+          constraint: "catalogue",
+          actualValue: "unavailable",
+          requiredValue: "a catalogue read",
+          severity: "hard",
+          affectedCandidate: s?.serviceId ?? "unknown",
+          correctiveAction: "the catalogue could not be read to verify the service; retry",
+        },
+      ],
+    };
+  }
+  const violations: Violation[] = [];
+  if (chain) {
+    const steps = chain.steps.map((step, i) => {
+      const r = reconcile(step.chosen.service, records.get(step.chosen.service.serviceId), `step ${i + 1}`);
+      violations.push(...r.violations);
+      return { ...step, chosen: { ...step.chosen, service: r.service } };
+    });
+    return { input: { ...input, composition: { ...input.composition, chain: { ...chain, steps } } }, violations, checked: true };
+  }
+  const r = reconcile(input.composition.chosen.service, records.get(input.composition.chosen.service.serviceId), "");
+  violations.push(...r.violations);
+  const composition = { ...input.composition, chosen: { ...input.composition.chosen, service: r.service } };
+  return { input: { ...input, composition }, violations, checked: true };
+}
+
 function findViolations(input: ReviewerAgentInput): Violation[] {
   if (input.composition.chain) return checkChain(input);
   return checkService(input.composition.chosen.service, input.constraints, input.requiredCategory, input.volume);
@@ -293,7 +406,9 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
   }
   const startedAt = Date.now();
   const iteration = input.composition.iteration;
-  const violations = findViolations(input);
+  const fromCatalogue = await withCatalogue(input);
+  const violations = [...fromCatalogue.violations, ...findViolations(fromCatalogue.input)];
+  const checkedAgainst = fromCatalogue.checked ? "the catalogue's own figures and " : "";
   const decisionId = input.decisionId ?? randomUUID();
 
   if (violations.length === 0) {
@@ -309,7 +424,7 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
         composition: input.composition,
         escalated: false,
       },
-      "Composition independently re-verified against every mandatory constraint; all satisfied."
+      `Composition independently re-verified against ${checkedAgainst}every mandatory constraint; all satisfied.`
     );
   }
 

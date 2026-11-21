@@ -183,13 +183,22 @@ export class AgentsConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("reviewer")),
-      timeout: Duration.seconds(10),
+      // L22: the Reviewer reads the chosen services from MongoDB; a cold connection takes a few seconds.
+      timeout: Duration.seconds(15),
       memorySize: 512,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        CATALOGUE_CHECK: "mongo",
       },
     });
+    this.reviewerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [`arn:aws:ssm:${region}:${account}:parameter/sage/broker/MONGO_URI`],
+      })
+    );
+    this.reviewerFn.addToRolePolicy(ssmKmsDecryptPolicy);
     props.escalationTopic.grantPublish(this.reviewerFn);
     grantAuditWrite(this.reviewerFn);
 
