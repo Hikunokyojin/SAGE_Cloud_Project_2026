@@ -25,7 +25,15 @@ let client: MongoClient | null = null;
 
 async function mongoLookup(serviceIds: string[]): Promise<Map<string, CatalogueRecord>> {
   if (!client) client = new MongoClient(await resolveSecret("MONGO_URI", "/sage/broker/MONGO_URI"), { serverSelectionTimeoutMS: 4000 });
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (err) {
+    // Drop the failed client so a retry starts a fresh connection.
+    const failed = client;
+    client = null;
+    await failed.close().catch(() => undefined);
+    throw err;
+  }
   const docs = await client
     .db("sage")
     .collection("services")

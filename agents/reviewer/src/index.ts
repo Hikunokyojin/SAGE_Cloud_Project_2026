@@ -288,14 +288,25 @@ function reconcile(service: Service, record: CatalogueRecord | undefined, label:
 // Reads every chosen service from the catalogue and returns the input with the catalogue's
 // figures in place, plus a violation for every figure that differed. A failed read is a
 // violation too: the Reviewer does not approve what it could not check.
+const CATALOGUE_RETRY_MS = process.env.VITEST ? 0 : 500;
+
 async function withCatalogue(input: ReviewerAgentInput): Promise<{ input: ReviewerAgentInput; violations: Violation[]; checked: boolean }> {
   const lookup = catalogueLookup();
   if (!lookup) return { input, violations: [], checked: false };
   const chain = input.composition.chain;
   const services = chain ? chain.steps.map((s) => s.chosen.service) : [input.composition.chosen.service];
   let records: Map<string, CatalogueRecord>;
+  const ids = [...new Set(services.map((s) => s.serviceId))];
   try {
-    records = await lookup([...new Set(services.map((s) => s.serviceId))]);
+    // L27: one retry after a short pause, so a brief connection blip does not send the request
+    // to human review.
+    try {
+      records = await lookup(ids);
+    } catch (first) {
+      console.warn("Reviewer Agent: catalogue read failed, retrying once", first);
+      await new Promise((r) => setTimeout(r, CATALOGUE_RETRY_MS));
+      records = await lookup(ids);
+    }
   } catch (err) {
     console.error("Reviewer Agent: catalogue read failed", err);
     const s = services[0];
