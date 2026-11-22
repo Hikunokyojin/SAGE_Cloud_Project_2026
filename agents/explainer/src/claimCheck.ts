@@ -26,6 +26,12 @@ function numbersIn(text: string): number[] {
   return (text.match(NUMBER) ?? []).map(Number);
 }
 
+// Comparative claims the model must not add on its own: the fact sheet never ranks services
+// this way, so "the cheapest option" or "the most reliable" is a claim the facts do not support
+// (a provider's cheaper plan is not the cheapest service).
+const SUPERLATIVES =
+  /\b(?:cheapest|least expensive|most affordable|lowest[- ](?:price|priced|cost)|most reliable|highest uptime|fastest|lowest latency|best(?:[- ]value)?|top[- ]rated|optimal)\b/gi;
+
 // Returns a list of problems; an empty list means the text is faithful to the facts.
 export function checkClaims(text: string, facts: ExplanationFacts): string[] {
   const problems: string[] = [];
@@ -54,6 +60,11 @@ export function checkClaims(text: string, facts: ExplanationFacts): string[] {
 
   if (facts.rejectedNames.length > 0 && /\bno (?:other )?alternatives?\b|\bno other options?\b/i.test(text)) {
     problems.push("claims there were no alternatives, but some candidates were rejected");
+  }
+
+  const factsLower = facts.text.toLowerCase();
+  for (const m of new Set((text.match(SUPERLATIVES) ?? []).map((w) => w.toLowerCase()))) {
+    if (!factsLower.includes(m)) problems.push(`claims "${m}", which the facts do not state`);
   }
 
   return problems;
