@@ -105,6 +105,25 @@ function makeInvoker(overrides: Partial<AgentInvoker> = {}): AgentInvoker {
 }
 
 describe("runPipeline", () => {
+  it("refuses a misuse request at the Input Guard without calling any later agent (L29)", async () => {
+    const invoker = makeInvoker({
+      inputGuard: vi.fn(async (input) => ({
+        requestId: input.requestId,
+        rawInput: input.rawInput,
+        sanitizedInput: input.rawInput,
+        flagged: true,
+        detectedPatterns: ["phishing"],
+        refused: { category: "phishing", reason: "This request was refused because it asks for phishing." },
+      })),
+    });
+    const result = await runPipeline("req-l29", "send phishing emails", invoker);
+    expect(result.status).toBe("refused");
+    if (result.status !== "refused") return;
+    expect(result.category).toBe("phishing");
+    expect(result.reason).toMatch(/refused/);
+    expect(invoker.intent).not.toHaveBeenCalled();
+  });
+
   it("runs the full chain and returns 'completed' when the first candidate is approved on the first attempt", async () => {
     const invoker = makeInvoker();
 

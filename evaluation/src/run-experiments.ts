@@ -141,7 +141,9 @@ async function runFullPipeline(tc: TestCase): Promise<RunResult> {
       hasExplanation: pipelineResult.escalation.explanation.length > 0,
     };
   }
-  return { ...base, actualOutcome: "failed", latencyMs, llmCalls, error: pipelineResult.error };
+  // L29: a refused request counts as failed here (none of the experiment cases is misuse).
+  const error = pipelineResult.status === "refused" ? pipelineResult.reason : pipelineResult.error;
+  return { ...base, actualOutcome: "failed", latencyMs, llmCalls, error };
 }
 
 // ── Runner ──────────────────────────────────────────────────────────────────────
