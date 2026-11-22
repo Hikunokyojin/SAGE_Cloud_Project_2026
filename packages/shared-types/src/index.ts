@@ -134,6 +134,9 @@ export interface InputGuardAgentOutput {
   sanitizedInput: string;
   flagged: boolean;
   detectedPatterns: string[];
+  // L29: set when the request asks for misuse (spam, phishing, covert tracking and similar);
+  // the pipeline then refuses it instead of finding a service.
+  refused?: { category: string; reason: string };
 }
 
 export interface IntentAgentInput {

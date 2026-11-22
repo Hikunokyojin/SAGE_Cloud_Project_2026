@@ -93,6 +93,8 @@ export type PipelineResult = (
   | { status: "completed"; requestId: string; result: ExplainedBlueprint }
   | { status: "paused_for_review"; requestId: string; escalation: EscalationExplanation; review?: ReviewContext }
   | { status: "failed"; requestId: string; error: string }
+  // L29: the Input Guard found a request for misuse; nothing after it runs.
+  | { status: "refused"; requestId: string; category: string; reason: string }
 ) & {
   // Wall-clock time of each agent call, in call order (retries appear once per attempt).
   timings?: StageTiming[];
@@ -185,6 +187,9 @@ async function runStages(
   // system that needs to know the pipeline's actual call order.
   const inputGuardDecisionId = randomUUID();
   const guardResult = await invoker.inputGuard({ requestId, rawInput, decisionId: inputGuardDecisionId });
+  if (guardResult.refused) {
+    return { status: "refused", requestId, category: guardResult.refused.category, reason: guardResult.refused.reason };
+  }
 
   const intentDecisionId = randomUUID();
   const intent = await invoker.intent({
