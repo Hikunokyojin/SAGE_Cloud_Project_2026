@@ -1,0 +1,15 @@
+{
+  "raters": 1,
+  "clarity": {
+    "n": 20,
+    "mean": 5,
+    "min": 5,
+    "max": 5
+  },
+  "correctness": {
+    "n": 20,
+    "mean": 5,
+    "min": 5,
+    "max": 5
+  }
+}
