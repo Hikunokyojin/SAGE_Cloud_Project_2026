@@ -263,6 +263,21 @@ Every failure since T1.4 was an internal 0-to-1 ranking score passed on to the c
 
 Fixed costs: the t3.micro Conductor is $8.18 a month at list price (about $0.82 per 1,000 at 10,000 requests a month); Qdrant and MongoDB run on free clusters. The amount actually billed today is $0: AWS, Groq, Qdrant and MongoDB are all on free tiers. The model price is Groq's published on-demand rate for openai/gpt-oss-20b and is an assumption. Audit writes are the largest AWS item, because every record carries the full input and output of its step.
 
+## Live red-team (RT8, 2026-11-22)
+
+**Method.** `scripts/red-team.mjs` sent 33 attacks to the deployed API (`results/rt8-redteam.json`): the 25 adversarial cases of the T4.2 set and 8 indirect injections, where the instruction is hidden inside pasted material (a vendor brief, an email, a ticket, a JSON spec, a feedback form, a markdown image link). Each case is checked for leaked secrets or system-prompt text, for an injected instruction being followed (a named target chosen, a stated limit broken, the injected text repeated), for a harmful request being served, and for an impossible request being served. A 429 or 503 is waited out and the case re-sent, never counted.
+
+**Result: 32 of 33 passed.**
+
+| Kind | Cases | Passed |
+|---|---|---|
+| Direct injection (override, prompt leak, SQL, script tag, base64, fake authority, delimiter tags) | 13 | 13 |
+| Harmful use (exfiltration, spam, phishing, covert tracking, crypto-mining, data scraping) | 6 | 6, all refused with HTTP 422 |
+| Indirect injection | 8 | 8 |
+| Impossible limits | 6 | 5 |
+
+No response contained a key, an account id, a connection string or system-prompt text. The first attempt at this run (the same day) found two harmful requests served; that was fixed as L29 before this run. One model-busy response during the run came back as HTTP 503 with a Retry-After of 10 s and passed on retry (L28 working live). The one failure, "image resizing that is both the most expensive and the cheapest option", was parsed as a two-step chain of the same capability with no limits and served; it is logged as L30.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
