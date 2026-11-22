@@ -460,7 +460,7 @@ describe("Explainer Agent explainEscalation", () => {
     recordDecisionMock.mockReset();
     recordDecisionMock.mockResolvedValue(undefined);
     resolveSecretMock.mockResolvedValue("test-groq-key");
-    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen because it is cheapest."));
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen."));
     const { handler } = await import("./index");
 
     await handler({ requestId: "req-1", composition: composition() } as ExplainerAgentInput);
