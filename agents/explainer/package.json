@@ -12,7 +12,8 @@
   "dependencies": {
     "@sage/audit": "*",
     "@sage/secrets": "*",
-    "@sage/shared-types": "*"
+    "@sage/shared-types": "*",
+    "@sage/llm": "*"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.140",

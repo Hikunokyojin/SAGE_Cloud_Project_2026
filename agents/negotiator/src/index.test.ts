@@ -170,3 +170,232 @@ describe("Negotiator Agent handler", () => {
     expect(result.iteration).toBe(2);
   });
 });
+
+describe("absolute scoring against catalogue references", () => {
+  // Real image-resizing references from data/services.json: price 0.005 to 0.045,
+  // uptime 97.5 to 99.9, latency 45 to 650 ms.
+  const turbo = candidate({
+    serviceId: "svc-turboresize",
+    price: 0.045,
+    uptime: 99.7,
+    latencyMs: 45,
+    similarityScore: 0.41,
+    capability: "image-resizing",
+  });
+  const limits: Constraint[] = [
+    { field: "price", operator: "lt", value: 0.05, mandatory: true },
+    { field: "uptime", operator: "gte", value: 99.5, mandatory: true },
+    { field: "latencyMs", operator: "lt", value: 100, mandatory: true },
+  ];
+
+  it("does not give a lone survivor a perfect score, and flags it as the sole survivor", async () => {
+    const r = await handler(baseInput({ candidates: [turbo], constraints: limits, requiredCategory: "image-resizing" }));
+
+    expect(r.scoreBreakdown.soleSurvivor).toBe(true);
+    expect(r.scoreBreakdown.basis).toBe("catalogue-references");
+    expect(r.chosen.score).toBeLessThan(1);
+    // Headroom under each limit, relative to the best value in the category:
+    // price (0.05 - 0.045) / (0.05 - 0.005) = 0.111; uptime (99.7 - 99.5) / (99.9 - 99.5) = 0.5;
+    // latency (100 - 45) / (100 - 45) = 1; capability is the raw similarity.
+    expect(r.scoreBreakdown.dimensions.price).toBeCloseTo(0.111, 3);
+    expect(r.scoreBreakdown.dimensions.uptime).toBeCloseTo(0.5, 3);
+    expect(r.scoreBreakdown.dimensions.latency).toBeCloseTo(1, 3);
+    expect(r.scoreBreakdown.dimensions.capability).toBeCloseTo(0.41, 3);
+  });
+
+  it("gives a candidate the same score whether or not other candidates are present", async () => {
+    const alone = await handler(baseInput({ candidates: [turbo], requiredCategory: "image-resizing" }));
+    const crowd = await handler(
+      baseInput({
+        candidates: [
+          turbo,
+          candidate({ serviceId: "svc-fastresize", price: 0.02, uptime: 99.9, latencyMs: 180, similarityScore: 0.42, capability: "image-resizing" }),
+        ],
+        requiredCategory: "image-resizing",
+      })
+    );
+
+    const turboInCrowd = [crowd.chosen, ...crowd.alternatives].find((c) => c.service.serviceId === "svc-turboresize");
+    expect(turboInCrowd?.score).toBeCloseTo(alone.chosen.score, 10);
+    expect(crowd.scoreBreakdown.soleSurvivor).toBe(false);
+  });
+
+  it("falls back to scoring relative to the candidates when the category has no references", async () => {
+    const r = await handler(
+      baseInput({ candidates: [candidate({ serviceId: "x", capability: "not-a-category" })], requiredCategory: "not-a-category" })
+    );
+    expect(r.scoreBreakdown.basis).toBe("relative-to-candidates");
+  });
+});
+
+describe("rejected candidates", () => {
+  it("lists every candidate that failed a hard filter, with the rule it failed", async () => {
+    const r = await handler(
+      baseInput({
+        requiredCategory: "image-resizing",
+        constraints: [
+          { field: "uptime", operator: "gte", value: 99.5, mandatory: true },
+          { field: "latencyMs", operator: "lt", value: 100, mandatory: true },
+        ],
+        candidates: [
+          candidate({ serviceId: "svc-budget", name: "BudgetResize", price: 0.005, uptime: 97.5, latencyMs: 650, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-fast", name: "FastResize", price: 0.02, uptime: 99.9, latencyMs: 180, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-turbo", name: "TurboResize", price: 0.045, uptime: 99.7, latencyMs: 45, capability: "image-resizing" }),
+          candidate({ serviceId: "svc-queue", name: "QueueRunner", price: 0.0007, uptime: 99.9, latencyMs: 15, capability: "message-queue" }),
+        ],
+      })
+    );
+
+    expect(r.chosen.service.serviceId).toBe("svc-turbo");
+    expect(r.rejected).toEqual([
+      { serviceId: "svc-budget", name: "BudgetResize", reason: "uptime 97.5% is not at least 99.5%" },
+      { serviceId: "svc-fast", name: "FastResize", reason: "latency 180 ms is not below 100 ms" },
+      { serviceId: "svc-queue", name: "QueueRunner", reason: "wrong category (message-queue, needed image-resizing)" },
+    ]);
+  });
+});
+
+describe("soft preferences", () => {
+  it("weights a dimension by the request's soft preference", async () => {
+    const candidates = [
+      candidate({ serviceId: "cheap-slow", price: 0.005, uptime: 99.7, latencyMs: 650 }),
+      candidate({ serviceId: "pricey-fast", price: 0.045, uptime: 97.5, latencyMs: 45 }),
+    ];
+
+    const neutral = await handler(baseInput({ candidates }));
+    const wantsFast = await handler(baseInput({ candidates, preferences: { latencyMs: 3 } }));
+
+    expect(neutral.chosen.service.serviceId).toBe("cheap-slow");
+    expect(wantsFast.chosen.service.serviceId).toBe("pricey-fast");
+    expect(wantsFast.scoreBreakdown.weights.latency).toBe(3);
+  });
+});
+
+describe("Negotiator volume pricing and plan quotas (T4.1b)", () => {
+  const volume = { amount: 100_000, unit: "emails" as const };
+  const sendgrid = candidate({
+    serviceId: "svc-sendgrid", name: "SendGrid", capability: "email", price: 19.95, uptime: 99.95,
+    volumeBasis: "quota", includedUnits: { amount: 50_000, unit: "emails" }, otherPlans: true,
+  });
+  const ses = candidate({
+    serviceId: "svc-ses", name: "SES", capability: "email", price: 10, uptime: 99.9,
+    listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD", priceBasis: "estimated USD/month at 100,000 emails/month",
+  });
+
+  it("rejects a plan whose quota is smaller than the stated volume, and says why", async () => {
+    const r = await handler(baseInput({ candidates: [sendgrid, ses], volume }));
+    expect(r.chosen.service.serviceId).toBe("svc-ses");
+    expect(r.rejected).toContainEqual({ serviceId: "svc-sendgrid", name: "SendGrid", reason: "its plan covers 50,000 emails a month, 100,000 emails needed" });
+  });
+
+  it("keeps a plan whose quota covers the volume and notes it", async () => {
+    const r = await handler(baseInput({ candidates: [sendgrid], volume: { amount: 40_000, unit: "emails" } }));
+    expect(r.chosen.service.volumeNote).toBe("plan covers 50,000 emails a month, enough for 40,000 emails");
+  });
+
+  it("re-prices a metered service at the stated volume", async () => {
+    const r = await handler(baseInput({ candidates: [ses], volume: { amount: 250_000, unit: "emails" } }));
+    expect(r.chosen.service.price).toBe(25);
+    expect(r.chosen.service.priceBasis).toBe("estimated USD/month at 250,000 emails/month");
+  });
+
+  it("treats a volume equal to the standard profile as used, with no note (live finding)", async () => {
+    const r = await handler(baseInput({ candidates: [ses], volume }));
+    expect(r.chosen.service.price).toBe(10);
+    expect(r.chosen.service.volumeNote).toBeUndefined();
+  });
+
+  it("checks a per-unit price limit against the unit price", async () => {
+    const perUnit: Constraint = { field: "price", operator: "lte", value: 0.00015, mandatory: true, per: "unit" };
+    const r = await handler(baseInput({ candidates: [sendgrid, ses], constraints: [perUnit] }));
+    // SES: $0.0001 an email passes; SendGrid: $19.95 / 50,000 = $0.000399 fails.
+    expect(r.chosen.service.serviceId).toBe("svc-ses");
+    expect(r.rejected?.[0].reason).toMatch(/^price per unit/);
+  });
+});
+
+describe("Negotiator chain mode (T4.1b)", () => {
+  const step = (capability: string, cands: ServiceCandidateWithEvidence[], dependsOn: number[] = []) => ({
+    capability, candidates: cands, constraints: [] as Constraint[], dependsOn,
+  });
+  const ocrA = candidate({ serviceId: "ocr-a", price: 30, uptime: 99.9, latencyMs: 300 });
+  const ocrB = candidate({ serviceId: "ocr-b", price: 5, uptime: 99.0, latencyMs: 800 });
+  const trA = candidate({ serviceId: "tr-a", price: 20, uptime: 99.95, latencyMs: 200 });
+  const trB = candidate({ serviceId: "tr-b", price: 4, uptime: 99.5, latencyMs: 400 });
+
+  it("picks one service per step and reports chain totals", async () => {
+    const r = await handler(baseInput({ steps: [step("ocr", [ocrA, ocrB]), step("translation", [trA, trB], [0])] }));
+    expect(r.chain?.steps.map((s) => s.capability)).toEqual(["ocr", "translation"]);
+    expect(r.chain?.steps[1].dependsOn).toEqual([0]);
+    expect(r.chain?.combinationsCompared).toBe(4);
+    const [a, b] = r.chain!.steps.map((s) => s.chosen.service);
+    expect(r.chain?.totals.price).toBeCloseTo(a.price + b.price, 2);
+    expect(r.chain?.totals.uptime).toBeCloseTo(a.uptime * b.uptime / 100, 3);
+    expect(r.chain?.totals.latencyMs).toBe((a.latencyMs ?? 0) + (b.latencyMs ?? 0));
+    expect(r.chosen.service.serviceId).toBe(a.serviceId);
+  });
+
+  it("applies chain-wide limits to the totals, not to each step", async () => {
+    const budget: Constraint = { field: "price", operator: "lte", value: 12, mandatory: true };
+    const r = await handler(baseInput({ constraints: [budget], steps: [step("ocr", [ocrA, ocrB]), step("translation", [trA, trB])] }));
+    expect(r.chain?.steps.map((s) => s.chosen.service.serviceId)).toEqual(["ocr-b", "tr-b"]);
+    expect(r.chain?.combinationsValid).toBe(1);
+  });
+
+  it("fails clearly when no combination fits the chain-wide limits", async () => {
+    const budget: Constraint = { field: "price", operator: "lte", value: 1, mandatory: true };
+    await expect(handler(baseInput({ constraints: [budget], steps: [step("ocr", [ocrA]), step("translation", [trA])] }))).rejects.toThrow(/none of the 1 combinations/);
+  });
+
+  it("names the step when one step has no eligible candidate", async () => {
+    await expect(handler(baseInput({ steps: [step("ocr", [ocrA]), step("translation", [])] }))).rejects.toThrow(/step 2 \(translation\)/);
+  });
+});
+
+describe("Negotiator converts a volume to the unit a service is priced in (L15, L16)", () => {
+  const pages = { amount: 5000, unit: "pages" as const };
+  const vision = candidate({
+    serviceId: "svc-vision", name: "Vision", capability: "document-ocr", price: 15, uptime: 99.9,
+    listPrice: 1.5, priceUnit: "per 1,000 images", currency: "USD",
+  });
+  const translate = candidate({
+    serviceId: "svc-translate", name: "Translate", capability: "translation", price: 15, uptime: 99.9,
+    listPrice: 15, priceUnit: "per 1,000,000 characters", currency: "USD",
+  });
+
+  it("L15: prices a per-image OCR service at the stated pages, and notes the conversion", async () => {
+    const r = await handler(baseInput({ candidates: [vision], volume: pages }));
+    expect(r.chosen.service.price).toBe(7.5);
+    expect(r.chosen.service.volumeNote).toBe("5,000 pages counted as 5,000 images");
+  });
+
+  it("L16: prices a per-character service at the pages' characters, and notes the rate", async () => {
+    const r = await handler(baseInput({ candidates: [translate], volume: pages }));
+    expect(r.chosen.service.price).toBe(150);
+    expect(r.chosen.service.volumeNote).toBe("5,000 pages counted as 10,000,000 characters, at about 2,000 characters a page");
+  });
+});
+
+describe("similarity only breaks ties (L24)", () => {
+  it("picks the cheaper, more reliable, faster service over a closer-worded one", async () => {
+    const closer = candidate({ serviceId: "svc-closer", price: 0.04, uptime: 99.6, latencyMs: 90, similarityScore: 0.9, capability: "image-resizing" });
+    const better = candidate({ serviceId: "svc-better", price: 0.01, uptime: 99.9, latencyMs: 50, similarityScore: 0.4, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [closer, better], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-better");
+  });
+
+  it("separates services that all beat the category's references on their own values", async () => {
+    // Both are cheaper and faster than the image-resizing reference best, so both score 1.
+    const dear = candidate({ serviceId: "svc-dear", price: 0.004, uptime: 99.95, latencyMs: 40, similarityScore: 0.9, capability: "image-resizing" });
+    const cheap = candidate({ serviceId: "svc-cheap", price: 0.001, uptime: 99.95, latencyMs: 40, similarityScore: 0.4, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [dear, cheap], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-cheap");
+  });
+
+  it("uses similarity to break an exact tie", async () => {
+    const a = candidate({ serviceId: "svc-a", price: 0.02, uptime: 99.8, latencyMs: 80, similarityScore: 0.5, capability: "image-resizing" });
+    const b = candidate({ serviceId: "svc-b", price: 0.02, uptime: 99.8, latencyMs: 80, similarityScore: 0.7, capability: "image-resizing" });
+    const r = await handler(baseInput({ candidates: [a, b], requiredCategory: "image-resizing" }));
+    expect(r.chosen.service.serviceId).toBe("svc-b");
+  });
+});

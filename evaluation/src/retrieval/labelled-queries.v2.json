@@ -1,0 +1,441 @@
+{
+ "in": [
+  [
+   "image-resizing",
+   "image resizing service"
+  ],
+  [
+   "image-resizing",
+   "resize and convert images"
+  ],
+  [
+   "image-resizing",
+   "thumbnail generation for photos"
+  ],
+  [
+   "video-transcoding",
+   "video transcoding"
+  ],
+  [
+   "video-transcoding",
+   "convert videos to H.265"
+  ],
+  [
+   "video-transcoding",
+   "encode video files"
+  ],
+  [
+   "speech-transcription",
+   "speech to text transcription"
+  ],
+  [
+   "speech-transcription",
+   "transcribe audio recordings"
+  ],
+  [
+   "speech-transcription",
+   "voice transcription API"
+  ],
+  [
+   "object-storage",
+   "object storage"
+  ],
+  [
+   "object-storage",
+   "store files durably"
+  ],
+  [
+   "object-storage",
+   "archive storage for backups"
+  ],
+  [
+   "content-delivery",
+   "content delivery network"
+  ],
+  [
+   "content-delivery",
+   "CDN with edge caching"
+  ],
+  [
+   "content-delivery",
+   "serve static assets globally"
+  ],
+  [
+   "email-delivery",
+   "email delivery service"
+  ],
+  [
+   "email-delivery",
+   "send transactional emails"
+  ],
+  [
+   "email-delivery",
+   "email API with bounce tracking"
+  ],
+  [
+   "messaging",
+   "SMS messaging"
+  ],
+  [
+   "messaging",
+   "send WhatsApp messages"
+  ],
+  [
+   "messaging",
+   "text message API"
+  ],
+  [
+   "authentication",
+   "user authentication"
+  ],
+  [
+   "authentication",
+   "single sign-on and OAuth"
+  ],
+  [
+   "authentication",
+   "identity and login service"
+  ],
+  [
+   "payment-processing",
+   "payment processing"
+  ],
+  [
+   "payment-processing",
+   "accept card payments"
+  ],
+  [
+   "payment-processing",
+   "payment gateway"
+  ],
+  [
+   "ml-inference",
+   "machine learning model inference"
+  ],
+  [
+   "ml-inference",
+   "host ML models for predictions"
+  ],
+  [
+   "ml-inference",
+   "model serving with autoscaling"
+  ],
+  [
+   "embedding-generation",
+   "text embedding generation"
+  ],
+  [
+   "embedding-generation",
+   "vector embeddings for semantic search"
+  ],
+  [
+   "embedding-generation",
+   "generate image embeddings"
+  ],
+  [
+   "product-analytics",
+   "product analytics"
+  ],
+  [
+   "product-analytics",
+   "event analytics dashboard"
+  ],
+  [
+   "product-analytics",
+   "track user events"
+  ],
+  [
+   "message-queue",
+   "message queue"
+  ],
+  [
+   "message-queue",
+   "queue with dead-letter handling"
+  ],
+  [
+   "message-queue",
+   "asynchronous job queue"
+  ],
+  [
+   "full-text-search",
+   "full-text search"
+  ],
+  [
+   "full-text-search",
+   "search index with typo tolerance"
+  ],
+  [
+   "full-text-search",
+   "text search engine"
+  ],
+  [
+   "document-generation",
+   "PDF generation"
+  ],
+  [
+   "document-generation",
+   "generate documents from HTML templates"
+  ],
+  [
+   "document-generation",
+   "create invoices as PDF"
+  ],
+  [
+   "compute",
+   "compute instances"
+  ],
+  [
+   "compute",
+   "virtual machines for batch jobs"
+  ],
+  [
+   "compute",
+   "cloud servers"
+  ],
+  [
+   "geolocation",
+   "IP geolocation"
+  ],
+  [
+   "geolocation",
+   "reverse geocoding addresses"
+  ],
+  [
+   "geolocation",
+   "location lookup API"
+  ],
+  [
+   "database",
+   "a managed database for my app's records"
+  ],
+  [
+   "database",
+   "serverless key-value store with fast reads"
+  ],
+  [
+   "database",
+   "hosted PostgreSQL or MySQL database"
+  ],
+  [
+   "dns",
+   "DNS hosting for my domain"
+  ],
+  [
+   "dns",
+   "resolve domain names with high availability"
+  ],
+  [
+   "dns",
+   "authoritative DNS service with an API"
+  ],
+  [
+   "data-streaming",
+   "stream real-time events into analytics"
+  ],
+  [
+   "data-streaming",
+   "managed Kafka for event streaming"
+  ],
+  [
+   "data-streaming",
+   "ingest a high-volume stream of log events"
+  ],
+  [
+   "secrets-management",
+   "store API keys and passwords securely"
+  ],
+  [
+   "secrets-management",
+   "rotate database credentials automatically"
+  ],
+  [
+   "secrets-management",
+   "manage encryption keys for my application"
+  ],
+  [
+   "text-to-speech",
+   "convert text into natural sounding speech"
+  ],
+  [
+   "text-to-speech",
+   "generate a voiceover from a script"
+  ],
+  [
+   "text-to-speech",
+   "text to speech API with many voices"
+  ],
+  [
+   "translation",
+   "translate product descriptions into French and Spanish"
+  ],
+  [
+   "translation",
+   "machine translation API for user messages"
+  ],
+  [
+   "translation",
+   "translate documents between languages"
+  ],
+  [
+   "document-ocr",
+   "extract text from scanned invoices"
+  ],
+  [
+   "document-ocr",
+   "OCR for receipts and forms"
+  ],
+  [
+   "document-ocr",
+   "read handwritten text from PDF scans"
+  ],
+  [
+   "image-analysis",
+   "detect objects and labels in photos"
+  ],
+  [
+   "image-analysis",
+   "moderate uploaded images for unsafe content"
+  ],
+  [
+   "image-analysis",
+   "face detection in pictures"
+  ],
+  [
+   "api-gateway",
+   "put an API gateway in front of my microservices"
+  ],
+  [
+   "api-gateway",
+   "rate limiting and API keys for my public API"
+  ],
+  [
+   "api-gateway",
+   "managed gateway to route HTTP requests to backends"
+  ],
+  [
+   "workflow-orchestration",
+   "orchestrate a multi-step business workflow with retries"
+  ],
+  [
+   "workflow-orchestration",
+   "run durable background jobs in sequence"
+  ],
+  [
+   "workflow-orchestration",
+   "coordinate several services in a state machine"
+  ],
+  [
+   "monitoring",
+   "collect logs and metrics from my servers"
+  ],
+  [
+   "monitoring",
+   "error tracking for my web app"
+  ],
+  [
+   "monitoring",
+   "distributed tracing across microservices"
+  ],
+  [
+   "text-analysis",
+   "sentiment analysis of customer reviews"
+  ],
+  [
+   "text-analysis",
+   "detect toxic or harmful text in comments"
+  ],
+  [
+   "text-analysis",
+   "extract entities and key phrases from text"
+  ],
+  [
+   "recommendations",
+   "product recommendations for my online shop"
+  ],
+  [
+   "recommendations",
+   "personalised suggestions based on user behaviour"
+  ],
+  [
+   "recommendations",
+   "recommend similar items to customers"
+  ],
+  [
+   "fraud-detection",
+   "detect fraudulent payments"
+  ],
+  [
+   "fraud-detection",
+   "score sign-ups for account fraud risk"
+  ],
+  [
+   "fraud-detection",
+   "screen card transactions for fraud"
+  ],
+  [
+   "file-storage",
+   "shared network file system for my servers"
+  ],
+  [
+   "file-storage",
+   "managed NFS file shares"
+  ],
+  [
+   "file-storage",
+   "mountable file storage for containers"
+  ],
+  [
+   "container-registry",
+   "store and distribute Docker images"
+  ],
+  [
+   "container-registry",
+   "private container image registry"
+  ],
+  [
+   "container-registry",
+   "host container images for deployment"
+  ],
+  [
+   "web-hosting",
+   "host my website with automatic deploys"
+  ],
+  [
+   "web-hosting",
+   "deploy a web app with a custom domain"
+  ],
+  [
+   "web-hosting",
+   "hosting for a Node.js web application"
+  ],
+  [
+   "data-query",
+   "run SQL queries over data in object storage"
+  ],
+  [
+   "data-query",
+   "serverless data warehouse for analytics"
+  ],
+  [
+   "data-query",
+   "query large datasets with SQL without servers"
+  ]
+ ],
+ "out": [
+  "domain name registration",
+  "weather forecast data",
+  "code repository hosting",
+  "load balancer",
+  "web application firewall",
+  "calendar scheduling",
+  "chat bot builder",
+  "container orchestration with Kubernetes",
+  "electronic signatures for contracts",
+  "flight booking",
+  "stock market price feed",
+  "video conferencing rooms",
+  "CRM for sales teams",
+  "VPN for remote employees",
+  "online form builder"
+ ]
+}

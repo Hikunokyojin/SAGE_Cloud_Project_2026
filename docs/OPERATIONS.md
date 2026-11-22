@@ -63,3 +63,73 @@ Free MongoDB Atlas and Qdrant Cloud clusters can go dormant, or be deleted, afte
 2. Review the limits above; raise `DAILY_REQUEST_LIMIT` only if you have a paid model quota.
 3. Add authentication (for example an API key or Cognito) before inviting the public, since the request limits are a safety net, not access control.
 4. Consider the upgrades in [ARCHITECTURE.md](ARCHITECTURE.md#known-limitations): a second availability zone and a stateless Conductor.
+
+## Automatic recovery of the Conductor (T2.2)
+
+The Conductor is a single EC2 instance (a documented design choice). It recovers on its own at three levels, all free:
+
+| Failure | What notices it | What happens | Typical time |
+|---|---|---|---|
+| The Node process crashes | systemd (`Restart=always`, 3 s) | `conductor.service` restarts | about 5 s |
+| The operating system hangs (instance status check fails) | CloudWatch alarm `sage-conductor-instance-check-reboot` (3 minutes) | instance reboots; systemd starts the service at boot | about 4 to 5 min |
+| The AWS host fails (system status check fails) | CloudWatch alarm `sage-conductor-system-check-recover` (2 minutes) | EC2 auto-recovery moves the instance to healthy hardware, keeping its ID, private IP and Elastic IP, so API Gateway needs no change | about 5 to 8 min |
+
+Both alarms also email the operator through the `sage-hitl-escalation` topic when they fire and when they clear.
+
+A deliberate pause (`npm run backend:pause`) never triggers recovery: a stopped instance sends no status metrics, and the alarms treat missing data as healthy. Recovery also does not start a stopped instance; use `npm run backend:resume`.
+
+### Recovery drill
+
+Run these after any change to the instance or the alarms. Record the timings in `docs/EVALUATION.md`.
+
+1. **Process crash:** on the instance (through Session Manager), run `sudo systemctl kill -s KILL conductor.service`. Then poll `GET /health` until it answers; it should take under 10 s.
+2. **Reboot path:** run `aws ec2 reboot-instances --region ap-south-1 --instance-ids <id>`. Then poll `GET /health`; it should answer within 2 minutes, with no manual step (RT5).
+3. **Alarm wiring:** run `aws cloudwatch set-alarm-state --region ap-south-1 --alarm-name sage-conductor-instance-check-reboot --state-value ALARM --state-reason drill`. Check that the alert email arrives. This really reboots the instance, so it also tests step 2.
+
+The host-failure path cannot be triggered on purpose; AWS documents the recover action, and the alarm wiring is covered by the CDK test.
+
+## Deploying the dashboard copy on the Conductor
+
+Always copy `index.html` explicitly after syncing the assets. `aws s3 sync` decides by size and timestamp. A rebuilt `index.html` usually has the same size (it only names new hashed asset files), so sync can skip it, while `--delete` removes the old assets it points to. The page then loads blank. This happened on 2026-11-07.
+
+```
+aws s3 sync apps/dashboard/dist s3://<bucket>/conductor/dashboard --delete
+aws s3 cp apps/dashboard/dist/index.html s3://<bucket>/conductor/dashboard/index.html
+# on the instance:
+aws s3 sync s3://<bucket>/conductor/dashboard /opt/conductor/dashboard --delete
+aws s3 cp s3://<bucket>/conductor/dashboard/index.html /opt/conductor/dashboard/index.html
+```
+
+## Alert email subscription
+
+The alert topic `sage-hitl-escalation` delivers to email subscribers only. Its subscriber was added by hand on 2026-11-07 (until then alerts were published but reached nobody). It is not managed by CDK, so a CDK-created duplicate cannot conflict with it. Check it with:
+
+```
+aws sns list-subscriptions-by-topic --region ap-south-1 --topic-arn <EscalationTopicArn>
+```
+
+## Language-model providers (T2.7)
+
+Intent and the Explainer call models through `packages/llm`. Providers are tried in the order of `LLM_PROVIDERS` (default `groq,openrouter`). Each call has a time limit: Groq 6 s (Intent) or 5 s (Explainer), the fallback 15 s (Intent) or 8 s (Explainer), because free fallback models answer more slowly. A provider that fails 3 times in a row is skipped for 60 s. If no model answers, the Explainer uses its deterministic fact sheet, and Intent fails the request with every provider's reason.
+
+| Provider | Key (SSM SecureString) | Notes |
+|---|---|---|
+| Groq | `/sage/shared/GROQ_API_KEY` | primary, `openai/gpt-oss-20b`, strict JSON schema |
+| OpenRouter | `/sage/shared/OPENROUTER_API_KEY` | fallback, free models via `OPENROUTER_MODEL` (default `openrouter/free`, which routes to any available free model; a single free model was rate-limited upstream in the live test), JSON mode; free models have a low daily request cap |
+| Cerebras | `/sage/shared/CEREBRAS_API_KEY` | opt-in only (its key needs a payment method), `CEREBRAS_MODEL` (default `gpt-oss-120b`) |
+| Bedrock | none (IAM) | implemented, off: this account gets "Operation not allowed" (checked 2026-11-07). When AWS unblocks it, set `LLM_PROVIDERS=bedrock,groq,cerebras` and grant `bedrock:InvokeModel` |
+
+A provider without a key is skipped silently, so the fallback is inactive until its key exists. Every failure is logged; Groq's keep the wording `Groq API error (<status>)` that the `sage-groq-rate-limited` alarm counts, even when the fallback then answers.
+
+## Load testing without using any quota (T2.8)
+
+`LLM_MODE=stub` makes `packages/llm` answer instantly without calling any provider. Intent gets valid JSON with a keyword-guessed category; the Explainer gets its fact sheet back. In stub mode, Intent neither reads nor writes the memory or shared (`intent_cache`) cache, so stub answers can never reach real requests. `LLM_STUB_DELAY_MS` adds an artificial delay if wanted.
+
+Run a local Conductor in stub mode with the per-visitor and daily caps raised, then the load test:
+
+```
+LLM_MODE=stub AGENT_INVOKE_MODE=local DAILY_REQUEST_LIMIT=100000 CLIENT_HOURLY_LIMIT=100000 npm run dev --workspace=services/conductor
+npm run load-test -- --url http://localhost:3001 --rps 25 --seconds 20
+```
+
+The local Broker still queries Qdrant Cloud and MongoDB Atlas (free tiers), so keep tests short. Do not load-test the production API: the stage is throttled to 5 requests per second, so most requests would return 429. A separate staging stack (planned in T2.8) needs every resource name made configurable first (`sage-intent`, `agent_decisions` and others are fixed today), and is left as follow-up work.

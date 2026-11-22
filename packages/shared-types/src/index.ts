@@ -10,11 +10,19 @@ export interface IntentConstraints {
 // each request onto one of these so Negotiator and Reviewer can reject candidates from
 // the wrong category -- semantic retrieval alone returns near neighbours across
 // categories. Must be updated when the dataset gains a new category.
+export { CATALOGUE_REFERENCES, LIVE_CATALOGUE_REFERENCES, referencesFor } from "./catalogueReferences";
+export type { CategoryReferences, Range } from "./catalogueReferences";
+
 export const SERVICE_CATEGORIES = [
   "image-resizing", "video-transcoding", "speech-transcription", "object-storage",
   "content-delivery", "email-delivery", "messaging", "authentication", "payment-processing",
   "ml-inference", "embedding-generation", "product-analytics", "message-queue",
   "full-text-search", "document-generation", "compute", "geolocation",
+  // Added with the real catalogue (T3.2).
+  "database", "dns", "data-streaming", "secrets-management", "text-to-speech",
+  "translation", "document-ocr", "image-analysis",
+  "api-gateway", "workflow-orchestration", "monitoring", "text-analysis", "recommendations",
+  "fraud-detection", "file-storage", "container-registry", "web-hosting", "data-query",
 ] as const;
 
 export interface Intent {
@@ -29,7 +37,21 @@ export interface Intent {
   // shape -- IntentConstraints itself is retained above for any external
   // consumer still on the old shape, but no agent constructs it anymore.
   constraints: Constraint[];
+  // Soft wishes ("fast", "cheapest", "X is not a concern") as scoring weights.
+  preferences?: Preferences;
+  // T4.1a: the monthly volume for a single-capability request (L3).
+  volume?: UsageVolume;
+  // T4.1a: present only for a chain of two to four capabilities. capability/category then
+  // describe the first step, and constraints are limits on the whole chain.
+  steps?: IntentStep[];
   rawInput: string;
+}
+
+// Scoring weight per dimension taken from soft words in the request (default weight is 1).
+export interface Preferences {
+  price?: number;
+  uptime?: number;
+  latencyMs?: number;
 }
 
 // ── Marketplace Data Types ─────────────────────────────────
@@ -48,6 +70,21 @@ export interface ServiceCandidate {
   latencyMs?: number;
   // Catalog category (one of SERVICE_CATEGORIES), checked against Intent.category.
   capability?: string;
+  // How `price` was derived (T3.4), e.g. "estimated USD/month at 100,000 emails/month"; absent
+  // for the original synthetic catalogue, whose price is a per-request figure.
+  priceBasis?: string;
+  // T4.1 (L1): what a flat monthly plan covers. quota: `includedUnits` per month;
+  // unmetered: volume does not change the price; unknown: not confirmed.
+  volumeBasis?: "quota" | "unmetered" | "unknown";
+  includedUnits?: UsageVolume;
+  // The catalogue holds the provider's cheaper plan; other plans exist for other usage.
+  otherPlans?: boolean;
+  // T4.1b (L2/L3): the provider's own price, so the Negotiator can re-price at the stated volume.
+  listPrice?: number;
+  priceUnit?: string;
+  currency?: string;
+  // Set by the Negotiator when the stated volume was used or could not be checked.
+  volumeNote?: string;
 }
 
 // ── Negotiator/Optimizer Output ────────────────────────────
@@ -72,6 +109,9 @@ export interface CompositionBlueprint {
 
 export interface ExplainedBlueprint extends Composition {
   explanation: string;
+  // "model" when the language model's wording passed the claim check, "facts" when the
+  // deterministic fact sheet was used instead.
+  explanationSource?: "model" | "facts";
 }
 
 // ── Scoped Payloads (inter-agent communication) ─────────────
@@ -111,6 +151,10 @@ export interface BrokerAgentInput {
   // spec (S5.3) it must never filter or rank by constraints. Enforcement is
   // exclusively Negotiator's (S5.4) and Reviewer's (S5.5) responsibility.
   constraints: Constraint[];
+  // Intent's catalogue category. When set, the vector search only returns services in
+  // that category (a Qdrant payload filter), so near neighbours from other categories
+  // never crowd out the right ones.
+  category?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -127,8 +171,17 @@ export interface NegotiatorAgentInput {
   // When set, candidates outside this category are excluded like a failed
   // mandatory constraint.
   requiredCategory?: string;
+  // Soft preference weights from Intent; an optional constraint's priority overrides them.
+  preferences?: Preferences;
+  // T4.1b: the monthly volume to price at and check plan quotas against.
+  volume?: UsageVolume;
+  // T4.1b: chain mode. Each step is scored on its own; `constraints` then limit the whole
+  // chain (total price, combined uptime, total latency).
+  steps?: NegotiatorStep[];
   decisionId?: string;
   parentDecisionId?: string;
+  // L14: other decisions this one also used (a chain's other Broker step searches).
+  relatedDecisionIds?: string[];
 }
 
 export interface ReviewerAgentInput {
@@ -137,6 +190,12 @@ export interface ReviewerAgentInput {
   constraints: Constraint[];
   // Re-verified independently of Negotiator's own category filter.
   requiredCategory?: string;
+  // Signed link to the human review page; included in the escalation email (T2.3).
+  reviewUrl?: string;
+  // T4.1c: the stated monthly volume, so the price and plan quota are re-checked independently.
+  volume?: UsageVolume;
+  // T4.1c: chain requests. Each step's own limits; `constraints` then limit the whole chain.
+  steps?: { capability: string; constraints: Constraint[]; requiredCategory?: string; volume?: UsageVolume; dependsOn: number[] }[];
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -169,10 +228,20 @@ export interface EscalationExplainerInput {
 // escalation path was unreachable for that failure mode -- it just failed silently
 // with no SNS notification. This input lets Conductor route that specific failure
 // through the same Human-in-the-Loop escalation Reviewer already performs.
+// Why a request is escalated without a Negotiator/Reviewer cycle. Optional so that an
+// older caller (or an older deployed Lambda) that omits it keeps the original behaviour.
+//  - no_valid_candidate: retrieval or the mandatory constraints left nothing to choose.
+//  - capability_not_in_catalogue: the request fits no catalogue category at all, so the
+//    marketplace does not offer this kind of service.
+export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue";
+
 export interface UnsatisfiableEscalationInput {
   requestId: string;
   constraints: Constraint[];
   reason: string;
+  kind?: UnsatisfiableEscalationKind;
+  // Signed link to the human review page; included in the escalation email (T2.3).
+  reviewUrl?: string;
   decisionId?: string;
   parentDecisionId?: string;
 }
@@ -181,6 +250,8 @@ export interface EscalationExplanation {
   requestId: string;
   explanation: string;
   attemptedOptions: ServiceCandidateWithEvidence[];
+  // L25: "model" when the model's wording passed the claim check, "facts" for the plain fact text.
+  explanationSource?: "model" | "facts";
 }
 
 // ── Audit Trail ──────────────────────────────────────────────
@@ -239,6 +310,36 @@ export interface Constraint {
   value: number;
   mandatory: boolean; // true = hard filter, false = weighted preference
   priority?: number; // relative weight, used when mandatory = false
+  // T4.1a (L2): a price limit stated per unit ("under $0.05 per image"). Intent converts it
+  // to a monthly limit when the request states a volume; otherwise it stays per unit.
+  per?: "unit";
+}
+
+// ── Multi-service composition (T4.1) ──────────────────────────────────────
+
+// The usage kinds the catalogue's monthly price estimate understands
+// (packages/catalogue/src/normalise.ts USAGE).
+export const USAGE_UNITS = [
+  "requests", "emails", "sms", "characters", "tokens", "pages", "images",
+  "users", "events", "minutes", "gb", "payments",
+] as const;
+export type UsageUnit = (typeof USAGE_UNITS)[number];
+
+// How much of a capability the user says they need each month ("about 100k emails").
+export interface UsageVolume {
+  amount: number;
+  unit: UsageUnit;
+}
+
+// One capability in a multi-service request. Its constraints apply to that step alone;
+// the Intent's top-level constraints apply to the whole chain.
+export interface IntentStep {
+  capability: string;
+  category?: string;
+  constraints: Constraint[];
+  volume?: UsageVolume;
+  // Indexes of earlier steps this one consumes the output of.
+  dependsOn: number[];
 }
 
 // ── Evidence (S6.2) ───────────────────────────────────────────────────────
@@ -277,6 +378,11 @@ export interface ScoreBreakdown {
   totalScore: number;
   constraintStatus: "pass" | "fail"; // self-reported by the negotiation agent
   violatedConstraints: string[];
+  // True when only one candidate survived the hard filters, so there was no real choice.
+  soleSurvivor?: boolean;
+  // How the dimensions were scored: against fixed catalogue references for the category
+  // (comparable across requests), or relative to the other candidates (fallback only).
+  basis?: "catalogue-references" | "relative-to-candidates";
 }
 
 // ── Composition (S6.4) ────────────────────────────────────────────────────
@@ -284,9 +390,43 @@ export interface ScoreBreakdown {
 // number and full score breakdown needed for the bounded refinement loop
 // and the decision-provenance chain.
 
+// A candidate the Negotiator excluded before scoring, with the plain-language rule it failed.
+export interface RejectedCandidate {
+  serviceId: string;
+  name: string;
+  reason: string;
+}
+
+export interface NegotiatorStep {
+  capability: string;
+  candidates: ServiceCandidateWithEvidence[];
+  constraints: Constraint[];
+  requiredCategory?: string;
+  volume?: UsageVolume;
+  dependsOn: number[];
+}
+
+// T4.1b: the chosen combination for a chain request.
+export interface ChainComposition {
+  steps: { capability: string; chosen: CompositionChoice; dependsOn: number[] }[];
+  // Sum of step prices, product of step uptimes (as a percentage), sum of step latencies.
+  totals: { price: number; uptime: number; latencyMs?: number };
+  // Mean of the step scores.
+  score: number;
+  // How many combinations were compared, and how many met the chain-wide limits.
+  combinationsCompared: number;
+  combinationsValid: number;
+  // T4.1d: the composition graph, one edge per dependency (output of `from` feeds `to`).
+  edges?: { from: string; to: string }[];
+}
+
 export interface Composition extends CompositionBlueprint {
   iteration: number;
   scoreBreakdown: ScoreBreakdown;
+  // Every candidate excluded by a hard filter (wrong category, a failed mandatory
+  // constraint, or rejected on an earlier attempt), so explanations can name them.
+  rejected?: RejectedCandidate[];
+  chain?: ChainComposition;
 }
 
 // ── Violation (S6.5) ──────────────────────────────────────────────────────
@@ -338,12 +478,53 @@ export interface NegotiationAttempt {
 // parentDecisionId linking to the preceding decision, the iteration number,
 // and the score/constraint/evidence context behind that specific decision.
 
+// Token usage reported by the language-model API for one call.
+export interface LlmUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+// Converts an OpenAI-compatible "usage" object (as Groq returns it) into LlmUsage, or
+// undefined when the response did not include usable counts.
+export function toLlmUsage(raw: unknown): LlmUsage | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const u = raw as Record<string, unknown>;
+  const prompt = u.prompt_tokens, completion = u.completion_tokens, total = u.total_tokens;
+  if (typeof prompt !== "number" || typeof completion !== "number" || typeof total !== "number") return undefined;
+  return { promptTokens: prompt, completionTokens: completion, totalTokens: total };
+}
+
+// One pipeline stage's wall-clock time, measured by the Conductor around each call.
+export interface StageTiming {
+  stage: string;
+  durationMs: number;
+}
+
 export interface DecisionProvenance extends AuditRecord {
   decisionId: string;
   parentDecisionId?: string;
+  // L14: further inputs besides the parent (a chain's other Broker decisions).
+  relatedDecisionIds?: string[];
   iteration: number;
+  // Latency and cost evidence: how long the agent's own work took, the language-model
+  // tokens it used (LLM agents only), and whether this was the first record written by
+  // its process (a cold start, for a Lambda container).
+  durationMs?: number;
+  usage?: LlmUsage;
+  coldStart?: boolean;
   score?: ScoreBreakdown;
   constraintStatus?: "pass" | "fail" | "n/a";
   evidence?: Evidence[];
   status: "success" | "failure" | "escalated";
+}
+
+// Keep-warm ping (T2.6): a scheduled rule invokes every agent with { warmup: true }; each
+// answers { warmed: true } after opening its connections, and does no real work.
+export interface WarmupEvent {
+  warmup: true;
+}
+export const WARMED = { warmed: true } as const;
+export function isWarmup(event: unknown): event is WarmupEvent {
+  return typeof event === "object" && event !== null && (event as { warmup?: unknown }).warmup === true;
 }

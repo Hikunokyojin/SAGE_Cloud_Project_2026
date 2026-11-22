@@ -11,7 +11,8 @@ Final run: 2026-10-04 (`evaluation/results/raw-results.json`, `evaluation/result
 
 ### Metrics
 
-- **CSR / CVR** (constraint satisfaction / violation rate): share of all 27 requests where the condition *approved* a service that does / does not satisfy the request. Satisfying means the service is in the requested capability and meets every mandatory constraint stated in the request ("under $0.05", "at least 99.5% uptime"). This is checked against real catalog values by `ground-truth.ts`, independently of the condition's own verdict. Correct escalations count in neither, so **the maximum achievable CSR is 20/27 = 74.1%**. A unit test (`ground-truth.test.ts`) verifies that every expected answer satisfies its ground truth and that the 7 escalation cases have no valid answer in the catalog.
+- **CSR / CVR** (constraint satisfaction / violation rate): share of all 27 requests where the condition *approved* a service that does / does not satisfy the request. Satisfying means the service is in the requested capability and meets every mandatory constraint stated in the request ("under $0.05", "at least 99.5% uptime"). This is checked against real catalog values by `ground-truth.ts`, independently of the condition's own verdict. Correct escalations count in neither, so whole-batch CSR cannot exceed 20/27; that is why the split below (T4.4) is the headline measure. A unit test (`ground-truth.test.ts`) verifies that every expected answer satisfies its ground truth and that the 7 escalation cases have no valid answer in the catalog.
+- **Answerable CSR and escalation recall (T4.4):** the two halves of the job, scored separately. *Answerable CSR* is valid approvals among the 20 cases that have a valid answer (100% is achievable). *Escalation recall* is the share of the 7 unanswerable cases that were handed to a human; approving one or failing with an error is a miss.
 - **Selection accuracy:** the outcome matches the expected outcome (approve or escalate) and, where the case names one, the expected best service. A valid but non-optimal pick (e.g. not the cheapest when the request asks for the cheapest) lowers selection accuracy but is *not* a violation.
 - **HITL%:** share of requests where the condition's code path actually invoked the human-escalation route. Only Full SAGE and ablation F run that route. The other conditions return an "escalated" outcome without notifying anyone, so they score 0% even when they escalate correctly; use selection accuracy to compare escalation correctness.
 - **Audit completeness:** share of requests that produced a decision-provenance chain in the harness (not a DynamoDB persistence check; that was verified live against the deployed system).
@@ -27,10 +28,29 @@ Final run: 2026-10-04 (`evaluation/results/raw-results.json`, `evaluation/result
 | Baseline 3: SAGE without Reviewer | 70.4% | 3.7% | 88.9% | 0.74 | 0.0% | 1,361 | 1.74 | 74.1% | 74.1% | 0.0% |
 | Proposed: full SAGE (with capability check) | 74.1% | 0.0% | 88.9% | 0.74 | 22.2% | 1,619 | 1.74 | 96.3% | 100.0% | 3.7% |
 
-- **Full SAGE now matches the best condition on constraint safety.** With the capability check, it reaches the maximum possible CSR (74.1%) with no violations, the same as Baseline 1. It is the only condition that also keeps a decision-provenance chain for its requests.
+- **Full SAGE now matches the best condition on constraint safety.** With the capability check, it approves a valid service for all 20 answerable cases (whole-batch CSR 74.1%) with no violations, the same as Baseline 1. It is the only condition that also keeps a decision-provenance chain for its requests.
 - **Baseline 1 is still the most accurate at choosing the *best* option** (100% against 88.9%). The likely reason is that the whole 21-service catalog fits in a single prompt, so the model sees every option at once. That approach does not scale to a realistic marketplace, and it has no decision provenance or deterministic scoring.
 - **Full SAGE's three remaining misses.** Two (CO-1, CO-3) picked a valid but not the cheapest service: Intent read "the cheapest possible …; performance and uptime are a low priority" without a strong price preference. That is an Intent extraction-quality limit, not a violation. The third (NVS-3, "compute under $0.001") **failed instead of escalating**: in this run Broker's search returned no candidates at all, and the pipeline's "no candidates found" path returns a bare failure without notifying a human. That path predates the capability check; it has since been fixed and deployed (see below), after this run. It also accounts for the one error and the one incomplete audit chain.
 - **Baseline 2 is the least safe condition.** Its 18.5% CVR comes from picking services from the wrong capability, or ones that break stated constraints, with no checking step.
+
+## Answerable vs. unanswerable (T4.4, 2026-11-19)
+
+Recomputed from the same run (`raw-results.json`, no new model calls) with `answerableCsr` and `escalationRecall` in `evaluation/src/metrics.ts`. This table replaces the old "maximum achievable 74.1%" framing.
+
+| Condition | Answerable CSR (of 20) | Invalid approvals (of 20) | Escalation recall (of 7) | Unanswerable approved / failed |
+|---|---|---|---|---|
+| Baseline 1: LLM only | 100% (20) | 0 | 100% (7) | 0 / 0 |
+| Baseline 2: retrieval + LLM | 75% (15) | 5 | 100% (7) | 0 / 0 |
+| Full SAGE (A, with capability check) | **100% (20)** | **0** | 85.7% (6) | 0 / 1 (NVS-3, path since fixed) |
+| B: without Reviewer | 95% (19) | 1 | 100% (7) | 0 / 0 |
+| C: without re-negotiation | 95% (19) | 1 | 100% (7) | 0 / 0 |
+| D: LLM-based Negotiator | 95% (19) | 0 | 14.3% (1) | 0 / 6 |
+| E: without scoped payloads | 100% (20) | 0 | 85.7% (6) | 1 / 0 |
+| F: without provenance | 90% (18) | 1 | 100% (7) | 0 / 0 |
+
+- Full SAGE gets every answerable case right with no invalid approvals. Its one escalation miss is NVS-3, which failed instead of escalating on the old "no candidates" path, fixed and deployed after this run.
+- D's weakness is now plain: it answers well but escalates only 1 of 7 impossible requests.
+- With 20 and 7 cases these are single runs with wide uncertainty; T4.3 adds 5 runs per condition and 95% intervals, and moves the scoring to the 160-case T4.2 set once its labels are agreed.
 
 ## Ablation study
 
@@ -87,15 +107,154 @@ Four further corrections were made for this run:
 3. **Every condition got the same LLM settings.** The harness's baselines and LLM-based ablations had their own, smaller token budgets (100 for ablation D). All conditions now match the deployed agents.
 4. **Results are checkpointed after each condition** instead of only at the end of a roughly one-hour run.
 
+## Retrieval cut-off calibration (2026-11-05)
+
+The Broker's similarity cut-off was a hand-picked 0.35. It is now chosen from labelled data by `evaluation/src/retrieval/calibrate.ts` (51 requests the catalogue can serve, 15 it cannot), using the same local embedding model as the Broker. Output: `results/retrieval-calibration.json`.
+
+| Cut-off | Recall@5, in-catalogue | Out-of-catalogue refused |
+|---|---|---|
+| 0.35 (old) | 0.98 | 0.93 (1 of 15 got through) |
+| **0.38 (now)** | **0.96** | **1.00** |
+
+Two in-catalogue phrasings still miss at 0.38 ("serve static assets globally", 0.228; "cloud servers", 0.365); richer service descriptions would fix them. The margin is thin (the highest out-of-catalogue score is 0.371) and the set is small, so the cut-off must be recalibrated when the catalogue grows.
+
+## Live T01 correction (2026-11-05)
+
+The original live T01 ("highly reliable database ... under USD 2") was recorded as a pass, but it returned an unrelated service: the catalogue has no database service, and the Broker searched every category. It is now a **fail, fixed**. Such a request escalates to a human (T1.1), and the live re-test returned HTTP 202 `paused_for_review` (requestId `44e98e58-22e9-4cca-96b8-560426a934af`). That re-test also exposed an SNS subject over 100 characters, which is fixed and covered by a regression test.
+
+## Recovery drill (T2.2, 2026-11-06)
+
+Run against the live Conductor, following `docs/OPERATIONS.md`.
+
+| Step | What was done | Result |
+|---|---|---|
+| Process crash | `systemctl kill -s KILL conductor.service` | systemd restarted it with a new PID; `/health` answered after **3.7 s** |
+| Reboot path (RT5) | alarm `sage-conductor-instance-check-reboot` forced to ALARM | public `/health` down at 3 s, back at **24 s**, no manual step (target under 2 minutes) |
+| Alarm wiring | alarm history | "Reboot EC2 Instance ... completed successfully"; both SNS notifications executed |
+
+The host-failure (recover) path cannot be triggered on purpose; its wiring is covered by the CDK test.
+
+## Audit tamper test (T2.4, 2026-11-07)
+
+On the live system, request `5f8162e7-36ba-4821-900f-5ceb438b5463` wrote 6 chained records. `npm run audit:verify` reported `INTACT: 6 chained record(s)`. The Broker record's `reasoning` was then edited directly in DynamoDB (with an operator account; the system's own roles are explicitly denied updates). The check reported:
+
+```
+TAMPERED: record 3 of 6 (BrokerAgent, 2026-11-07T06:58:32.455Z): content does not match its hash: the record was edited.
+```
+
+Deletion, insertion, reordering and an edit whose hash was recomputed afterwards are covered by unit tests (`packages/audit/src/chain.test.ts`).
+
+## Human-in-the-loop resume (T2.3, 2026-11-07)
+
+Three forced escalations, each resolved from the link in the alert email: approve (BudgetResize, status `approved`), reject (status `rejected`), and relax the price limit to 0.05 (status `rerun`; the re-run chose CloudVault, score 0.821, Reviewer approved). Each human decision is a `HumanInTheLoop` audit record linked to the escalation it answers. The live test found three defects, all fixed: no email subscriber on the alert topic, a stale dashboard `index.html` after deploy, and the relax form losing typed decimals.
+
+## Start-up time (T2.6, RT12, 2026-11-07)
+
+Measured from the Lambda logs (`REPORT` lines) and from outside the API. "Cold call" is load time plus the first call's duration.
+
+| | Before (7 days to 2026-11-07) | After keep-warm and memory change |
+|---|---|---|
+| Warm request, end to end | about 4 s | 5 requests: 1.19 to 1.97 s, median 1.40 s (**RT12 warm p95 under 3 s: pass**) |
+| Share of calls that were cold | most (5 or 6 of 7 to 14 per agent) | 1 per agent (the first call after deploy), then all warm |
+| Broker cold call | about 4.8 s | 2.5 s (783 ms load + 1,752 ms first call, model included) |
+| Negotiator cold call | about 1.5 s (128 MB) | 0.57 s (512 MB) |
+| Explainer cold call | about 2.6 s | 1.0 s |
+| Fully cold request (sum of cold calls) | about 15 s (one trace: 14.4 s) | about 6 s, estimated, at the RT12 limit |
+
+With the 5-minute pings, a fully cold request now happens essentially only right after a deploy. The four warm-request samples with about 30 ms Intent times were cache hits (repeated wording); a new wording adds the Groq call, about 0.3 to 0.6 s, which still fits under 3 s. Provisioned concurrency (paid) was not needed.
+
+## Language-model fallback drill (T2.7, 2026-11-08)
+
+Groq was forced to fail (an invalid model name on the Intent and Explainer Lambdas), five requests were sent, and Groq was restored afterwards.
+
+| Round | Backup setting | Completed | What failed |
+|---|---|---|---|
+| 1 | `google/gemma-4-31b-it:free`, 6 s | 0 of 1 | the free model was rate-limited upstream (429) |
+| 2 | `openrouter/free`, 6 s | 2 of 5 | the free router often needed more than 6 s |
+| 3 | `openrouter/free`, 15 s fallback limit | 3 of 5 | once over 15 s; once the fallback got the primary's 6 s limit because the primary's circuit was open (a bug, fixed with a test) |
+| 4 (2026-11-11) | as 3, with the fix | **4 of 5** | once the free model returned an empty answer; once the Explainer's fallback was too slow and it used the fact sheet (request still completed) |
+
+In every round the switch-over happened on each request, and the circuit breaker skipped Groq after three failures. Completed requests took 8 to 14 s, with model-written explanations. The free fallback keeps the system answering through a Groq outage most of the time, but a free model has no guaranteed speed, so it is a best-effort backup, not a guarantee.
+
+## Real catalogue live (T3.4, RT6, 2026-11-12)
+
+The live system now searches 213 real services in 35 categories. The 21 synthetic services were removed from MongoDB and Qdrant and are kept in the repo for the offline tests above. Real prices are turned into an estimated USD per month at a fixed usage level (for example 100,000 emails), so services priced per email, per GB or per seat can be compared. Uptime and latency blend our own probe results with the provider's claim.
+
+**Retrieval calibration on v2** (105 in-catalogue and 15 out-of-catalogue labelled queries, `results/retrieval-calibration-v2.json`): at the existing cut-off of 0.38, recall@5 is **0.952** (target at least 0.95), so the cut-off is unchanged. Only **60%** of out-of-catalogue requests are refused (100% on the 21-service set), because a bigger catalogue has closer near neighbours (Kubernetes scored 0.546, e-signatures 0.520).
+
+**Live request** (deployed Lambdas): "transactional email API, about 100k emails a month, under $50 a month, at least 99.9% uptime". Broker returned five real email services; Brevo was chosen ($7.50 a month, score 0.610) ahead of Amazon SES (0.596) and SendGrid (0.547); Mailgun and Postmark were rejected on price ($180). The model-worded explanation passed the fact check.
+
+**RT6, an outage changes the selection: pass.** Brevo's live uptime was set to 95% with `agents/broker/scripts/simulate-outage.ts`. The same request then rejected Brevo ("uptime 95% is not at least 99.9%") and chose Amazon SES. Brevo's real values were restored afterwards. The outage was written straight to MongoDB, because probe results do not yet reach the live database on their own ([LOOPHOLES.md](LOOPHOLES.md), L5).
+
+Gaps found in this stage are tracked in [LOOPHOLES.md](LOOPHOLES.md).
+
+## Reviewer fault injection (T4.5, 2026-11-19)
+
+Does the Reviewer catch a buggy Negotiator? `evaluation/faults/` takes each of the 211 real catalogue services, applies seven plausible Negotiator bugs, and runs the real Reviewer handler on the corrupted pick (audit and SNS mocked). Every fault describes a pick the request should not get, so an approval is a miss. Reproduce with `npm run faults -w @sage/evaluation` (no model calls, under a second); results in `evaluation/results/t45-faults.json`.
+
+| Injected fault | Example | Injected | Caught |
+|---|---|---|---|
+| Off-by-one price limit (`<` checked as `<=`) | "price under 0.1" passes a service at 0.1 | 207 | **100%** |
+| Off-by-one uptime limit (`>` checked as `>=`) | "uptime above 99.954" passes 99.954 | 211 | **100%** |
+| Wrong unit (list amount reported as the monthly price) | 0.035 per 10,000 calls reported as $0.035/month | 115 | **100%** |
+| Stale price (monthly price 20% low) | 0.08 reported instead of 0.10 | 194 | **100%** |
+| Wrong category | an api-gateway service offered for email-delivery | 211 | **100%** |
+| Stale uptime (inflated to 99.99%) | 99.954 reported as 99.99 | 165 | 0% |
+| Stale list price (list and monthly price both 20% low) | consistent but out-of-date figures | 194 | 1% |
+| **All** | | **1,297** | **72.5%** |
+
+- The Reviewer catches every fault it has an independent check for: the limit arithmetic, the category, and the price, which it recomputes from the provider's list price and unit.
+- It cannot catch a wrong value that arrives in the service record itself (uptime, or a list price changed together with the price), because it checks the service object the Negotiator hands it rather than reading the catalogue again. Logged as L22.
+
+## Scale study (T4.7, 2026-11-19)
+
+How do accuracy and token use change as the catalogue grows from 21 to 100, 500 and 2,000 services? `evaluation/scale/` pads the 21-service test catalogue with **synthetic** services (flagged `synthetic: true`, ids `pad-*`), whose wording is borrowed from the real v2 catalogue. Padding inside one of the 21's categories is strictly worse than every original there (dearer, slower, less reliable), so the 27 test cases keep the same right answers at every size. Reproduce with `npm run scale -w @sage/evaluation` (local embeddings, no model calls, about 10 s); results in `evaluation/results/t47-scale.json`.
+
+- **SAGE (retrieval first):** the Broker's search run locally (same MiniLM model, category filter, every category match up to 100, 0.38 cut-off), then the real Negotiator. Intent is held at the ground truth because it never sees the catalogue, so its accuracy does not change with size. Its real soft-preference rules are applied. Tokens per request are measured: 793 tokens per model call (mean of 169 live audit records) × 1.74 calls.
+- **LLM only:** the whole catalogue goes into every prompt, as in Baseline 1. The prompt is sized, not sent (characters ÷ 4, an approximation); at 500 and above, a single request already exceeds the free tier's 8,000 tokens a minute.
+
+| Services | Padding | SAGE answerable CSR (of 20) | SAGE escalation recall (of 7) | Best service retrieved | SAGE tokens/request | LLM-only prompt tokens/request | LLM only ÷ SAGE |
+|---|---|---|---|---|---|---|---|
+| 21 | 0 | 100% | 100% | 100% | 1,380 | 1,693 | 1.2× |
+| 100 | 79 | 100% (95% before the L23/L24 fix) | 100% | 100% | 1,380 | 5,496 | 4.0× |
+| 500 | 479 | 100% (85%) | 100% | 100% (90%) | 1,380 | 25,866 (over the free-tier minute) | 18.7× |
+| 2,000 | 1,979 | 100% (65%) | 100% | 100% (65%) | 1,380 | 104,028 (close to the 131k context) | 75.4× |
+
+![Tokens per request against catalogue size](img/t47-scale-tokens.svg)
+
+- **Cost:** SAGE's tokens per request stay flat, while LLM only grows in a straight line with the catalogue. SAGE is already cheaper at 21 services (1.2×) and 75× cheaper at 2,000. LLM only stops being runnable on the free tier somewhere between 100 and 500 services, and runs out of context at about 2,500. Dollar cost is tokens × the provider's price; the Groq price page could not be read automatically, so no dollar figure is given.
+- **Accuracy:** SAGE escalates every impossible request at every size. Before the fix, answerable accuracy fell from 100% to 65% as same-category padding crowded in, for two logged reasons, both now fixed:
+  - **L23:** the Broker kept only the closest text matches before any scoring (the live Broker returned 5), so in a crowded category the best-value service could be cut. With a known category it now returns every match up to 100, and the Negotiator decides.
+  - **L24:** the Negotiator gave text similarity a fixed weight of 0.5, so a closer-worded service could beat a cheaper, faster and more reliable one (SS-1, "the cheapest email service", picked a padded SparkPost). Similarity now only breaks ties. A second cause showed up while fixing it: absolute scores clamp at 1, so every service better than the category's reference best tied; tied services are now compared with each other on price, uptime and latency before similarity.
+  - After the fix SAGE scores 100% answerable at every size, up to 2,000 services.
+- **Limits of this study:** the padding text is real provider copy, often a closer match than the 21 hand-written test descriptions, so the drop is probably larger than on a real catalogue of the same size. LLM-only accuracy at 100 and above is not measured; doing so needs a paid tier or a slow free fallback (another plan). The accuracy crossover therefore isn't shown; the token and cost crossover is shown.
+
+## Explanation faithfulness and rating (T4.6, 2026-11-19)
+
+**Faithfulness (automatic).** `evaluation/explain/faithfulness.ts` re-checks every live Explainer audit record against the raw decision the Explainer was given, not against its own fact sheet. Every number must come from the decision (rounded is fine), no internal ranking score may be shown, the chosen service(s) and every rejected candidate must be named, and "no alternatives" must not be claimed when there were some. Run: `npm run explain -w @sage/evaluation -- <explainer-scan.json> [intent-scan.json]` (read-only DynamoDB scans). Results: `results/t46-faithfulness.json`.
+
+| Explanations | Faithful | Ranking score shown to the client |
+|---|---|---|
+| Before T1.4 (model wrote freely) | 23 / 43 (53%) | 20 |
+| T1.4 to 2026-11-13 (claim check, scores still in the fact sheet) | 53 / 73 (73%) | 20 |
+| Current, model wording | 24 / 24 (100%) | 0 |
+| Current, plain fact sheet (model wording failed the check) | 5 / 5 (100%) | 0 |
+
+Every failure since T1.4 was an internal 0-to-1 ranking score passed on to the client, which the 2026-11-13 change removed. No current explanation contains an invented number or leaves out a chosen or rejected service. RT14 asks for 200 live requests; 29 exist since the fix, so the target is not yet met in volume (another 171 live requests is about 236k tokens, over one day of Groq's free tier).
+
+**Human rating.** A rating page (https://claude.ai/artifact/FnQLwYtBdFDhmX793K271X, share as Contributor) shows the 20 most recent current explanations next to their requests (`results/t46-rating-sample.json`), rated 1 to 5 for clarity and correctness. Raters see only their own answers. Summarise with `tsx explain/ratings.ts <folder>`. Results (2026-11-22, `results/t46-ratings.json`): 1 rater, 20 of 20 explanations rated; clarity mean 5.0 and correctness mean 5.0 (every rating 5). With one rater and no spread, this shows no explanation was judged unclear or wrong, but it cannot measure agreement between raters or separate good explanations from excellent ones.
+
 ## Limitations
 
-1. **Small catalog.** 21 services fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
+1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
 2. **Single run per condition.** LLM sampling is nondeterministic. With 27 cases, one case is 3.7 percentage points, so most gaps between SAGE variants are within noise. Only large, explained differences (D's escalation failures, E's impossible approval, Baseline 2's violation rate) should be relied on.
 3. **Ground truth is hand-derived** from each request's wording and the catalog, and validated by unit test. "Cheapest" and "fastest" are treated as preferences scored by selection accuracy, not as constraints.
 4. **HITL% and explanation consistency are partial measures** (see Metrics). Escalation correctness is better read from selection accuracy, and explanation quality is not judged.
 5. **The local harness has no SNS topic or audit-table writes.** Both are verified on the deployed system instead (live escalation test and the 2026-10-04 dry run).
 6. **Groq free tier: 8,000 tokens per minute and 200,000 per day.** With the fixed settings, the full run completed with no rate-limit retries.
 7. **Only full SAGE was re-run with the capability check.** The baselines and ablations B–F are from 2026-10-04 and run without it, so A-versus-ablation differences partly reflect the capability check.
+8. **Monthly prices on the live system.** Per-request budgets ("under $0.05 per image") are compared with estimated monthly prices and match almost nothing; monthly budgets work. Flat plan prices do not change with volume, so a cheap plan can win a high-volume request it would not cover (LOOPHOLES L1 to L3).
+9. **Out-of-catalogue refusal on v2 is 60%**, below the 95% target (LOOPHOLES L4).
 
 ## Summary
 

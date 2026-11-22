@@ -1,0 +1,237 @@
+{
+ "generatedAt": "2026-11-21T22:09:14.340Z",
+ "services": 211,
+ "cleanFalseAlarms": 0,
+ "injected": 1297,
+ "caught": 1297,
+ "rate": 1,
+ "byKind": {
+  "off-by-one-price": {
+   "injected": 207,
+   "caught": 207
+  },
+  "off-by-one-uptime": {
+   "injected": 211,
+   "caught": 211
+  },
+  "stale-price": {
+   "injected": 194,
+   "caught": 194
+  },
+  "wrong-category": {
+   "injected": 211,
+   "caught": 211
+  },
+  "stale-uptime": {
+   "injected": 165,
+   "caught": 165
+  },
+  "stale-list-price": {
+   "injected": 194,
+   "caught": 194
+  },
+  "wrong-unit-price": {
+   "injected": 115,
+   "caught": 115
+  }
+ },
+ "examples": {
+  "off-by-one-price": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "limit \"price under 0.1\" (lt) passed by a <= check",
+    "caught": true,
+    "violations": [
+     "price"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "limit \"price under 0.35\" (lt) passed by a <= check",
+    "caught": true,
+    "violations": [
+     "price"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "limit \"price under 0.35\" (lt) passed by a <= check",
+    "caught": true,
+    "violations": [
+     "price"
+    ]
+   }
+  ],
+  "off-by-one-uptime": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "limit \"uptime above 99.954\" (gt) passed by a >= check",
+    "caught": true,
+    "violations": [
+     "uptime"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "limit \"uptime above 99.954\" (gt) passed by a >= check",
+    "caught": true,
+    "violations": [
+     "uptime"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "limit \"uptime above 99.954\" (gt) passed by a >= check",
+    "caught": true,
+    "violations": [
+     "uptime"
+    ]
+   }
+  ],
+  "stale-price": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "stale price 0.08 instead of 0.1",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "stale price 0.28 instead of 0.35",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "stale price 0.28 instead of 0.35",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   }
+  ],
+  "wrong-category": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "api-gateway service offered for email-delivery",
+    "caught": true,
+    "violations": [
+     "capability"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "api-gateway service offered for email-delivery",
+    "caught": true,
+    "violations": [
+     "capability"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "api-gateway service offered for email-delivery",
+    "caught": true,
+    "violations": [
+     "capability"
+    ]
+   }
+  ],
+  "stale-uptime": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "uptime 99.954 reported as 99.99",
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "uptime 99.954 reported as 99.99",
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "uptime 99.954 reported as 99.99",
+    "caught": true,
+    "violations": [
+     "catalogue uptime",
+     "uptime"
+    ]
+   }
+  ],
+  "stale-list-price": [
+   {
+    "service": "svc-aws-api-gateway-http",
+    "fault": "list price and monthly price both 20% low",
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-aws-api-gateway-rest",
+    "fault": "list price and monthly price both 20% low",
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-azure-api-management",
+    "fault": "list price and monthly price both 20% low",
+    "caught": true,
+    "violations": [
+     "catalogue listPrice",
+     "price",
+     "price"
+    ]
+   }
+  ],
+  "wrong-unit-price": [
+   {
+    "service": "svc-azure-api-management",
+    "fault": "list amount 0.035 per 10,000 calls reported as 0.035/month",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-fastly",
+    "fault": "list amount 2.5 per 10000 requests (after 100K free) reported as 2.5/month",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   },
+   {
+    "service": "svc-aws-cognito",
+    "fault": "list amount 0.0055 per monthly active user reported as 0.0055/month",
+    "caught": true,
+    "violations": [
+     "price",
+     "price"
+    ]
+   }
+  ]
+ }
+}

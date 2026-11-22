@@ -1,4 +1,5 @@
 import * as path from "path";
+import { assertFreshBundles } from "./dist-freshness";
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -11,6 +12,8 @@ export interface AgentsConstructProps {
   escalationTopic: sns.ITopic;
   /** agent_decisions audit-trail table -- every agent writes its own AuditRecord here. */
   auditTable: dynamodb.ITable;
+  /** Shared Intent parse cache (TTL). */
+  intentCacheTable: dynamodb.ITable;
 }
 
 /**
@@ -65,10 +68,31 @@ export class AgentsConstruct extends Construct {
 
     const groqSsmPolicy = new iam.PolicyStatement({
       actions: ["ssm:GetParameter"],
-      resources: [`arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`],
+      // T2.7: the fallback provider's key sits next to Groq's.
+      resources: [
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/GROQ_API_KEY`,
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/OPENROUTER_API_KEY`,
+        `arn:aws:ssm:${region}:${account}:parameter/sage/shared/CEREBRAS_API_KEY`,
+      ],
     });
 
+    // Audit writers (T2.4): append-only. PutItem to add a record, Query to read the request's
+    // latest hash for the chain, and an explicit Deny on changing or removing records, so
+    // no later grant can quietly allow it.
+    const grantAuditWrite = (fn: lambda.Function) => {
+      props.auditTable.grant(fn, "dynamodb:PutItem", "dynamodb:Query");
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.DENY,
+          actions: ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"],
+          resources: [props.auditTable.tableArn],
+        })
+      );
+    };
+
     const agentDir = (name: string) => path.join(__dirname, "..", "..", "..", "agents", name, "dist");
+    // Refuse to synthesise from stale bundles (WP3.5 L7).
+    assertFreshBundles(path.join(__dirname, "..", "..", ".."), ["input-guard", "intent", "broker", "negotiator", "reviewer", "explainer"]);
 
     this.inputGuardFn = new lambda.Function(this, "InputGuardFunction", {
       functionName: "sage-input-guard",
@@ -76,32 +100,34 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("input-guard")),
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       // Rule-based, no external calls -- the only extra permission needed beyond the
       // default CloudWatch Logs grant is dynamodb:PutItem for its own audit record.
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
-    props.auditTable.grant(this.inputGuardFn, "dynamodb:PutItem");
+    grantAuditWrite(this.inputGuardFn);
 
     this.intentFn = new lambda.Function(this, "IntentFunction", {
       functionName: "sage-intent",
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("intent")),
-      timeout: Duration.seconds(15),
-      memorySize: 256,
+      timeout: Duration.seconds(25),
+      memorySize: 512,
       // AWS_REGION is injected automatically by the Lambda runtime -- setting it here
       // is rejected by CDK ("reserved environment variable"). GROQ_API_KEY is fetched
       // at runtime from SSM by the agent's own code (see src/index.ts).
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        INTENT_CACHE_TABLE_NAME: props.intentCacheTable.tableName,
       },
     });
     this.intentFn.addToRolePolicy(groqSsmPolicy);
+    props.intentCacheTable.grant(this.intentFn, "dynamodb:GetItem", "dynamodb:PutItem");
     this.intentFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.intentFn, "dynamodb:PutItem");
+    grantAuditWrite(this.intentFn);
 
     this.brokerFn = new lambda.Function(this, "BrokerFunction", {
       functionName: "sage-broker",
@@ -112,7 +138,7 @@ export class AgentsConstruct extends Construct {
       // The local embedding model (onnxruntime-node running all-MiniLM-L6-v2) needs real
       // memory and CPU headroom to load and run -- 256MB (enough for a thin API-calling
       // function) is not enough for in-process ML inference.
-      memorySize: 1024,
+      memorySize: 1769,
       // MONGO_URI / QDRANT_URL / QDRANT_API_KEY are SSM SecureString parameters, fetched
       // at runtime by the agent's own code (see agents/broker/src/index.ts) --
       // Lambda's Environment.Variables cannot hold an ssm-secure dynamic reference
@@ -134,7 +160,7 @@ export class AgentsConstruct extends Construct {
       })
     );
     this.brokerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.brokerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.brokerFn);
 
     this.negotiatorFn = new lambda.Function(this, "NegotiatorFunction", {
       functionName: "sage-negotiator",
@@ -142,28 +168,39 @@ export class AgentsConstruct extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("negotiator")),
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       // Pure deterministic computation -- no external calls beyond its own audit write.
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        // Score against the real catalogue's reference values (WP3.5 L6).
+        SAGE_CATALOGUE: "v2",
       },
     });
-    props.auditTable.grant(this.negotiatorFn, "dynamodb:PutItem");
+    grantAuditWrite(this.negotiatorFn);
 
     this.reviewerFn = new lambda.Function(this, "ReviewerFunction", {
       functionName: "sage-reviewer",
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: lambda.Code.fromAsset(agentDir("reviewer")),
-      timeout: Duration.seconds(10),
-      memorySize: 128,
+      // L22: the Reviewer reads the chosen services from MongoDB; a cold connection takes a few seconds.
+      timeout: Duration.seconds(15),
+      memorySize: 512,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
         AUDIT_TABLE_NAME: props.auditTable.tableName,
+        CATALOGUE_CHECK: "mongo",
       },
     });
+    this.reviewerFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [`arn:aws:ssm:${region}:${account}:parameter/sage/broker/MONGO_URI`],
+      })
+    );
+    this.reviewerFn.addToRolePolicy(ssmKmsDecryptPolicy);
     props.escalationTopic.grantPublish(this.reviewerFn);
-    props.auditTable.grant(this.reviewerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.reviewerFn);
 
     // Shares Reviewer's dist bundle (same two-functions-from-one-asset pattern as
     // Explainer/EscalationExplainer below) -- Conductor calls this when Negotiator
@@ -176,14 +213,14 @@ export class AgentsConstruct extends Construct {
       handler: "index.escalateUnsatisfiable",
       code: reviewerAsset,
       timeout: Duration.seconds(10),
-      memorySize: 128,
+      memorySize: 512,
       environment: {
         SNS_TOPIC_ARN: props.escalationTopic.topicArn,
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
     props.escalationTopic.grantPublish(this.unsatisfiableEscalationFn);
-    props.auditTable.grant(this.unsatisfiableEscalationFn, "dynamodb:PutItem");
+    grantAuditWrite(this.unsatisfiableEscalationFn);
 
     const explainerAsset = lambda.Code.fromAsset(agentDir("explainer"));
 
@@ -192,29 +229,29 @@ export class AgentsConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.handler",
       code: explainerAsset,
-      timeout: Duration.seconds(20),
-      memorySize: 256,
+      timeout: Duration.seconds(30),
+      memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
     this.explainerFn.addToRolePolicy(groqSsmPolicy);
     this.explainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.explainerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.explainerFn);
 
     this.escalationExplainerFn = new lambda.Function(this, "EscalationExplainerFunction", {
       functionName: "sage-escalation-explainer",
       runtime: lambda.Runtime.NODEJS_24_X,
       handler: "index.explainEscalation",
       code: explainerAsset,
-      timeout: Duration.seconds(20),
-      memorySize: 256,
+      timeout: Duration.seconds(30),
+      memorySize: 512,
       environment: {
         AUDIT_TABLE_NAME: props.auditTable.tableName,
       },
     });
     this.escalationExplainerFn.addToRolePolicy(groqSsmPolicy);
     this.escalationExplainerFn.addToRolePolicy(ssmKmsDecryptPolicy);
-    props.auditTable.grant(this.escalationExplainerFn, "dynamodb:PutItem");
+    grantAuditWrite(this.escalationExplainerFn);
   }
 }

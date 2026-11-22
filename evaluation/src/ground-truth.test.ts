@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { GROUND_TRUTH, satisfiesRequest } from "./ground-truth";
 import { TEST_CASES } from "./test-cases";
+import { CATALOGUE_REFERENCES, LIVE_CATALOGUE_REFERENCES } from "@sage/shared-types";
+import { toV1, type CatalogueServiceV2 } from "@sage/catalogue";
 
 const raw = JSON.parse(readFileSync(join(__dirname, "..", "..", "data", "services.json"), "utf-8"));
 const catalog: { serviceId: string }[] = Array.isArray(raw) ? raw : raw.services;
@@ -44,6 +46,37 @@ describe("GROUND_TRUTH consistency with the test suite and catalog", () => {
   it("treats every expected service as valid", () => {
     for (const tc of TEST_CASES.filter((t) => t.expectedServiceId)) {
       expect(satisfiesRequest(tc.id, tc.expectedServiceId)).toBe(true);
+    }
+  });
+});
+
+describe("CATALOGUE_REFERENCES", () => {
+  it("matches data/services.json exactly (run npm run catalogue:refs after changing the catalogue)", () => {
+    const expected: Record<string, { price: { min: number; max: number }; uptime: { min: number; max: number }; latencyMs: { min: number; max: number } }> = {};
+    for (const s of raw as { capability: string; price: number; uptime: number; latencyMs: number }[]) {
+      const r = (expected[s.capability] ??= {
+        price: { min: s.price, max: s.price },
+        uptime: { min: s.uptime, max: s.uptime },
+        latencyMs: { min: s.latencyMs, max: s.latencyMs },
+      });
+      r.price = { min: Math.min(r.price.min, s.price), max: Math.max(r.price.max, s.price) };
+      r.uptime = { min: Math.min(r.uptime.min, s.uptime), max: Math.max(r.uptime.max, s.uptime) };
+      r.latencyMs = { min: Math.min(r.latencyMs.min, s.latencyMs), max: Math.max(r.latencyMs.max, s.latencyMs) };
+    }
+    expect(CATALOGUE_REFERENCES).toEqual(expected);
+  });
+
+  it("LIVE_CATALOGUE_REFERENCES matches the real services in data/services.v2.json as seeded (WP3.5 L6)", () => {
+    const v2: CatalogueServiceV2[] = JSON.parse(readFileSync(join(__dirname, "..", "..", "data", "services.v2.json"), "utf-8"));
+    const live = v2.filter((s) => !s.synthetic).map(toV1);
+    const cats = new Set(live.map((s) => s.capability));
+    expect(Object.keys(LIVE_CATALOGUE_REFERENCES).sort()).toEqual([...cats].sort());
+    for (const s of live) {
+      const r = LIVE_CATALOGUE_REFERENCES[s.capability];
+      expect(s.price).toBeGreaterThanOrEqual(r.price.min);
+      expect(s.price).toBeLessThanOrEqual(r.price.max);
+      expect(s.uptime).toBeGreaterThanOrEqual(r.uptime.min);
+      expect(s.uptime).toBeLessThanOrEqual(r.uptime.max);
     }
   });
 });

@@ -43,6 +43,8 @@ export const GROUND_TRUTH: Record<string, GroundTruth> = {
   "NVS-1": { capability: "image-resizing", constraints: [["uptime", "gte", 100]] },
   "NVS-2": { capability: "object-storage", constraints: [["latencyMs", "lt", 10]] },
   "NVS-3": { capability: "compute", constraints: [["price", "lt", 0.001]] },
+  // "database" is deliberately not a catalogue category: no service can be valid.
+  "NVS-4": { capability: "database", constraints: [["uptime", "gte", 99.5], ["price", "lt", 2]] },
   "HITL-1": { capability: "email-delivery", constraints: [["price", "lt", 0.0001], ["uptime", "gte", 99.99]] },
   "HITL-2": { capability: "messaging", constraints: [["price", "lt", 0.001], ["latencyMs", "lt", 10]] },
 };

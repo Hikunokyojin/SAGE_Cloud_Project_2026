@@ -11,6 +11,8 @@ import type {
   InputGuardAgentOutput,
   Violation,
   UnsatisfiableEscalationInput,
+  StageTiming,
+  NegotiatorStep,
 } from "@sage/shared-types";
 
 // One typed method per agent -- both the local (in-process) and Lambda-backed
@@ -38,6 +40,7 @@ export interface AgentInvoker {
     requestId: string;
     capability: string;
     constraints: Constraint[];
+    category?: string;
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<ServiceCandidateWithEvidence[]>;
@@ -48,14 +51,21 @@ export interface AgentInvoker {
     iteration: number;
     priorViolations?: Violation[];
     requiredCategory?: string;
+    preferences?: Intent["preferences"];
+    volume?: Intent["volume"];
+    steps?: NegotiatorStep[];
     decisionId?: string;
     parentDecisionId?: string;
+    relatedDecisionIds?: string[];
   }): Promise<Composition>;
   reviewer(input: {
     requestId: string;
     composition: Composition;
     constraints: Constraint[];
     requiredCategory?: string;
+    volume?: Intent["volume"];
+    steps?: { capability: string; constraints: Constraint[]; requiredCategory?: string; volume?: Intent["volume"]; dependsOn: number[] }[];
+    reviewUrl?: string;
     decisionId?: string;
     parentDecisionId?: string;
   }): Promise<ReviewerResult>;
@@ -79,10 +89,52 @@ export interface AgentInvoker {
   escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation>;
 }
 
-export type PipelineResult =
+export type PipelineResult = (
   | { status: "completed"; requestId: string; result: ExplainedBlueprint }
-  | { status: "paused_for_review"; requestId: string; escalation: EscalationExplanation }
-  | { status: "failed"; requestId: string; error: string };
+  | { status: "paused_for_review"; requestId: string; escalation: EscalationExplanation; review?: ReviewContext }
+  | { status: "failed"; requestId: string; error: string }
+) & {
+  // Wall-clock time of each agent call, in call order (retries appear once per attempt).
+  timings?: StageTiming[];
+};
+
+// Lambda errors arrive wrapped as "lambdaInvoker: <fn> returned an error: <message>";
+// the reviewer only needs the agent's own message.
+export function plainReason(message: string): string {
+  return message.replace(/^lambdaInvoker: \S+ returned an error: /, "");
+}
+
+// What a human reviewer needs to resume a paused request (T2.3). The Conductor stores it.
+export interface ReviewContext {
+  reason: string;
+  intent: Intent;
+  candidates: ServiceCandidateWithEvidence[];
+  // decisionId of the escalation record, so the human decision links into the chain.
+  escalationDecisionId: string;
+}
+
+export interface PipelineOptions {
+  // Signed link to the review page, put into any escalation email.
+  reviewUrl?: string;
+}
+
+// Wraps every invoker method so each call's duration is recorded, without changing what
+// the call does or returns. Timing lives here, not in the agents, because only the
+// Conductor sees the full request including network and Lambda overhead.
+function withTimings(invoker: AgentInvoker, timings: StageTiming[]): AgentInvoker {
+  const timed = {} as Record<string, unknown>;
+  for (const [stage, fn] of Object.entries(invoker) as [string, (arg: unknown) => Promise<unknown>][]) {
+    timed[stage] = async (arg: unknown) => {
+      const started = Date.now();
+      try {
+        return await fn(arg);
+      } finally {
+        timings.push({ stage, durationMs: Date.now() - started });
+      }
+    };
+  }
+  return timed as unknown as AgentInvoker;
+}
 
 // Hard safety cap independent of Reviewer's own MAX_RETRIES=3 -- if something ever
 // changed Reviewer's behavior, Conductor still refuses to loop forever (spec constraint:
@@ -99,7 +151,34 @@ const SAFETY_MAX_ATTEMPTS = 5;
 export async function runPipeline(
   requestId: string,
   rawInput: string,
-  invoker: AgentInvoker
+  invoker: AgentInvoker,
+  options: PipelineOptions = {}
+): Promise<PipelineResult> {
+  const timings: StageTiming[] = [];
+  const result = await runStages(requestId, rawInput, withTimings(invoker, timings), options);
+  return { ...result, timings };
+}
+
+// Resumes a paused request from the Broker onward with an intent a human edited
+// (for example relaxed constraints). parentDecisionId is the human decision's id, so
+// the provenance chain shows exactly where the person stepped in.
+export async function resumePipeline(
+  requestId: string,
+  intent: Intent,
+  invoker: AgentInvoker,
+  parentDecisionId: string,
+  options: PipelineOptions = {}
+): Promise<PipelineResult> {
+  const timings: StageTiming[] = [];
+  const result = await fromIntent(requestId, intent, withTimings(invoker, timings), parentDecisionId, options);
+  return { ...result, timings };
+}
+
+async function runStages(
+  requestId: string,
+  rawInput: string,
+  invoker: AgentInvoker,
+  options: PipelineOptions
 ): Promise<PipelineResult> {
   // decisionId is assigned here, once per stage invocation, and the previous
   // stage's decisionId is threaded in as parentDecisionId -- the only place in the
@@ -115,26 +194,100 @@ export async function runPipeline(
     parentDecisionId: inputGuardDecisionId,
   });
 
-  const brokerDecisionId = randomUUID();
-  const candidates = await invoker.broker({
-    requestId,
-    capability: intent.capability,
-    constraints: intent.constraints,
-    decisionId: brokerDecisionId,
-    parentDecisionId: intentDecisionId,
-  });
+  return fromIntent(requestId, intent, invoker, intentDecisionId, options);
+}
+
+async function fromIntent(
+  requestId: string,
+  intent: Intent,
+  invoker: AgentInvoker,
+  intentDecisionId: string,
+  options: PipelineOptions
+): Promise<PipelineResult> {
+  const { reviewUrl } = options;
+  // Every pause goes through here, so each one carries the same review context.
+  const paused = async (
+    reason: string,
+    candidates: ServiceCandidateWithEvidence[],
+    escalate: (decisionId: string) => Promise<EscalationExplanation>
+  ): Promise<PipelineResult> => {
+    const escalationDecisionId = randomUUID();
+    const escalation = await escalate(escalationDecisionId);
+    return {
+      status: "paused_for_review",
+      requestId,
+      escalation,
+      review: { reason, intent, candidates, escalationDecisionId },
+    };
+  };
+
+  // A request that fits no catalogue category is unresolved, not "any service will do".
+  // Without this check retrieval returns the nearest neighbour from an unrelated category
+  // (found live: a request for a database service was answered with a message queue), so
+  // it goes straight to a human instead, before any search.
+  const chainSteps = intent.steps && intent.steps.length >= 2 ? intent.steps : undefined;
+  const missing = chainSteps?.findIndex((s) => !s.category) ?? -1;
+  if (chainSteps && missing >= 0) {
+    const reason = `capability_not_in_catalogue: step ${missing + 1} "${chainSteps[missing].capability}" does not match any service category in the catalogue`;
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        kind: "capability_not_in_catalogue",
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: intentDecisionId,
+      })
+    );
+  }
+
+  if (!chainSteps && !intent.category) {
+    const reason = `capability_not_in_catalogue: "${intent.capability}" does not match any service category in the catalogue`;
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        kind: "capability_not_in_catalogue",
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: intentDecisionId,
+      })
+    );
+  }
+
+  // T4.1d: a chain runs one Broker search per step (each its own audited decision, all
+  // children of the Intent decision); a single request runs one.
+  const searches = chainSteps
+    ? chainSteps.map((s) => ({ capability: s.capability, constraints: s.constraints, category: s.category }))
+    : [{ capability: intent.capability, constraints: intent.constraints, category: intent.category }];
+  const brokerDecisionIds = searches.map(() => randomUUID());
+  const perStep = await Promise.all(
+    searches.map((s, i) =>
+      invoker.broker({ requestId, ...s, decisionId: brokerDecisionIds[i], parentDecisionId: intentDecisionId })
+    )
+  );
+  const brokerDecisionId = brokerDecisionIds[brokerDecisionIds.length - 1];
+  const candidates = perStep.flat();
+  const emptyStep = perStep.findIndex((c) => c.length === 0);
 
   // Retrieval finding nothing is still an unresolved request, so it goes to a human
   // like any other no-valid-solution outcome rather than ending as a bare failure.
-  if (candidates.length === 0) {
-    const escalation = await invoker.escalateUnsatisfiable({
-      requestId,
-      constraints: intent.constraints,
-      reason: "no matching services were found in the catalog for this request",
-      decisionId: randomUUID(),
-      parentDecisionId: brokerDecisionId,
-    });
-    return { status: "paused_for_review", requestId, escalation };
+  if (emptyStep >= 0) {
+    const reason = chainSteps
+      ? `no matching services were found in the catalog for step ${emptyStep + 1} ("${chainSteps[emptyStep].capability}")`
+      : "no matching services were found in the catalog for this request";
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: brokerDecisionId,
+      })
+    );
   }
 
   const history: NegotiationAttempt[] = [];
@@ -155,8 +308,25 @@ export async function runPipeline(
         iteration,
         priorViolations,
         requiredCategory: intent.category,
+        preferences: intent.preferences,
+        // T4.1b: price at, and check plan quotas against, the stated monthly volume.
+        ...(intent.volume ? { volume: intent.volume } : {}),
+        ...(chainSteps
+          ? {
+              steps: chainSteps.map((s, i) => ({
+                capability: s.capability,
+                candidates: perStep[i],
+                constraints: s.constraints,
+                requiredCategory: s.category,
+                ...(s.volume ? { volume: s.volume } : {}),
+                dependsOn: s.dependsOn,
+              })),
+            }
+          : {}),
         decisionId: negotiatorDecisionId,
         parentDecisionId: lastDecisionId,
+        // L14: on the first try the other steps' Broker searches fed this decision too.
+        ...(iteration === 1 && brokerDecisionIds.length > 1 ? { relatedDecisionIds: brokerDecisionIds.slice(0, -1) } : {}),
       });
     } catch (err) {
       // Negotiator throws when no candidate satisfies the mandatory constraints
@@ -168,14 +338,17 @@ export async function runPipeline(
       // notified about. Routed through the same escalation channel as a
       // Reviewer-driven circuit-breaker trip.
       const reason = err instanceof Error ? err.message : "Negotiator Agent failed to produce a composition.";
-      const escalation = await invoker.escalateUnsatisfiable({
-        requestId,
-        constraints: intent.constraints,
-        reason,
-        decisionId: randomUUID(),
-        parentDecisionId: lastDecisionId,
-      });
-      return { status: "paused_for_review", requestId, escalation };
+      const parent = lastDecisionId;
+      return paused(plainReason(reason), candidates, (decisionId) =>
+        invoker.escalateUnsatisfiable({
+          requestId,
+          constraints: intent.constraints,
+          reason,
+          reviewUrl,
+          decisionId,
+          parentDecisionId: parent,
+        })
+      );
     }
 
     const reviewerDecisionId = randomUUID();
@@ -184,6 +357,19 @@ export async function runPipeline(
       composition,
       constraints: intent.constraints,
       requiredCategory: intent.category,
+      ...(intent.volume ? { volume: intent.volume } : {}),
+      ...(chainSteps
+        ? {
+            steps: chainSteps.map((s) => ({
+              capability: s.capability,
+              constraints: s.constraints,
+              requiredCategory: s.category,
+              ...(s.volume ? { volume: s.volume } : {}),
+              dependsOn: s.dependsOn,
+            })),
+          }
+        : {}),
+      reviewUrl,
       decisionId: reviewerDecisionId,
       parentDecisionId: negotiatorDecisionId,
     });
@@ -199,7 +385,7 @@ export async function runPipeline(
     if (reviewResult.approved) {
       const explained = await invoker.explainer({
         requestId,
-        composition: reviewResult.composition,
+        composition: withGraph(reviewResult.composition),
         negotiationHistory: history,
         decisionId: randomUUID(),
         parentDecisionId: reviewerDecisionId,
@@ -208,14 +394,16 @@ export async function runPipeline(
     }
 
     if (reviewResult.escalated) {
-      const escalation = await invoker.explainEscalation({
-        requestId,
-        constraints: intent.constraints,
-        attempts: history,
-        decisionId: randomUUID(),
-        parentDecisionId: reviewerDecisionId,
-      });
-      return { status: "paused_for_review", requestId, escalation };
+      const reason = `Reviewer rejected ${history.length} attempt(s): ${reviewResult.violations.map((v) => v.constraint).join(", ")}`;
+      return paused(reason, candidates, (decisionId) =>
+        invoker.explainEscalation({
+          requestId,
+          constraints: intent.constraints,
+          attempts: history,
+          decisionId,
+          parentDecisionId: reviewerDecisionId,
+        })
+      );
     }
 
     priorViolations = reviewResult.violations;
@@ -227,4 +415,13 @@ export async function runPipeline(
     requestId,
     error: "Reviewer did not approve or escalate within the safety attempt limit.",
   };
+}
+
+// T4.1d: the approved chain as a graph of services, one edge per step dependency.
+export function withGraph(composition: Composition): Composition {
+  const chain = composition.chain;
+  if (!chain) return composition;
+  const ids = chain.steps.map((s) => s.chosen.service.serviceId);
+  const edges = chain.steps.flatMap((s, i) => s.dependsOn.map((d) => ({ from: ids[d], to: ids[i] })));
+  return { ...composition, chain: { ...chain, edges } };
 }

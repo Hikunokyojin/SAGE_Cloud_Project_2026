@@ -147,3 +147,206 @@ describe("Reviewer Agent handler", () => {
     await expect(handler(input)).rejects.toThrow("SNS_TOPIC_ARN is not set");
   });
 });
+
+describe("Reviewer independent price, quota and chain checks (T4.1c)", () => {
+  const ses = { serviceId: "svc-ses", name: "SES", description: "", endpoint: "https://x", evidence: [], uptime: 99.9,
+    capability: "email-delivery", listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD" };
+  const withService = (svc: object) => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, ...svc } as Composition["chosen"]["service"];
+    return c;
+  };
+  const volume = { amount: 250_000, unit: "emails" as const };
+
+  it("approves a price that matches the list price at the stated volume", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...ses, price: 25 }), constraints: [], volume });
+    expect(r.violations).toEqual([]);
+  });
+
+  it("rejects a price that does not match the list price at the stated volume (L12)", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...ses, price: 10 }), constraints: [], volume });
+    expect(r.violations[0]).toMatchObject({ constraint: "price", actualValue: 10, requiredValue: 25 });
+  });
+
+  it("checks a price limit against the recomputed price, not the stated one", async () => {
+    const { handler } = await import("./index");
+    const limit: Constraint = { field: "price", operator: "lte", value: 15, mandatory: true };
+    const r = await handler({ requestId: "r", composition: withService({ ...ses, price: 10 }), constraints: [limit], volume });
+    expect(r.violations.map((v) => v.constraint)).toEqual(["price", "price"]);
+  });
+
+  it("rejects a plan whose quota is below the stated volume", async () => {
+    const { handler } = await import("./index");
+    const svc = { serviceId: "svc-sg", price: 19.95, volumeBasis: "quota", includedUnits: { amount: 50_000, unit: "emails" } };
+    const r = await handler({ requestId: "r", composition: withService(svc), constraints: [], volume });
+    expect(r.violations[0]).toMatchObject({ constraint: "volume", actualValue: 50_000, requiredValue: 250_000 });
+  });
+
+  it("checks a per-unit limit against the unit price", async () => {
+    const { handler } = await import("./index");
+    const perUnit: Constraint = { field: "price", operator: "lte", value: 0.00005, mandatory: true, per: "unit" };
+    const r = await handler({ requestId: "r", composition: withService({ ...ses, price: 10 }), constraints: [perUnit] });
+    expect(r.violations[0]).toMatchObject({ constraint: "price per unit", actualValue: 0.0001 });
+  });
+
+  const chainComposition = (a: object, b: object) => {
+    const c = composition();
+    const choice = (svc: object) => ({ service: { ...c.chosen.service, ...svc } as Composition["chosen"]["service"], score: 0.8, reason: "" });
+    c.chain = {
+      steps: [
+        { capability: "ocr", chosen: choice(a), dependsOn: [] },
+        { capability: "translation", chosen: choice(b), dependsOn: [0] },
+      ],
+      totals: { price: 0, uptime: 0 },
+      score: 0.8,
+      combinationsCompared: 1,
+      combinationsValid: 1,
+    };
+    return c;
+  };
+  const steps = [
+    { capability: "ocr", constraints: [], dependsOn: [] },
+    { capability: "translation", constraints: [], dependsOn: [0] },
+  ];
+
+  it("recomputes chain totals and names the costliest step when the budget fails", async () => {
+    const { handler } = await import("./index");
+    const budget: Constraint = { field: "price", operator: "lte", value: 20, mandatory: true };
+    const r = await handler({
+      requestId: "r", steps, constraints: [budget],
+      composition: chainComposition({ serviceId: "ocr-a", price: 15, uptime: 99.9 }, { serviceId: "tr-a", price: 10, uptime: 99.5 }),
+    });
+    expect(r.violations).toEqual([expect.objectContaining({ constraint: "chain price", actualValue: 25, affectedCandidate: "ocr-a" })]);
+  });
+
+  it("checks combined uptime and names the least reliable step", async () => {
+    const { handler } = await import("./index");
+    const uptime: Constraint = { field: "uptime", operator: "gte", value: 99.5, mandatory: true };
+    const r = await handler({
+      requestId: "r", steps, constraints: [uptime],
+      composition: chainComposition({ serviceId: "ocr-a", price: 1, uptime: 99.9 }, { serviceId: "tr-a", price: 1, uptime: 99.5 }),
+    });
+    expect(r.violations[0]).toMatchObject({ constraint: "chain uptime", actualValue: 99.4005, affectedCandidate: "tr-a" });
+  });
+
+  it("rejects a chain whose steps do not match the request", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({
+      requestId: "r", steps: [steps[1], steps[0]], constraints: [],
+      composition: chainComposition({ serviceId: "ocr-a", price: 1 }, { serviceId: "tr-a", price: 1 }),
+    });
+    expect(r.violations[0].constraint).toBe("chain");
+  });
+
+  it("checks each step's own limits, labelled by step", async () => {
+    const { handler } = await import("./index");
+    const cap: Constraint = { field: "price", operator: "lte", value: 5, mandatory: true };
+    const r = await handler({
+      requestId: "r", constraints: [],
+      steps: [steps[0], { ...steps[1], constraints: [cap] }],
+      composition: chainComposition({ serviceId: "ocr-a", price: 1 }, { serviceId: "tr-a", price: 8 }),
+    });
+    expect(r.violations[0]).toMatchObject({ constraint: "step 2: price", affectedCandidate: "tr-a" });
+  });
+});
+
+describe("Reviewer recomputes prices with the same unit conversions (L15, L16)", () => {
+  const vision = { serviceId: "svc-vision", name: "Vision", description: "", endpoint: "https://x", evidence: [], uptime: 99.9,
+    capability: "document-ocr", listPrice: 1.5, priceUnit: "per 1,000 images", currency: "USD" };
+  const withService = (svc: object) => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, ...svc } as Composition["chosen"]["service"];
+    return c;
+  };
+  const volume = { amount: 5000, unit: "pages" as const };
+
+  it("approves an OCR price converted from pages to images", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...vision, price: 7.5 }), constraints: [], volume });
+    expect(r.violations).toEqual([]);
+  });
+
+  it("rejects the standard estimate when the converted volume gives another price", async () => {
+    const { handler } = await import("./index");
+    const r = await handler({ requestId: "r", composition: withService({ ...vision, price: 15 }), constraints: [], volume });
+    expect(r.violations[0]).toMatchObject({ constraint: "price", actualValue: 15, requiredValue: 7.5 });
+  });
+});
+
+describe("Reviewer catalogue re-read (L22)", () => {
+  beforeEach(() => {
+    sendMock.mockReset();
+    sendMock.mockResolvedValue({});
+    process.env.SNS_TOPIC_ARN = "arn:aws:sns:ap-south-1:123456789012:sage-hitl";
+  });
+
+  const catalogue = (records: Record<string, object>) => async (ids: string[]) =>
+    new Map(ids.filter((id) => records[id]).map((id) => [id, { serviceId: id, ...records[id] }]));
+
+  it("rejects a stated uptime that differs from the catalogue and checks the catalogue's figure", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    _setCatalogueLookup(catalogue({ "svc-1": { price: 0.02, uptime: 90 } }));
+    try {
+      const result = await handler({ requestId: "req-l22a", composition: composition({ uptime: 99.9 }), constraints: CONSTRAINTS });
+      expect(result.approved).toBe(false);
+      expect(result.violations.map((v) => v.constraint)).toEqual(["catalogue uptime", "uptime"]);
+      expect(result.violations[1].actualValue).toBe(90);
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+
+  it("rejects a list price changed together with the price", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    _setCatalogueLookup(catalogue({ "svc-1": { listPrice: 20, priceUnit: "per month", currency: "USD", uptime: 99.9 } }));
+    try {
+      const c = composition({ price: 2 });
+      Object.assign(c.chosen.service, { listPrice: 2, priceUnit: "per month", currency: "USD" });
+      const result = await handler({ requestId: "req-l22b", composition: c, constraints: [] });
+      expect(result.approved).toBe(false);
+      expect(result.violations.map((v) => v.constraint)).toContain("catalogue listPrice");
+      expect(result.violations.map((v) => v.constraint)).toContain("price");
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+
+  it("approves when the service matches the catalogue, and rejects one not in it or when the read fails", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    try {
+      _setCatalogueLookup(catalogue({ "svc-1": { price: 0.02, uptime: 99.9 } }));
+      expect((await handler({ requestId: "req-l22c", composition: composition(), constraints: CONSTRAINTS })).approved).toBe(true);
+      _setCatalogueLookup(catalogue({}));
+      const missing = await handler({ requestId: "req-l22d", composition: composition(), constraints: CONSTRAINTS });
+      expect(missing.violations.map((v) => v.constraint)).toEqual(["catalogue"]);
+      _setCatalogueLookup(async () => {
+        throw new Error("down");
+      });
+      const failed = await handler({ requestId: "req-l22e", composition: composition(), constraints: CONSTRAINTS });
+      expect(failed.approved).toBe(false);
+      expect(failed.violations[0].actualValue).toBe("unavailable");
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+
+  it("retries a failed catalogue read once before rejecting (L27)", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    let calls = 0;
+    const ok = catalogue({ "svc-1": { price: 0.02, uptime: 99.9 } });
+    _setCatalogueLookup(async (ids) => {
+      calls += 1;
+      if (calls === 1) throw new Error("blip");
+      return ok(ids);
+    });
+    try {
+      const result = await handler({ requestId: "req-l27", composition: composition(), constraints: CONSTRAINTS });
+      expect(result.approved).toBe(true);
+      expect(calls).toBe(2);
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
+});

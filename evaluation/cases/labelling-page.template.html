@@ -1,0 +1,254 @@
+<title>SAGE Labelling Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: one request at a time on a ruled "case sheet", progress strip above, answer form below. */
+:root{
+  --bg:#f3f4f1; --paper:#ffffff; --ink:#1c2321; --muted:#5d6763; --line:#d5dad6;
+  --accent:#1f6f5c; --accent-ink:#ffffff; --soft:#e3eee9; --warn:#9a5b13;
+  --display:"Fraunces",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121615; --paper:#1a201e; --ink:#e4ebe7; --muted:#9aa6a1; --line:#2e3734;
+  --accent:#5cc2a4; --accent-ink:#0c1412; --soft:#1f2d28; --warn:#e0a35a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121615; --paper:#1a201e; --ink:#e4ebe7; --muted:#9aa6a1; --line:#2e3734;
+  --accent:#5cc2a4; --accent-ink:#0c1412; --soft:#1f2d28; --warn:#e0a35a; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+h1{font-family:var(--display);font-size:1.75rem;margin:0;text-wrap:balance}
+h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+p{margin:0}
+.lede{color:var(--muted);max-width:62ch}
+.status{font-size:.88rem;color:var(--muted)}
+.status.warn{color:var(--warn)}
+.progress{display:grid;gap:6px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+details.guide{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+details.guide summary{cursor:pointer;font-weight:600}
+.guide dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:12px 0 0}
+.guide dt{font-family:var(--mono);font-size:.85rem}
+.guide dd{margin:0;color:var(--muted)}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:20px;display:grid;gap:18px}
+.caseid{font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.request{font-size:1.15rem;line-height:1.5;border-left:3px solid var(--accent);padding-left:14px;overflow-wrap:anywhere}
+fieldset{border:0;padding:0;margin:0;display:grid;gap:8px;min-width:0}
+legend{font-weight:600;margin-bottom:6px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.choice{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:pointer}
+.choice:has(input:checked){border-color:var(--accent);background:var(--soft)}
+.choice input{margin-top:3px;accent-color:var(--accent)}
+.choice b{display:block;font-weight:600}
+.choice small{color:var(--muted);font-size:.8rem}
+.steps{display:grid;gap:8px}
+.steprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.steprow label{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-width:4.5em}
+select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;max-width:100%}
+select{flex:1 1 220px}
+textarea{width:100%;box-sizing:border-box;min-height:56px;resize:vertical}
+.hint{font-size:.82rem;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,textarea:focus-visible,.choice:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.spacer{flex:1}
+.saved{font-size:.85rem;color:var(--accent)}
+.export{background:var(--paper);border:1px dashed var(--line);border-radius:8px;padding:14px 16px;display:grid;gap:8px}
+.export textarea{font-family:var(--mono);font-size:.78rem;min-height:90px}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>SAGE Labelling Desk</h1>
+    <p class="lede">Read each request as if a customer typed it into a cloud-service marketplace. Decide what the right outcome is, and if a service should be found, which kind or kinds. Work on your own; your answers are compared with another labeller's.</p>
+    <p id="status" class="status">Connecting to the answer store&hellip;</p>
+  </header>
+
+  <section class="progress" aria-label="Progress">
+    <div class="bar"><span id="barfill"></span></div>
+    <div class="meta"><span id="count">0 of 0 labelled</span><span id="who"></span></div>
+  </section>
+
+  <details class="guide" id="guide" open>
+    <summary>What each outcome means</summary>
+    <dl>
+      <dt>serve</dt><dd>The catalogue has the kind of service asked for, and the stated limits look achievable. Pick the service kind (or kinds, in order, for a chain).</dd>
+      <dt>review</dt><dd>It asks for real kinds of service, but no option could meet the limits (impossible budget, 100% uptime, contradictory limits). A human should look at it. Pick the kinds too.</dd>
+      <dt>out of catalogue</dt><dd>It asks for something none of the listed service kinds covers.</dd>
+      <dt>ambiguous</dt><dd>Too vague to act on, or readable more than one way. The system should ask a question back.</dd>
+      <dt>block</dt><dd>An attack or misuse: trying to override the system's rules, steal secrets, or do something harmful or illegal. Refuse outright.</dd>
+    </dl>
+    <p class="hint" style="margin-top:10px">If a request mixes a harmful aim with a normal one, choose block. Use the notes box when you are unsure; it helps when we compare answers.</p>
+  </details>
+
+  <form class="sheet" id="sheet" novalidate>
+    <div class="meta"><span class="caseid" id="caseid"></span><span id="pos"></span></div>
+    <p class="request" id="request"></p>
+
+    <fieldset>
+      <legend>Outcome</legend>
+      <div class="choices" id="outcomes"></div>
+    </fieldset>
+
+    <fieldset id="stepsbox">
+      <legend>Service kinds needed, in order</legend>
+      <div class="steps" id="steps"></div>
+      <p class="hint">Leave later steps empty for a single service. A chain is when one service's output feeds the next.</p>
+    </fieldset>
+
+    <div>
+      <label for="note" style="font-weight:600;display:block;margin-bottom:6px">Notes (optional)</label>
+      <textarea id="note" placeholder="Anything that made this one hard to decide"></textarea>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="prev">Previous</button>
+      <button type="button" id="skip">Next unlabelled</button>
+      <span class="spacer"></span>
+      <span class="saved" id="saved" aria-live="polite"></span>
+      <button type="submit" class="primary" id="save">Save and next</button>
+    </div>
+  </form>
+
+  <section class="export" id="exportbox" hidden>
+    <h2>Your answers</h2>
+    <p class="hint">The shared answer store is not available in this view, so answers are kept in this browser only. When you finish, copy this text and send it to the person who asked you to label.</p>
+    <textarea id="exporttext" readonly></textarea>
+    <div class="actions"><button type="button" id="copy">Copy answers</button><span class="saved" id="copied"></span></div>
+  </section>
+</div>
+
+<script>
+const DATA = /*CASES*/null;
+const OUTCOMES = [
+  ["serve","serve","A service or chain should be approved"],
+  ["review","review","Real services, impossible limits"],
+  ["out_of_catalogue","out of catalogue","No listed kind covers it"],
+  ["ambiguous","ambiguous","Too vague; ask back"],
+  ["block","block","Attack or misuse"],
+];
+const MAX_STEPS = 3;
+const NEEDS_STEPS = new Set(["serve","review"]);
+const cases = DATA.cases;
+const answers = {};         // id -> {outcome, steps, note}
+let i = 0, db = null, uid = null, writable = true;
+const $ = (id) => document.getElementById(id);
+const LS_KEY = "sage-labels-b";
+
+function lsLoad(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }catch{ return {}; } }
+function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(answers)); }catch{} }
+
+// Build the static controls once.
+$("outcomes").innerHTML = OUTCOMES.map(([v,l,d]) =>
+  `<label class="choice"><input type="radio" name="outcome" id="o-${v}" value="${v}"><span><b>${l}</b><small>${d}</small></span></label>`).join("");
+const catOptions = ['<option value="">(none)</option>'].concat(DATA.categories.map(c => `<option value="${c}">${c}</option>`)).join("");
+$("steps").innerHTML = Array.from({length:MAX_STEPS}, (_,k) =>
+  `<div class="steprow"><label for="s${k}">Step ${k+1}</label><select id="s${k}">${catOptions}</select></div>`).join("");
+
+function setStatus(text, warn){ $("status").textContent = text; $("status").className = "status" + (warn ? " warn" : ""); }
+function done(){ return cases.filter(c => answers[c.id]?.outcome).length; }
+
+function render(){
+  const c = cases[i];
+  $("caseid").textContent = c.id;
+  $("pos").textContent = `Request ${i+1} of ${cases.length}`;
+  $("request").textContent = c.text;
+  const a = answers[c.id] || {};
+  document.querySelectorAll('input[name="outcome"]').forEach(r => r.checked = r.value === a.outcome);
+  for (let k = 0; k < MAX_STEPS; k++) $("s"+k).value = (a.steps || [])[k] || "";
+  $("note").value = a.note || "";
+  syncSteps();
+  const n = done();
+  $("count").textContent = `${n} of ${cases.length} labelled`;
+  $("barfill").style.width = (100*n/cases.length) + "%";
+  $("prev").disabled = i === 0;
+  $("saved").textContent = "";
+  $("save").disabled = !writable;
+}
+function syncSteps(){
+  const o = document.querySelector('input[name="outcome"]:checked')?.value;
+  const on = NEEDS_STEPS.has(o);
+  $("stepsbox").style.opacity = on ? "1" : ".45";
+  for (let k = 0; k < MAX_STEPS; k++) $("s"+k).disabled = !on;
+}
+$("outcomes").addEventListener("change", syncSteps);
+
+function readForm(){
+  const outcome = document.querySelector('input[name="outcome"]:checked')?.value;
+  const steps = NEEDS_STEPS.has(outcome)
+    ? Array.from({length:MAX_STEPS}, (_,k) => $("s"+k).value).filter(Boolean) : [];
+  return { outcome, steps, note: $("note").value.trim() };
+}
+function nextUnlabelled(from){
+  for (let k = 1; k <= cases.length; k++){ const j = (from + k) % cases.length; if (!answers[cases[j].id]?.outcome) return j; }
+  return -1;
+}
+
+$("sheet").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const a = readForm();
+  if (!a.outcome){ $("saved").textContent = "Choose an outcome first."; return; }
+  if (NEEDS_STEPS.has(a.outcome) && !a.steps.length){ $("saved").textContent = "Pick at least one service kind."; return; }
+  const id = cases[i].id;
+  answers[id] = a;
+  lsSave();
+  $("save").disabled = true;
+  if (db){
+    try{
+      await db.collection("labels").doc(id).set({ ...a, by: uid || "", at: new Date().toISOString() });
+    }catch(err){
+      if (err && err.code === "invalid_argument"){ writable = false; setStatus("You can view this page but not save answers. Ask the owner to make you a Contributor or Editor.", true); }
+      else { $("saved").textContent = "Not saved, try again."; $("save").disabled = false; return; }
+    }
+  }
+  updateExport();
+  const j = nextUnlabelled(i);
+  if (j === -1){ setStatus("All requests are labelled. Thank you. You can still go back and change any answer."); render(); return; }
+  i = j; render();
+});
+$("prev").addEventListener("click", () => { if (i > 0){ i--; render(); } });
+$("skip").addEventListener("click", () => { const j = nextUnlabelled(i); if (j !== -1){ i = j; render(); } });
+
+function updateExport(){
+  if ($("exportbox").hidden) return;
+  $("exporttext").value = JSON.stringify({ labeller: "B", labels: answers });
+}
+$("copy").addEventListener("click", () => {
+  const t = $("exporttext");
+  navigator.clipboard.writeText(t.value).then(() => $("copied").textContent = "Copied.",
+    () => { t.select(); $("copied").textContent = "Selected; press Ctrl+C to copy."; });
+});
+
+function fallbackLocal(){
+  Object.assign(answers, lsLoad());
+  $("exportbox").hidden = false;
+  updateExport();
+  setStatus("Answers are saved in this browser only. Copy them at the end (box below the form).", true);
+  const j = nextUnlabelled(-1); i = j === -1 ? 0 : j; render();
+}
+
+render();
+(async () => {
+  const claude = window.claude;
+  if (!claude || !claude.use){ fallbackLocal(); return; }
+  const [store, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+  if (!store){ fallbackLocal(); return; }
+  db = store;
+  if (user){ try{ uid = await user.id(); }catch{} if (user.can && (await user.can("data.write")) === false){ writable = false; } }
+  const timer = setTimeout(() => setStatus("The answer store is slow to respond; answers will appear when it does.", true), 10000);
+  let first = true;
+  db.collection("labels").onSnapshot((snap) => {
+    if (!snap.metadata.fromCache) clearTimeout(timer);
+    for (const d of snap.docs){ const v = d.data(); if (v) answers[d.id] = { outcome: v.outcome, steps: v.steps || [], note: v.note || "" }; }
+    if (first){ first = false; const j = nextUnlabelled(-1); i = j === -1 ? 0 : j; }
+    setStatus(writable ? "Answers save to the shared store as you go. You can stop and come back any time."
+                       : "You can view this page but not save answers. Ask the owner to make you a Contributor or Editor.", !writable);
+    render();
+  }, () => { clearTimeout(timer); fallbackLocal(); });
+})();
+</script>

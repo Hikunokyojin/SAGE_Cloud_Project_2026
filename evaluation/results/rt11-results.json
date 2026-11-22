@@ -1,0 +1,1221 @@
+{
+  "ranAt": "2026-11-15T10:28:31.721Z",
+  "api": "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod",
+  "cases": 30,
+  "passed": 29,
+  "sandboxCalls": 56,
+  "rows": [
+    {
+      "id": "rt11-01",
+      "expect": "approved",
+      "requestId": "2d8db42d-f705-4070-a13d-20029f120dbb",
+      "status": "completed",
+      "ms": 6291,
+      "steps": [
+        {
+          "capability": "document-ocr",
+          "service": "Google Cloud Vision OCR",
+          "price": 7.5,
+          "uptime": 99.908,
+          "latencyMs": 227
+        },
+        {
+          "capability": "translation",
+          "service": "Amazon Translate",
+          "price": 150,
+          "uptime": 99.908,
+          "latencyMs": 1321
+        }
+      ],
+      "totals": {
+        "price": 157.5,
+        "uptime": 99.8161,
+        "latencyMs": 1548
+      },
+      "limits": {
+        "price": 200
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-02",
+      "expect": "approved",
+      "requestId": "d3f490a8-0169-484a-86d0-eaefa374fe0d",
+      "status": "completed",
+      "ms": 2047,
+      "steps": [
+        {
+          "capability": "speech-transcription",
+          "service": "Google Cloud Speech-to-Text",
+          "price": 16,
+          "uptime": 99.908,
+          "latencyMs": 456
+        },
+        {
+          "capability": "text-analysis",
+          "service": "Amazon Comprehend Entities",
+          "price": 1,
+          "uptime": 99.908,
+          "latencyMs": 1005
+        }
+      ],
+      "totals": {
+        "price": 17,
+        "uptime": 99.8161,
+        "latencyMs": 1461
+      },
+      "limits": {
+        "price": 300
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-03",
+      "expect": "approved",
+      "requestId": "42bf35bd-eae1-472f-9b78-438ef2af39dd",
+      "status": "completed",
+      "ms": 1607,
+      "steps": [
+        {
+          "capability": "object-storage",
+          "service": "Google Cloud Storage Standard",
+          "price": 2.6,
+          "uptime": 99.954,
+          "latencyMs": 207
+        },
+        {
+          "capability": "image-resizing",
+          "service": "ImageKit",
+          "price": 9,
+          "uptime": 99.908,
+          "latencyMs": 786
+        }
+      ],
+      "totals": {
+        "price": 11.6,
+        "uptime": 99.862,
+        "latencyMs": 993
+      },
+      "limits": {
+        "price": 100
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-04",
+      "expect": "approved",
+      "requestId": "25b12522-2da8-4226-9adf-cef7eb20a7c0",
+      "status": "completed",
+      "ms": 1363,
+      "steps": [
+        {
+          "capability": "payment-processing",
+          "service": "Stripe Payments",
+          "price": 40,
+          "uptime": 99.991,
+          "latencyMs": 301
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Mailgun",
+          "price": 180,
+          "uptime": 99.991,
+          "latencyMs": 1018
+        }
+      ],
+      "totals": {
+        "price": 220,
+        "uptime": 99.982,
+        "latencyMs": 1319
+      },
+      "limits": {
+        "uptime": 99.5
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-05",
+      "expect": "approved",
+      "requestId": "afa10fbf-5e1b-4f1c-b78e-5ef9b618e381",
+      "status": "completed",
+      "ms": 1111,
+      "steps": [
+        {
+          "capability": "authentication",
+          "service": "WorkOS AuthKit",
+          "price": 2.5,
+          "uptime": 99.991,
+          "latencyMs": 342
+        },
+        {
+          "capability": "messaging",
+          "service": "Telnyx Messaging",
+          "price": 40,
+          "uptime": 99.999,
+          "latencyMs": 535
+        }
+      ],
+      "totals": {
+        "price": 42.5,
+        "uptime": 99.99,
+        "latencyMs": 877
+      },
+      "limits": {
+        "price": 150
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-06",
+      "expect": "approved",
+      "requestId": "59c35598-a78b-4a4d-904e-1283a2323a39",
+      "status": "completed",
+      "ms": 2257,
+      "steps": [
+        {
+          "capability": "translation",
+          "service": "Azure AI Translator",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 192
+        },
+        {
+          "capability": "text-to-speech",
+          "service": "Google Cloud Text-to-Speech",
+          "price": 4,
+          "uptime": 99.908,
+          "latencyMs": 229
+        }
+      ],
+      "totals": {
+        "price": 14,
+        "uptime": 99.8161,
+        "latencyMs": 421
+      },
+      "limits": {
+        "price": 250
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-07",
+      "expect": "approved",
+      "requestId": "d1626988-e8bd-4960-9612-7867c7ecbeb0",
+      "status": "completed",
+      "ms": 1690,
+      "steps": [
+        {
+          "capability": "fraud-detection",
+          "service": "Stripe Radar",
+          "price": 12,
+          "uptime": 99.991,
+          "latencyMs": 378
+        },
+        {
+          "capability": "payment-processing",
+          "service": "Stripe Payments",
+          "price": 40,
+          "uptime": 99.991,
+          "latencyMs": 301
+        }
+      ],
+      "totals": {
+        "price": 52,
+        "uptime": 99.982,
+        "latencyMs": 679
+      },
+      "limits": {
+        "uptime": 99
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-08",
+      "expect": "approved",
+      "requestId": "a365912c-9672-4b1b-a8f6-09d8d836ee29",
+      "status": "completed",
+      "ms": 1793,
+      "steps": [
+        {
+          "capability": "message-queue",
+          "service": "Upstash QStash",
+          "price": 1,
+          "uptime": 99.991,
+          "latencyMs": 645
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Brevo Transactional Email",
+          "price": 7.5,
+          "uptime": 99.908,
+          "latencyMs": 1351
+        }
+      ],
+      "totals": {
+        "price": 8.5,
+        "uptime": 99.899,
+        "latencyMs": 1996
+      },
+      "limits": {
+        "price": 80
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-09",
+      "expect": "approved",
+      "requestId": "f1d7c470-16bf-470e-8390-4c58e4165e0e",
+      "status": "completed",
+      "ms": 1333,
+      "steps": [
+        {
+          "capability": "image-analysis",
+          "service": "Amazon Rekognition Image",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 1014
+        },
+        {
+          "capability": "database",
+          "service": "MongoDB Atlas Flex",
+          "price": 8,
+          "uptime": 99.954,
+          "latencyMs": 1271
+        }
+      ],
+      "totals": {
+        "price": 18,
+        "uptime": 99.862,
+        "latencyMs": 2285
+      },
+      "limits": {
+        "price": 200
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-10",
+      "expect": "approved",
+      "requestId": "6e9a7c40-6cc3-4959-9a74-61fd7811450f",
+      "status": "completed",
+      "ms": 1390,
+      "steps": [
+        {
+          "capability": "document-generation",
+          "service": "PDFShift",
+          "price": 9,
+          "uptime": 99.908,
+          "latencyMs": 506
+        },
+        {
+          "capability": "email-delivery",
+          "service": "SendGrid Email API",
+          "price": 19.95,
+          "uptime": 99.954,
+          "latencyMs": 564
+        }
+      ],
+      "totals": {
+        "price": 28.95,
+        "uptime": 99.862,
+        "latencyMs": 1070
+      },
+      "limits": {
+        "price": 120
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-11",
+      "expect": "approved",
+      "requestId": "113545e4-22a7-4428-a03c-7a84a08fb185",
+      "status": "completed",
+      "ms": 1597,
+      "steps": [
+        {
+          "capability": "video-transcoding",
+          "service": "Bunny Stream",
+          "price": 0.5,
+          "uptime": 99.991,
+          "latencyMs": 373
+        },
+        {
+          "capability": "content-delivery",
+          "service": "Bunny CDN",
+          "price": 1,
+          "uptime": 99.991,
+          "latencyMs": 507
+        }
+      ],
+      "totals": {
+        "price": 1.5,
+        "uptime": 99.982,
+        "latencyMs": 880
+      },
+      "limits": {
+        "price": 500
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-12",
+      "expect": "approved",
+      "requestId": "9d6628f6-689f-4ab0-8c78-86531cb91fc3",
+      "status": "completed",
+      "ms": 1338,
+      "steps": [
+        {
+          "capability": "embedding-generation",
+          "service": "Voyage AI Embeddings",
+          "price": 0.6,
+          "uptime": 99.908,
+          "latencyMs": 401
+        },
+        {
+          "capability": "full-text-search",
+          "service": "Algolia Search",
+          "price": 50,
+          "uptime": 99.991,
+          "latencyMs": 319
+        }
+      ],
+      "totals": {
+        "price": 50.6,
+        "uptime": 99.899,
+        "latencyMs": 720
+      },
+      "limits": {
+        "price": 150
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-13",
+      "expect": "approved",
+      "requestId": "34b7155f-6789-40f2-aa9f-20eb8c3ddda0",
+      "status": "completed",
+      "ms": 1434,
+      "steps": [
+        {
+          "capability": "geolocation",
+          "service": "MaxMind GeoIP2 Precision",
+          "price": 10,
+          "uptime": 99.991,
+          "latencyMs": 376
+        },
+        {
+          "capability": "product-analytics",
+          "service": "PostHog",
+          "price": 50,
+          "uptime": 99.908,
+          "latencyMs": 830
+        }
+      ],
+      "totals": {
+        "price": 60,
+        "uptime": 99.899,
+        "latencyMs": 1206
+      },
+      "limits": {
+        "price": 100
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-14",
+      "expect": "approved",
+      "requestId": "b14a8af8-7907-4bc0-a655-4cf6e685f189",
+      "status": "completed",
+      "ms": 1514,
+      "steps": [
+        {
+          "capability": "data-streaming",
+          "service": "Azure Event Hubs (Standard)",
+          "price": 0.03,
+          "uptime": 99.954,
+          "latencyMs": 223
+        },
+        {
+          "capability": "data-query",
+          "service": "Google BigQuery",
+          "price": 6.25,
+          "uptime": 99.991,
+          "latencyMs": 174
+        }
+      ],
+      "totals": {
+        "price": 6.28,
+        "uptime": 99.945,
+        "latencyMs": 397
+      },
+      "limits": {
+        "price": 300
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-15",
+      "expect": "approved",
+      "requestId": "ed7411b7-81b6-466d-983f-60bcc0c893c0",
+      "status": "completed",
+      "ms": 1854,
+      "steps": [
+        {
+          "capability": "ml-inference",
+          "service": "Fireworks AI",
+          "price": 0.5,
+          "uptime": 99.908,
+          "latencyMs": 381
+        },
+        {
+          "capability": "messaging",
+          "service": "Telnyx Messaging",
+          "price": 40,
+          "uptime": 99.999,
+          "latencyMs": 535
+        }
+      ],
+      "totals": {
+        "price": 40.5,
+        "uptime": 99.907,
+        "latencyMs": 916
+      },
+      "limits": {
+        "price": 250
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-16",
+      "expect": "approved",
+      "requestId": "514e374d-7531-4cf9-a9a7-cc77aefae7b9",
+      "status": "completed",
+      "ms": 2118,
+      "steps": [
+        {
+          "capability": "document-ocr",
+          "service": "Google Cloud Vision OCR",
+          "price": 15,
+          "uptime": 99.908,
+          "latencyMs": 227
+        },
+        {
+          "capability": "text-analysis",
+          "service": "Amazon Comprehend Entities",
+          "price": 1,
+          "uptime": 99.908,
+          "latencyMs": 1005
+        }
+      ],
+      "totals": {
+        "price": 16,
+        "uptime": 99.8161,
+        "latencyMs": 1232
+      },
+      "limits": {
+        "price": 250
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-17",
+      "expect": "approved",
+      "requestId": "61474654-7251-4e0a-98e6-ed0c5dca0d18",
+      "status": "completed",
+      "ms": 5613,
+      "steps": [
+        {
+          "capability": "speech-transcription",
+          "service": "AssemblyAI",
+          "price": 2.5,
+          "uptime": 99.908,
+          "latencyMs": 1500
+        },
+        {
+          "capability": "translation",
+          "service": "Azure AI Translator",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 192
+        },
+        {
+          "capability": "text-to-speech",
+          "service": "Google Cloud Text-to-Speech",
+          "price": 4,
+          "uptime": 99.908,
+          "latencyMs": 229
+        }
+      ],
+      "totals": {
+        "price": 16.5,
+        "uptime": 99.7243,
+        "latencyMs": 1921
+      },
+      "limits": {
+        "price": 400
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        },
+        {
+          "step": 3,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-18",
+      "expect": "approved",
+      "requestId": "dbacf0d2-21d4-4c1c-b14d-2813b54b27bc",
+      "status": "completed",
+      "ms": 2006,
+      "steps": [
+        {
+          "capability": "authentication",
+          "service": "WorkOS AuthKit",
+          "price": 2.5,
+          "uptime": 99.991,
+          "latencyMs": 342
+        },
+        {
+          "capability": "object-storage",
+          "service": "Google Cloud Storage Standard",
+          "price": 2.6,
+          "uptime": 99.954,
+          "latencyMs": 207
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Mailgun",
+          "price": 180,
+          "uptime": 99.991,
+          "latencyMs": 1018
+        }
+      ],
+      "totals": {
+        "price": 185.1,
+        "uptime": 99.936,
+        "latencyMs": 1567
+      },
+      "limits": {
+        "price": 200
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        },
+        {
+          "step": 3,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-19",
+      "expect": "approved",
+      "requestId": "18b51a3a-8181-4c0b-acd4-ac1b4ffb7dff",
+      "status": "completed",
+      "ms": 1441,
+      "steps": [
+        {
+          "capability": "fraud-detection",
+          "service": "Stripe Radar",
+          "price": 12,
+          "uptime": 99.991,
+          "latencyMs": 378
+        },
+        {
+          "capability": "payment-processing",
+          "service": "Stripe Payments",
+          "price": 40,
+          "uptime": 99.991,
+          "latencyMs": 301
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Mailgun",
+          "price": 180,
+          "uptime": 99.991,
+          "latencyMs": 1018
+        }
+      ],
+      "totals": {
+        "price": 232,
+        "uptime": 99.973,
+        "latencyMs": 1697
+      },
+      "limits": {
+        "uptime": 99
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        },
+        {
+          "step": 3,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-20",
+      "expect": "approved",
+      "requestId": "9c7f80e1-7856-43e2-906e-e4d2552b632a",
+      "status": "completed",
+      "ms": 1260,
+      "steps": [
+        {
+          "capability": "object-storage",
+          "service": "Google Cloud Storage Standard",
+          "price": 2.6,
+          "uptime": 99.954,
+          "latencyMs": 207
+        },
+        {
+          "capability": "image-resizing",
+          "service": "Cloudflare Images",
+          "price": 5,
+          "uptime": 100,
+          "latencyMs": 375
+        },
+        {
+          "capability": "content-delivery",
+          "service": "Bunny CDN",
+          "price": 1,
+          "uptime": 99.991,
+          "latencyMs": 507
+        }
+      ],
+      "totals": {
+        "price": 8.6,
+        "uptime": 99.945,
+        "latencyMs": 1089
+      },
+      "limits": {
+        "price": 150
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        },
+        {
+          "step": 3,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-21",
+      "expect": "approved",
+      "requestId": "c1eae916-4716-4831-804e-9b3cb06154c4",
+      "status": "completed",
+      "ms": 1322,
+      "steps": [
+        {
+          "capability": "message-queue",
+          "service": "Upstash QStash",
+          "price": 1,
+          "uptime": 99.991,
+          "latencyMs": 645
+        },
+        {
+          "capability": "workflow-orchestration",
+          "service": "Azure Logic Apps (Consumption)",
+          "price": 2.5,
+          "uptime": 99.908,
+          "latencyMs": 199
+        }
+      ],
+      "totals": {
+        "price": 3.5,
+        "uptime": 99.899,
+        "latencyMs": 844
+      },
+      "limits": {
+        "price": 100
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-22",
+      "expect": "approved",
+      "requestId": "f77e3ea5-46c6-417e-9205-1483c6c2e0c6",
+      "status": "completed",
+      "ms": 1377,
+      "steps": [
+        {
+          "capability": "secrets-management",
+          "service": "Azure Key Vault (Standard)",
+          "price": 0.3,
+          "uptime": 99.991,
+          "latencyMs": 263
+        },
+        {
+          "capability": "api-gateway",
+          "service": "Amazon API Gateway REST API",
+          "price": 0.35,
+          "uptime": 99.954,
+          "latencyMs": 725
+        }
+      ],
+      "totals": {
+        "price": 0.65,
+        "uptime": 99.945,
+        "latencyMs": 988
+      },
+      "limits": {
+        "price": 60
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-23",
+      "expect": "approved",
+      "requestId": "e94c8821-5095-4a4a-945e-21cff32d173a",
+      "status": "completed",
+      "ms": 1131,
+      "steps": [
+        {
+          "capability": "web-hosting",
+          "service": "Vercel",
+          "price": 20,
+          "uptime": 99.991,
+          "latencyMs": 263
+        },
+        {
+          "capability": "monitoring",
+          "service": "Sentry",
+          "price": 26,
+          "uptime": 99.908,
+          "latencyMs": 386
+        }
+      ],
+      "totals": {
+        "price": 46,
+        "uptime": 99.899,
+        "latencyMs": 649
+      },
+      "limits": {
+        "price": 100
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-24",
+      "expect": "approved",
+      "requestId": "681ee9df-1e25-4d81-a65a-5e11f3e31d3b",
+      "status": "completed",
+      "ms": 1137,
+      "limits": {
+        "price": 300
+      },
+      "pass": false,
+      "problems": [
+        "no chain was approved (status completed)"
+      ]
+    },
+    {
+      "id": "rt11-25",
+      "expect": "approved",
+      "requestId": "e3d21da7-8913-490d-a388-3c53e6d99fdb",
+      "status": "completed",
+      "ms": 1410,
+      "steps": [
+        {
+          "capability": "recommendations",
+          "service": "Algolia Recommend",
+          "price": 60,
+          "uptime": 99.991,
+          "latencyMs": 260
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Mailgun",
+          "price": 180,
+          "uptime": 99.991,
+          "latencyMs": 1018
+        }
+      ],
+      "totals": {
+        "price": 240,
+        "uptime": 99.982,
+        "latencyMs": 1278
+      },
+      "limits": {
+        "price": 300
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-26",
+      "expect": "approved",
+      "requestId": "4f455ceb-f32e-4a6e-b356-1feebde9d970",
+      "status": "completed",
+      "ms": 1834,
+      "steps": [
+        {
+          "capability": "speech-transcription",
+          "service": "Speechmatics",
+          "price": 4,
+          "uptime": 99.908,
+          "latencyMs": 675
+        },
+        {
+          "capability": "email-delivery",
+          "service": "Amazon SES",
+          "price": 10,
+          "uptime": 99.908,
+          "latencyMs": 772
+        }
+      ],
+      "totals": {
+        "price": 14,
+        "uptime": 99.8161,
+        "latencyMs": 1447
+      },
+      "limits": {
+        "price": 100
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-27",
+      "expect": "approved",
+      "requestId": "517cf791-e7fc-4ead-bc95-2dd06fa54a29",
+      "status": "completed",
+      "ms": 1272,
+      "steps": [
+        {
+          "capability": "image-resizing",
+          "service": "Cloudflare Images",
+          "price": 5,
+          "uptime": 100,
+          "latencyMs": 375
+        },
+        {
+          "capability": "image-analysis",
+          "service": "Sightengine",
+          "price": 29,
+          "uptime": 99.908,
+          "latencyMs": 807
+        }
+      ],
+      "totals": {
+        "price": 34,
+        "uptime": 99.908,
+        "latencyMs": 1182
+      },
+      "limits": {
+        "uptime": 99
+      },
+      "sandbox": [
+        {
+          "step": 1,
+          "ok": true
+        },
+        {
+          "step": 2,
+          "ok": true
+        }
+      ],
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-28",
+      "expect": "refused",
+      "requestId": "2db072b3-d3ec-4a1e-b552-5a854b3614e4",
+      "status": "paused_for_review",
+      "ms": 949,
+      "limits": {
+        "price": 1
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-29",
+      "expect": "refused",
+      "requestId": "9c7d979f-c0da-4dbf-a4c2-593d82da4b5f",
+      "status": "paused_for_review",
+      "ms": 857,
+      "limits": {
+        "uptime": 99.999
+      },
+      "pass": true,
+      "problems": []
+    },
+    {
+      "id": "rt11-30",
+      "expect": "refused",
+      "requestId": "d67f1945-6697-4fff-b91a-a6cda06160ce",
+      "status": "paused_for_review",
+      "ms": 754,
+      "limits": {
+        "price": 0.5
+      },
+      "pass": true,
+      "problems": []
+    }
+  ]
+}

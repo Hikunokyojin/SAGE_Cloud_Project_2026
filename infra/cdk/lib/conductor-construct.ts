@@ -1,9 +1,11 @@
 import { Construct } from "constructs";
-import { RemovalPolicy, Stack } from "aws-cdk-lib";
+import { Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
@@ -12,6 +14,8 @@ export interface ConductorConstructProps {
   invokableFunctions: lambda.IFunction[];
   /** agent_decisions table -- Conductor's GET /audit/:requestId route reads (never writes) from here. */
   auditTable: dynamodb.ITable;
+  /** paused_requests table -- Conductor stores and resolves paused requests (T2.3). */
+  pausedRequestsTable: dynamodb.ITable;
 }
 
 /**
@@ -33,6 +37,8 @@ export class ConductorConstruct extends Construct {
   public readonly instance: ec2.Instance;
   public readonly eip: ec2.CfnEIP;
   public readonly api: apigateway.RestApi;
+  public readonly userPool: cognito.UserPool;
+  public readonly userPoolClient: cognito.UserPoolClient;
   public readonly deployBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ConductorConstructProps) {
@@ -66,6 +72,33 @@ export class ConductorConstruct extends Construct {
       })
     );
     props.auditTable.grantReadData(role);
+    // T2.3: the Conductor writes the human reviewer's decision to the audit trail, keeps
+    // paused requests (no delete: they expire through TTL), and reads the review-link key.
+    props.auditTable.grant(role, "dynamodb:PutItem");
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.DENY,
+        actions: ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"],
+        resources: [props.auditTable.tableArn],
+      })
+    );
+    props.pausedRequestsTable.grant(role, "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem");
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["ssm:GetParameter"],
+        resources: [
+          `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/HITL_SIGNING_KEY`,
+          `arn:aws:ssm:${Stack.of(this).region}:${Stack.of(this).account}:parameter/sage/conductor/ORIGIN_SECRET`,
+        ],
+      })
+    );
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["kms:Decrypt"],
+        resources: ["*"],
+        conditions: { StringEquals: { "kms:ViaService": `ssm.${Stack.of(this).region}.amazonaws.com` } },
+      })
+    );
 
     // The EC2 instance has no way to receive Conductor's built application code other
     // than pulling it from somewhere -- SSM Session Manager has no built-in file
@@ -104,17 +137,44 @@ export class ConductorConstruct extends Construct {
     // API Gateway's HTTP_PROXY integration below is configured against this fixed IP.
     this.eip = new ec2.CfnEIP(this, "ConductorEip", { instanceId: this.instance.instanceId });
 
+    // Stage-wide throttling (T2.1): bursts get a clean HTTP 429 from API Gateway before
+    // they reach the single Conductor or burn the Groq free-tier quota. Free.
     this.api = new apigateway.RestApi(this, "ConductorApi", {
       restApiName: "sage-conductor-api",
-      deployOptions: { stageName: "prod" },
+      deployOptions: { stageName: "prod", throttlingRateLimit: 5, throttlingBurstLimit: 10, tracingEnabled: true },
     });
+
+    // Pilot users (T2.1): a Cognito user pool, free tier. No self sign-up; pilot accounts
+    // are created by the operator. The dashboard signs in with USER_PASSWORD_AUTH.
+    this.userPool = new cognito.UserPool(this, "PilotUserPool", {
+      userPoolName: "sage-pilot-users",
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      passwordPolicy: { minLength: 12, requireSymbols: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    this.userPoolClient = this.userPool.addClient("DashboardClient", {
+      userPoolClientName: "sage-dashboard",
+      generateSecret: false,
+      authFlows: { userPassword: true },
+      idTokenValidity: Duration.hours(1),
+    });
+    const pilotAuthorizer = new apigateway.CognitoUserPoolsAuthorizer(this, "PilotAuthorizer", {
+      cognitoUserPools: [this.userPool],
+    });
+    // T2.9: every call to the instance carries X-Sage-Origin, resolved from SSM at deploy
+    // time (a dynamic reference, so the value is never in the template or in git). The
+    // Conductor refuses requests without it, which closes direct access by IP.
+    const originSecret = ssm.StringParameter.valueForStringParameter(this, "/sage/conductor/ORIGIN_SECRET");
+    const originHeader = { "integration.request.header.X-Sage-Origin": `'${originSecret}'` };
     const proxyIntegration = new apigateway.HttpIntegration(
       `http://${this.eip.ref}:3001/{proxy}`,
       {
         httpMethod: "ANY",
         proxy: true,
         options: {
-          requestParameters: { "integration.request.path.proxy": "method.request.path.proxy" },
+          requestParameters: { "integration.request.path.proxy": "method.request.path.proxy", ...originHeader },
         },
       }
     );
@@ -123,11 +183,30 @@ export class ConductorConstruct extends Construct {
       requestParameters: { "method.request.path.proxy": true },
     });
 
+    // /pilot/<path> is the same Conductor route, but only with a valid Cognito ID token
+    // in the Authorization header; API Gateway refuses anything else with 401.
+    const pilotProxy = this.api.root.addResource("pilot").addResource("{proxy+}");
+    pilotProxy.addMethod("ANY", proxyIntegration, {
+      requestParameters: { "method.request.path.proxy": true },
+      authorizer: pilotAuthorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+    // Browsers send a CORS preflight (OPTIONS, never with a token) before a cross-site call
+    // that carries Authorization, e.g. from the GitHub Pages dashboard. It must not hit the
+    // authorizer; the Conductor's cors() middleware answers it.
+    pilotProxy.addMethod("OPTIONS", proxyIntegration, {
+      requestParameters: { "method.request.path.proxy": true },
+    });
+
     // {proxy+} never matches the bare stage root, so the dashboard's index.html at
     // /prod/ needs its own method.
     this.api.root.addMethod(
       "GET",
-      new apigateway.HttpIntegration(`http://${this.eip.ref}:3001/`, { httpMethod: "GET", proxy: true })
+      new apigateway.HttpIntegration(`http://${this.eip.ref}:3001/`, {
+        httpMethod: "GET",
+        proxy: true,
+        options: { requestParameters: originHeader },
+      })
     );
   }
 }

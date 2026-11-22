@@ -5,8 +5,12 @@ import type {
   ExplainedBlueprint,
   EscalationExplainerInput,
   EscalationExplanation,
+  LlmUsage,
 } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { toLlmUsage, isWarmup, WARMED } from "@sage/shared-types";
+import { recordDecision, warmUp } from "@sage/audit";
+import { chat } from "@sage/llm";
+import { checkClaims, type ExplanationFacts } from "./claimCheck";
 
 // Bedrock is unreachable for this AWS account (account-standing restriction on model
 // access, confirmed with AWS support -- not an IAM/region issue). Calls Groq's free-tier
@@ -27,87 +31,192 @@ async function getApiKey(): Promise<string> {
   return cachedApiKey;
 }
 
-async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<string> {
-  const apiKey = await getApiKey();
-
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      // Reasoning tokens count against max_tokens on gpt-oss-20b; see the same
-      // setting in intent/src/index.ts for the measured failure this prevents.
-      reasoning_effort: "low",
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Explainer Agent: Groq API error (${response.status}): ${errorText}`);
-  }
-
-  const responseBody = await response.json();
-  return responseBody.choices[0].message.content;
+// Through @sage/llm (T2.7): Groq first, OpenRouter if Groq fails or is rate-limited.
+async function callModel(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<{ text: string; usage: LlmUsage | undefined }> {
+  const reply = await chat({ system: systemPrompt, user: userPrompt, maxTokens, timeoutMs: 5000, fallbackTimeoutMs: 8000 });
+  return { text: reply.text, usage: reply.usage };
 }
 
 const SYSTEM_PROMPT = `You are the Explainer Agent for SAGE, a cloud service marketplace.
-Given a chosen service composition, the alternatives it was selected over, and (when present)
-a history of earlier attempts that were rejected during negotiation, write a short,
-plain-language explanation (2-4 sentences) of why the chosen service was picked. If there is
-prior-attempt history, briefly mention what was tried first and why it was rejected before
-explaining the final choice.
+You are given a short fact sheet about a decision. Rewrite it as a plain-language explanation
+of 2-4 sentences for a non-expert. Keep every service name and every number exactly as given.
+Do not add any number, service or claim that is not in the facts, and do not leave out any
+service that was not chosen.
 Return ONLY the explanation text, no markdown formatting, no preamble.`;
 
-export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
+// How many times the model may try before the deterministic fact sheet is used instead.
+const MAX_WORDING_ATTEMPTS = 2;
+
+type ChosenService = ExplainerAgentInput["composition"]["chosen"]["service"];
+
+// Price, uptime and latency of one service. A single service keeps its existing wording
+// ("price about $X a month, ..."); a chain step reads "about $X a month at ...".
+function serviceFacts(s: ChosenService, single = false): string {
+  const basis = s.priceBasis?.replace(/^estimated USD\/month /, "");
+  const price = s.priceBasis?.startsWith("estimated")
+    ? single
+      ? `price about $${s.price.toFixed(2)} a month, ${basis}`
+      : `about $${s.price.toFixed(2)} a month ${basis}`
+    : single
+      ? `price $${s.price}`
+      : `$${s.price}`;
+  return `${price}, uptime ${s.uptime}%${s.latencyMs !== undefined ? `, latency ${s.latencyMs} ms` : ""}`;
+}
+
+// The decision as deterministic sentences: the only source of facts for the explanation.
+function buildFacts(input: ExplainerAgentInput): ExplanationFacts {
   const { composition, negotiationHistory } = input;
-  const { chosen, alternatives } = composition;
+  const { chosen, alternatives, scoreBreakdown } = composition;
+  const rejected = composition.rejected ?? [];
+  const s = chosen.service;
 
-  const alternativesText = alternatives.length
-    ? alternatives
-        .map((a) => `${a.service.name} (price: ${a.service.price}, uptime: ${a.service.uptime}%, score: ${a.score.toFixed(3)})`)
-        .join("; ")
-    : "none";
+  const parts: string[] = [];
+  const cheaper: string[] = [];
+  let scoreNote: string | undefined;
+  const planFacts = (svc: ChosenService) => {
+    // T4.1 (L1): what the flat plan covers, and the catalogue's cheaper-plan rule.
+    if (svc.volumeBasis === "quota" && svc.includedUnits) {
+      parts.push(`The plan includes ${svc.includedUnits.amount.toLocaleString("en-US")} ${svc.includedUnits.unit} a month.`);
+    }
+    if (svc.otherPlans) cheaper.push(`This is the cheaper plan; ${svc.name} also offers other plans for other usage levels.`);
+  };
 
-  const historyText =
-    negotiationHistory && negotiationHistory.length > 1
-      ? negotiationHistory
-          .slice(0, -1)
-          .map(
-            (attempt) =>
-              `Attempt ${attempt.iteration}: ${attempt.composition.chosen.service.name} was rejected -- ${attempt.reviewerResult.violations
-                .map((v) => `${v.constraint} was ${v.actualValue}, required ${v.correctiveAction}`)
-                .join("; ")}`
-          )
-          .join("\n")
-      : "none -- approved on the first attempt";
+  const chain = composition.chain;
+  if (chain) {
+    // T4.1e: one sentence per step (with how it uses earlier steps), then the chain totals.
+    parts.push(`This request is a chain of ${chain.steps.length} steps.`);
+    chain.steps.forEach((step, i) => {
+      const svc = step.chosen.service;
+      const uses = step.dependsOn.length
+        ? `, using the output of step ${step.dependsOn.map((d) => d + 1).join(" and step ")}`
+        : "";
+      parts.push(`Step ${i + 1} (${step.capability}${uses}): ${svc.name}, ${serviceFacts(svc)}${svc.volumeNote ? `; ${svc.volumeNote}` : ""}.`);
+      planFacts(svc);
+    });
+    const t = chain.totals;
+    parts.push(
+      `Together: about $${t.price.toFixed(2)} a month, combined uptime ${t.uptime}%${t.latencyMs !== undefined ? `, total latency ${t.latencyMs} ms` : ""}.`,
+      `${chain.combinationsCompared} combinations of services were compared and ${chain.combinationsValid} met every limit.`
+    );
+  } else {
+    parts.push(`${s.name} was selected (${serviceFacts(s, true)}).`);
+    // L13, L15, L16: how the stated volume was (or could not be) applied to this service.
+    if (s.volumeNote) parts.push(`Volume: ${s.volumeNote}.`);
+    planFacts(s);
+    if (scoreBreakdown.soleSurvivor) {
+      parts.push("It was the only candidate that met every requirement.");
+    } else if (alternatives.length > 0) {
+      // The out-of-1 scores are internal: the client sees the ranking, the audit trail the scores.
+      parts.push(`It ranked ahead of ${alternatives.map((a) => a.service.name).join(", ")}.`);
+      scoreNote = `Scores (out of 1): ${[chosen, ...alternatives]
+        .map((a) => `${a.service.name} ${a.score.toFixed(3)}`)
+        .join("; ")}.`;
+    }
+  }
+  const cheaperPlan = cheaper.length ? cheaper.join(" ") : undefined;
+  if (cheaperPlan) parts.push(cheaperPlan);
+  if (rejected.length > 0) {
+    parts.push(`Not chosen: ${rejected.map((r) => `${r.name} (${r.reason})`).join("; ")}.`);
+  }
+  if (negotiationHistory && negotiationHistory.length > 1) {
+    const earlier = negotiationHistory
+      .slice(0, -1)
+      .map(
+        (attempt) =>
+          `${attempt.composition.chosen.service.name} was rejected on attempt ${attempt.iteration} (${attempt.reviewerResult.violations
+            .map((v) => `${v.constraint} was ${v.actualValue}, required ${v.requiredValue}`)
+            .join("; ")})`
+      )
+      .join("; ");
+    parts.push(`Earlier: ${earlier}.`);
+  }
 
-  const userPrompt = `Chosen: ${chosen.service.name} (price: ${chosen.service.price}, uptime: ${chosen.service.uptime}%, score: ${chosen.score.toFixed(3)})
-Alternatives considered: ${alternativesText}
-Prior rejected attempts: ${historyText}`;
+  return {
+    text: parts.join(" "),
+    chosenName: s.name,
+    alsoChosen: chain ? chain.steps.slice(1).map((st) => st.chosen.service.name) : [],
+    rejectedNames: rejected.map((r) => r.name),
+    cheaperPlan,
+    scoreNote,
+    volumeNotes: chain
+      ? chain.steps.flatMap((st, i) => (st.chosen.service.volumeNote ? [{ note: st.chosen.service.volumeNote, sentence: `Step ${i + 1}: ${st.chosen.service.volumeNote}.` }] : []))
+      : s.volumeNote
+        ? [{ note: s.volumeNote, sentence: `Volume: ${s.volumeNote}.` }]
+        : [],
+  };
+}
 
-  const explanation = await callGroq(SYSTEM_PROMPT, userPrompt, 1024);
+function addUsage(a: LlmUsage | undefined, b: LlmUsage | undefined): LlmUsage | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  return {
+    promptTokens: a.promptTokens + b.promptTokens,
+    completionTokens: a.completionTokens + b.completionTokens,
+    totalTokens: a.totalTokens + b.totalTokens,
+  };
+}
+
+export async function handler(input: ExplainerAgentInput): Promise<ExplainedBlueprint> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
+  const startedAt = Date.now();
+  const { composition } = input;
+  const facts = buildFacts(input);
+
+  // The model only rewords the facts. Its text is used only if it passes the claim check;
+  // otherwise the deterministic fact sheet itself is the explanation.
+  let explanation = facts.text;
+  let explanationSource: "model" | "facts" = "facts";
+  let usage: LlmUsage | undefined;
+  let lastProblems: string[] = [];
+  for (let attempt = 1; attempt <= MAX_WORDING_ATTEMPTS; attempt++) {
+    let reply: { text: string; usage: LlmUsage | undefined };
+    try {
+      reply = await callModel(SYSTEM_PROMPT, facts.text, 1024);
+    } catch (err) {
+      // No model answered: the deterministic fact sheet is a complete, faithful explanation.
+      lastProblems = [`no language model answered (${err instanceof Error ? err.message : String(err)})`];
+      break;
+    }
+    usage = addUsage(usage, reply.usage);
+    const candidateText = reply.text.trim();
+    lastProblems = checkClaims(candidateText, facts);
+    if (lastProblems.length === 0) {
+      // The cheaper-plan rule must always be stated (T4.1b): add it back if the wording dropped it.
+      const added: string[] = [];
+      // L17: so must every volume note (a unit conversion or assumption behind a price).
+      for (const v of facts.volumeNotes ?? []) {
+        if (!candidateText.toLowerCase().includes(v.note.toLowerCase())) added.push(v.sentence);
+      }
+      if (facts.cheaperPlan && !/cheaper plan/i.test(candidateText)) added.push(facts.cheaperPlan);
+      explanation = [candidateText, ...added].join(" ");
+      explanationSource = "model";
+      break;
+    }
+  }
 
   const output: ExplainedBlueprint = {
     ...composition,
     explanation,
+    explanationSource,
   };
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
+      usage,
       requestId: input.requestId,
       agent: "ExplainerAgent",
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: explanation,
+      reasoning:
+        (explanationSource === "model"
+          ? explanation
+          : `${explanation} (Plain facts used: the model's wording failed the fact check: ${lastProblems.join("; ")}.)`) +
+        (facts.scoreNote ? ` ${facts.scoreNote}` : ""),
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: composition.iteration,
@@ -131,6 +240,11 @@ percentage, or broadening the request). Return ONLY the explanation text, no mar
 formatting, no preamble.`;
 
 export async function explainEscalation(input: EscalationExplainerInput): Promise<EscalationExplanation> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
+  const startedAt = Date.now();
   const { attempts, constraints } = input;
 
   const attemptsText = attempts
@@ -147,22 +261,68 @@ export async function explainEscalation(input: EscalationExplainerInput): Promis
 Attempted options and why each failed:
 ${attemptsText}`;
 
-  const explanation = await callGroq(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
+  // L25: the reviewer message gets the same claim check as client explanations. Every number
+  // must come from the attempts or constraints, and every attempted service must be named.
+  const constraintsText = constraints.map((c) => `${c.field} ${c.operator} ${c.value}`).join(", ");
+  const factsText =
+    `No option met all of your requirements (${attempts.length} attempt(s)), so the request has been passed to a human reviewer. ` +
+    `Requirements: ${constraintsText}. ` +
+    attempts
+      .map((a) => {
+        const { service } = a.composition.chosen;
+        const why = a.reviewerResult.violations.map((v) => `${v.constraint} was ${v.actualValue}, required ${v.requiredValue}`).join("; ");
+        return `${service.name} (price ${service.price}, uptime ${service.uptime}%): ${why}.`;
+      })
+      .join(" ") +
+    " Relaxing one of these requirements may let the marketplace find a match.";
+  const escalationFacts: ExplanationFacts = {
+    text: `${factsText}
+${attemptsText}
+${JSON.stringify(constraints)}`,
+    chosenName: "",
+    rejectedNames: attempts.map((a) => a.composition.chosen.service.name),
+  };
+
+  let explanation = factsText;
+  let explanationSource: "model" | "facts" = "facts";
+  let usage: LlmUsage | undefined;
+  let lastProblems: string[] = [];
+  for (let n = 1; n <= MAX_WORDING_ATTEMPTS; n++) {
+    let reply: { text: string; usage: LlmUsage | undefined };
+    try {
+      reply = await callModel(ESCALATION_SYSTEM_PROMPT, userPrompt, 1024);
+    } catch (err) {
+      lastProblems = [`no language model answered (${err instanceof Error ? err.message : String(err)})`];
+      break;
+    }
+    usage = reply.usage;
+    lastProblems = checkClaims(reply.text, escalationFacts);
+    if (lastProblems.length === 0) {
+      explanation = reply.text;
+      explanationSource = "model";
+      break;
+    }
+  }
 
   const output: EscalationExplanation = {
     requestId: input.requestId,
     explanation,
     attemptedOptions: attempts.map((a) => a.composition.chosen.service),
+    explanationSource,
   };
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
+      usage,
       requestId: input.requestId,
       agent: "ExplainerAgent",
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}`,
+      reasoning:
+        `Escalation remediation explanation for ${attempts.length} failed attempt(s): ${explanation}` +
+        (explanationSource === "facts" ? ` (Plain facts used: ${lastProblems.join("; ")}.)` : ""),
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: attempts.length > 0 ? attempts[attempts.length - 1].iteration : 0,

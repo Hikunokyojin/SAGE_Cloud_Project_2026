@@ -8,7 +8,12 @@ import type {
   UnsatisfiableEscalationInput,
   EscalationExplanation,
 } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
+import { isWarmup, WARMED, USAGE_UNITS } from "@sage/shared-types";
+import type { UsageVolume } from "@sage/shared-types";
+import { monthlyCost, priceAtVolume } from "@sage/catalogue/src/normalise";
+import { catalogueLookup, type CatalogueRecord } from "./catalogue";
+export { _setCatalogueLookup } from "./catalogue";
 
 // Hard circuit breaker: once iteration reaches this, we escalate to a human
 // instead of letting the pipeline retry indefinitely.
@@ -43,6 +48,8 @@ function violatesConstraint(actual: number, constraint: Constraint): boolean {
   }
 }
 
+type Service = ReviewerAgentInput["composition"]["chosen"]["service"];
+
 function fieldValue(service: { price: number; uptime: number; latencyMs?: number }, field: string): number | undefined {
   if (field === "price") return service.price;
   if (field === "uptime") return service.uptime;
@@ -50,26 +57,98 @@ function fieldValue(service: { price: number; uptime: number; latencyMs?: number
   return undefined;
 }
 
-function findViolations(input: ReviewerAgentInput): Violation[] {
-  const service = input.composition.chosen.service;
-  const violations: Violation[] = [];
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
-  if (input.requiredCategory && service.capability !== input.requiredCategory) {
+function listed(s: Service) {
+  if (typeof s.listPrice !== "number" || !s.priceUnit || !s.currency) return undefined;
+  return { amount: s.listPrice, unit: s.priceUnit, currency: s.currency };
+}
+
+// T4.1c (L12): the monthly price recomputed here from the provider's list price, not taken
+// from the Negotiator. Undefined when it cannot be recomputed (the stated price is then used).
+function independentPrice(s: Service, volume?: UsageVolume): number | undefined {
+  const pricing = listed(s);
+  if (!pricing) return undefined;
+  try {
+    // L15/L16: the same conversion the Negotiator uses (pages to images or characters).
+    const atVolume = volume && !s.volumeBasis ? priceAtVolume(pricing, volume) : undefined;
+    return round2((atVolume ?? monthlyCost(pricing)).usd);
+  } catch {
+    return undefined;
+  }
+}
+
+// Price of one unit of use, for a limit stated per unit.
+function independentUnitPrice(s: Service, price: number): number | undefined {
+  if (s.volumeBasis === "quota" && s.includedUnits) return price / s.includedUnits.amount;
+  if (s.volumeBasis) return undefined;
+  const pricing = listed(s);
+  if (!pricing) return undefined;
+  try {
+    const one = monthlyCost(pricing, Object.fromEntries(USAGE_UNITS.map((u) => [u, 1])));
+    const two = monthlyCost(pricing, Object.fromEntries(USAGE_UNITS.map((u) => [u, 2])));
+    return one.usd === two.usd ? undefined : one.usd;
+  } catch {
+    return undefined;
+  }
+}
+
+function checkService(
+  service: Service,
+  constraints: Constraint[],
+  requiredCategory: string | undefined,
+  volume: UsageVolume | undefined,
+  label = ""
+): Violation[] {
+  const violations: Violation[] = [];
+  const at = label ? `${label}: ` : "";
+
+  if (requiredCategory && service.capability !== requiredCategory) {
     violations.push({
-      constraint: "capability",
+      constraint: `${at}capability`,
       actualValue: service.capability ?? "unknown",
-      requiredValue: input.requiredCategory,
+      requiredValue: requiredCategory,
       severity: "hard",
       affectedCandidate: service.serviceId,
-      correctiveAction: `select a candidate in the "${input.requiredCategory}" category`,
+      correctiveAction: `select a candidate in the "${requiredCategory}" category`,
     });
   }
 
-  for (const constraint of input.constraints.filter((c) => c.mandatory)) {
-    const actual = fieldValue(service, constraint.field);
+  const recomputed = independentPrice(service, volume);
+  if (recomputed !== undefined && Math.abs(recomputed - service.price) > 0.01) {
+    violations.push({
+      constraint: `${at}price`,
+      actualValue: service.price,
+      requiredValue: recomputed,
+      severity: "hard",
+      affectedCandidate: service.serviceId,
+      correctiveAction: `the stated price does not match the list price (${service.priceUnit}) at the stated volume; re-price the candidate`,
+    });
+  }
+  const price = recomputed ?? service.price;
+
+  const inc = service.includedUnits;
+  if (volume && service.volumeBasis === "quota" && inc && inc.unit === volume.unit && volume.amount > inc.amount) {
+    violations.push({
+      constraint: `${at}volume`,
+      actualValue: inc.amount,
+      requiredValue: volume.amount,
+      severity: "hard",
+      affectedCandidate: service.serviceId,
+      correctiveAction: `select a plan that covers ${volume.amount} ${volume.unit} a month`,
+    });
+  }
+
+  for (const constraint of constraints.filter((c) => c.mandatory)) {
+    const perUnit = constraint.per === "unit" && constraint.field === "price";
+    const actual = perUnit
+      ? independentUnitPrice(service, price)
+      : constraint.field === "price"
+        ? price
+        : fieldValue(service, constraint.field);
     if (actual === undefined || violatesConstraint(actual, constraint)) {
       violations.push({
-        constraint: constraint.field,
+        constraint: `${at}${perUnit ? "price per unit" : constraint.field}`,
         actualValue: actual ?? "unavailable",
         requiredValue: constraint.value,
         severity: "hard",
@@ -78,8 +157,192 @@ function findViolations(input: ReviewerAgentInput): Violation[] {
       });
     }
   }
-
   return violations;
+}
+
+// T4.1c: a chain is checked step by step, then its totals are recomputed here and checked
+// against the chain-wide limits. A failing total names the step that contributes most.
+function checkChain(input: ReviewerAgentInput): Violation[] {
+  const chain = input.composition.chain!;
+  const steps = input.steps ?? [];
+  if (chain.steps.length !== steps.length || chain.steps.some((s, i) => s.capability !== steps[i].capability)) {
+    return [
+      {
+        constraint: "chain",
+        actualValue: chain.steps.map((s) => s.capability).join(" > "),
+        requiredValue: steps.map((s) => s.capability).join(" > "),
+        severity: "hard",
+        affectedCandidate: chain.steps[0]?.chosen.service.serviceId ?? "unknown",
+        correctiveAction: "compose one service for each requested step, in order",
+      },
+    ];
+  }
+  const violations: Violation[] = [];
+  const services = chain.steps.map((s) => s.chosen.service);
+  services.forEach((svc, i) => {
+    violations.push(...checkService(svc, steps[i].constraints, steps[i].requiredCategory, steps[i].volume, `step ${i + 1}`));
+  });
+  const prices = services.map((svc, i) => independentPrice(svc, steps[i].volume) ?? svc.price);
+  const latencies = services.map((svc) => svc.latencyMs);
+  const totals: Record<string, number | undefined> = {
+    price: round2(prices.reduce((a, b) => a + b, 0)),
+    uptime: Math.round(services.reduce((a, svc) => a * (svc.uptime / 100), 1) * 1e6) / 1e4,
+    latencyMs: latencies.every((l) => typeof l === "number") ? latencies.reduce((a, l) => a + (l as number), 0) : undefined,
+  };
+  const worst = (field: string): string => {
+    let idx = 0;
+    services.forEach((svc, i) => {
+      const better =
+        field === "uptime"
+          ? svc.uptime < services[idx].uptime
+          : field === "latencyMs"
+            ? (svc.latencyMs ?? 0) > (services[idx].latencyMs ?? 0)
+            : prices[i] > prices[idx];
+      if (better) idx = i;
+    });
+    return services[idx].serviceId;
+  };
+  for (const constraint of input.constraints.filter((c) => c.mandatory && c.per !== "unit")) {
+    const actual = totals[constraint.field];
+    if (actual === undefined || violatesConstraint(actual, constraint)) {
+      violations.push({
+        constraint: `chain ${constraint.field}`,
+        actualValue: actual ?? "unavailable",
+        requiredValue: constraint.value,
+        severity: "hard",
+        affectedCandidate: worst(constraint.field),
+        correctiveAction: `replace the step that contributes most so the chain's total ${constraint.field} ${describeOperator(constraint.operator)} ${constraint.value}`,
+      });
+    }
+  }
+  return violations;
+}
+
+// L22: the catalogue's own figures for the fields the checks use. A stated value that differs
+// is a violation, and the checks below then run on the catalogue's value.
+const CATALOGUE_FIELDS = ["uptime", "latencyMs", "capability", "listPrice", "priceUnit", "currency", "volumeBasis"] as const;
+
+function same(a: unknown, b: unknown): boolean {
+  if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) < 1e-9;
+  return a === b;
+}
+
+function reconcile(service: Service, record: CatalogueRecord | undefined, label: string): { service: Service; violations: Violation[] } {
+  const at = label ? `${label}: ` : "";
+  if (!record) {
+    return {
+      service,
+      violations: [
+        {
+          constraint: `${at}catalogue`,
+          actualValue: service.serviceId,
+          requiredValue: "a service listed in the catalogue",
+          severity: "hard",
+          affectedCandidate: service.serviceId,
+          correctiveAction: "select a service that is listed in the catalogue",
+        },
+      ],
+    };
+  }
+  const violations: Violation[] = [];
+  const fresh = { ...service } as Record<string, unknown>;
+  const fields: string[] = [...CATALOGUE_FIELDS];
+  // Without a list price the stated monthly price is the catalogue's own figure.
+  if (typeof record.listPrice !== "number") fields.push("price");
+  for (const f of fields) {
+    const stated = (service as unknown as Record<string, unknown>)[f];
+    const listedValue = (record as unknown as Record<string, unknown>)[f];
+    // Only values the Broker would pass on (it drops nulls and unknown plan kinds).
+    if (listedValue === null || listedValue === undefined || (typeof listedValue !== "number" && typeof listedValue !== "string")) continue;
+    if (f === "volumeBasis" && !["quota", "unmetered", "unknown"].includes(listedValue as string)) continue;
+    if (!same(stated, listedValue)) {
+      violations.push({
+        constraint: `${at}catalogue ${f}`,
+        actualValue: stated === undefined ? "missing" : (stated as number | string),
+        requiredValue: listedValue as number | string,
+        severity: "hard",
+        affectedCandidate: service.serviceId,
+        correctiveAction: `the stated ${f} does not match the catalogue; re-read the service from the catalogue`,
+      });
+    }
+    fresh[f] = listedValue;
+  }
+  const inc = record.includedUnits;
+  if (inc && typeof inc.amount === "number") {
+    const stated = service.includedUnits;
+    if (!stated || stated.amount !== inc.amount || stated.unit !== inc.unit) {
+      violations.push({
+        constraint: `${at}catalogue includedUnits`,
+        actualValue: stated ? `${stated.amount} ${stated.unit}` : "missing",
+        requiredValue: `${inc.amount} ${inc.unit}`,
+        severity: "hard",
+        affectedCandidate: service.serviceId,
+        correctiveAction: "the stated plan allowance does not match the catalogue; re-read the service from the catalogue",
+      });
+    }
+    fresh.includedUnits = inc;
+  }
+  return { service: fresh as unknown as Service, violations };
+}
+
+// Reads every chosen service from the catalogue and returns the input with the catalogue's
+// figures in place, plus a violation for every figure that differed. A failed read is a
+// violation too: the Reviewer does not approve what it could not check.
+const CATALOGUE_RETRY_MS = process.env.VITEST ? 0 : 500;
+
+async function withCatalogue(input: ReviewerAgentInput): Promise<{ input: ReviewerAgentInput; violations: Violation[]; checked: boolean }> {
+  const lookup = catalogueLookup();
+  if (!lookup) return { input, violations: [], checked: false };
+  const chain = input.composition.chain;
+  const services = chain ? chain.steps.map((s) => s.chosen.service) : [input.composition.chosen.service];
+  let records: Map<string, CatalogueRecord>;
+  const ids = [...new Set(services.map((s) => s.serviceId))];
+  try {
+    // L27: one retry after a short pause, so a brief connection blip does not send the request
+    // to human review.
+    try {
+      records = await lookup(ids);
+    } catch (first) {
+      console.warn("Reviewer Agent: catalogue read failed, retrying once", first);
+      await new Promise((r) => setTimeout(r, CATALOGUE_RETRY_MS));
+      records = await lookup(ids);
+    }
+  } catch (err) {
+    console.error("Reviewer Agent: catalogue read failed", err);
+    const s = services[0];
+    return {
+      input,
+      checked: true,
+      violations: [
+        {
+          constraint: "catalogue",
+          actualValue: "unavailable",
+          requiredValue: "a catalogue read",
+          severity: "hard",
+          affectedCandidate: s?.serviceId ?? "unknown",
+          correctiveAction: "the catalogue could not be read to verify the service; retry",
+        },
+      ],
+    };
+  }
+  const violations: Violation[] = [];
+  if (chain) {
+    const steps = chain.steps.map((step, i) => {
+      const r = reconcile(step.chosen.service, records.get(step.chosen.service.serviceId), `step ${i + 1}`);
+      violations.push(...r.violations);
+      return { ...step, chosen: { ...step.chosen, service: r.service } };
+    });
+    return { input: { ...input, composition: { ...input.composition, chain: { ...chain, steps } } }, violations, checked: true };
+  }
+  const r = reconcile(input.composition.chosen.service, records.get(input.composition.chosen.service.serviceId), "");
+  violations.push(...r.violations);
+  const composition = { ...input.composition, chosen: { ...input.composition.chosen, service: r.service } };
+  return { input: { ...input, composition }, violations, checked: true };
+}
+
+function findViolations(input: ReviewerAgentInput): Violation[] {
+  if (input.composition.chain) return checkChain(input);
+  return checkService(input.composition.chosen.service, input.constraints, input.requiredCategory, input.volume);
 }
 
 function describeOperator(operator: Constraint["operator"]): string {
@@ -106,15 +369,21 @@ async function escalate(input: ReviewerAgentInput, violations: Violation[]): Pro
   await getSnsClient().send(
     new PublishCommand({
       TopicArn: topicArn,
-      Subject: `SAGE: request ${input.requestId} needs human review`,
-      Message: `Request ${input.requestId} failed Reviewer Agent validation after ${input.composition.iteration} attempt(s).\nChosen service: ${service.name} (${service.serviceId}), price=${service.price}, uptime=${service.uptime}%${service.latencyMs !== undefined ? `, latency=${service.latencyMs}ms` : ""}\nViolations: ${JSON.stringify(violations)}`,
+      Subject: snsSubject(`SAGE: request ${input.requestId} needs human review`),
+      Message: `Request ${input.requestId} failed Reviewer Agent validation after ${input.composition.iteration} attempt(s).\nChosen service: ${service.name} (${service.serviceId}), price=${service.price}, uptime=${service.uptime}%${service.latencyMs !== undefined ? `, latency=${service.latencyMs}ms` : ""}\nViolations: ${JSON.stringify(violations)}${input.reviewUrl ? `\n\nReview and resolve: ${input.reviewUrl}` : ""}`,
     })
   );
 }
 
-async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoning: string): Promise<ReviewerResult> {
+async function finish(
+  startedAt: number,
+  input: ReviewerAgentInput,
+  output: ReviewerResult,
+  reasoning: string
+): Promise<ReviewerResult> {
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "ReviewerAgent",
       timestamp: new Date().toISOString(),
@@ -134,13 +403,28 @@ async function finish(input: ReviewerAgentInput, output: ReviewerResult, reasoni
   return output;
 }
 
+// SNS rejects a Subject over 100 characters ("Invalid parameter: Subject"), which would
+// turn an escalation into a failed request, so every subject is clamped.
+const SNS_SUBJECT_LIMIT = 100;
+export function snsSubject(text: string): string {
+  return text.length <= SNS_SUBJECT_LIMIT ? text : text.slice(0, SNS_SUBJECT_LIMIT - 3) + "...";
+}
+
 export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
+  const startedAt = Date.now();
   const iteration = input.composition.iteration;
-  const violations = findViolations(input);
+  const fromCatalogue = await withCatalogue(input);
+  const violations = [...fromCatalogue.violations, ...findViolations(fromCatalogue.input)];
+  const checkedAgainst = fromCatalogue.checked ? "the catalogue's own figures and " : "";
   const decisionId = input.decisionId ?? randomUUID();
 
   if (violations.length === 0) {
     return finish(
+      startedAt,
       input,
       {
         requestId: input.requestId,
@@ -151,13 +435,14 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
         composition: input.composition,
         escalated: false,
       },
-      "Composition independently re-verified against every mandatory constraint; all satisfied."
+      `Composition independently re-verified against ${checkedAgainst}every mandatory constraint; all satisfied.`
     );
   }
 
   if (iteration >= MAX_RETRIES) {
     await escalate(input, violations);
     return finish(
+      startedAt,
       input,
       {
         requestId: input.requestId,
@@ -173,6 +458,7 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
   }
 
   return finish(
+    startedAt,
     input,
     {
       requestId: input.requestId,
@@ -200,6 +486,11 @@ export async function handler(input: ReviewerAgentInput): Promise<ReviewerResult
 // for that specific case too, reusing the same SNS topic and Human-in-the-Loop
 // channel as a circuit-breaker escalation.
 export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput): Promise<EscalationExplanation> {
+  if (isWarmup(input)) {
+    await warmUp();
+    return WARMED as never;
+  }
+  const startedAt = Date.now();
   const topicArn = process.env.SNS_TOPIC_ARN;
   if (!topicArn) {
     throw new Error("Reviewer Agent: SNS_TOPIC_ARN is not set, cannot escalate to Human-in-the-Loop");
@@ -212,14 +503,22 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
   await getSnsClient().send(
     new PublishCommand({
       TopicArn: topicArn,
-      Subject: `SAGE: request ${input.requestId} needs human review (no valid candidate)`,
-      Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}`,
+      Subject: snsSubject(
+        input.kind === "capability_not_in_catalogue"
+          ? `SAGE review: ${input.requestId} (not in the catalogue)`
+          : `SAGE review: ${input.requestId} (no valid candidate)`
+      ),
+      Message: `Request ${input.requestId} could not be satisfied: ${input.reason}.\nRequested constraints: ${constraintsText}${input.reviewUrl ? `\n\nReview and resolve: ${input.reviewUrl}` : ""}`,
     })
   );
 
   // User-facing text: input.reason carries internal error plumbing (e.g. the
   // lambdaInvoker prefix), so it goes only to the SNS message and audit record.
-  const explanation = input.constraints.length === 0
+  const explanation = input.kind === "capability_not_in_catalogue"
+    ? `The marketplace does not offer this kind of service yet, so the request has been passed to a human reviewer ` +
+      `instead of being matched to an unrelated service. Try describing what you need in other words, ` +
+      `or ask the marketplace to add this type of service.`
+    : input.constraints.length === 0
     ? `No service in the catalog matches this request, so it has been passed to a human reviewer. ` +
       `Try describing the service you need differently, or check whether the marketplace offers it.`
     : `No available service could satisfy every mandatory requirement at once. ` +
@@ -234,6 +533,7 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "ReviewerAgent",
       timestamp: new Date().toISOString(),

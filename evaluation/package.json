@@ -8,10 +8,16 @@
   "scripts": {
     "experiment": "tsx src/run-experiments.ts",
     "typecheck": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "calibrate:retrieval": "tsx src/retrieval/calibrate.ts",
+    "rt11": "tsx src/rt11/run.ts",
+    "faults": "node -e \"process.env.FAULT_REPORT='1';require('child_process').execSync('npx vitest run evaluation/faults',{stdio:'inherit',cwd:'..'})\"",
+    "explain": "tsx explain/run.ts",
+    "scale": "node -e \"process.env.SCALE_RUN='1';require('child_process').execSync('npx vitest run evaluation/scale',{stdio:'inherit',cwd:'..'})\""
   },
   "dependencies": {
     "@sage/shared-types": "*",
+    "@sage/catalogue": "*",
     "@sage/secrets": "*",
     "@sage/agent-input-guard": "*",
     "@sage/agent-intent": "*",
@@ -20,7 +26,8 @@
     "@sage/agent-reviewer": "*",
     "@sage/agent-explainer": "*",
     "@sage/conductor": "*",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "@huggingface/transformers": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

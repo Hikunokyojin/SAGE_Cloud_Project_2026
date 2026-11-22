@@ -1,5 +1,61 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
+import { ReviewPage } from "./ReviewPage";
+import { parseReviewHash } from "./review";
+import { chainView, type ChainResult } from "./chain";
+import {
+  initiateAuthRequest, parseAuthResponse, isValid, requestUrl, requestHeaders,
+  loadSession, saveSession, type Session,
+} from "./auth";
+
+// Set at build time (VITE_COGNITO_CLIENT_ID); without it the pilot sign-in is hidden.
+const COGNITO = {
+  region: (import.meta.env.VITE_COGNITO_REGION as string | undefined) ?? "ap-south-1",
+  clientId: import.meta.env.VITE_COGNITO_CLIENT_ID as string | undefined,
+};
+
+function PilotSignIn({ session, onChange }: { session: Session | null; onChange: (s: Session | null) => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!COGNITO.clientId) return null;
+
+  if (isValid(session)) {
+    return (
+      <div className="pilot-signin">
+        Signed in as <strong>{session.email}</strong> (pilot route).{" "}
+        <button type="button" onClick={() => onChange(null)}>Sign out</button>
+      </div>
+    );
+  }
+
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const { url, init } = initiateAuthRequest({ region: COGNITO.region, clientId: COGNITO.clientId! }, email, password);
+      const res = await fetch(url, init);
+      onChange(parseAuthResponse(res.status, await res.json(), email));
+      setPassword("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="pilot-signin" onSubmit={signIn}>
+      <span>Pilot users:</span>
+      <input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <input type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <button type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
+      {error && <span className="error">{error}</span>}
+    </form>
+  );
+}
 
 interface AuditStep {
   agent: string;
@@ -12,7 +68,7 @@ interface AuditStep {
 interface PipelineResponse {
   requestId: string;
   status?: "completed" | "paused_for_review" | "failed";
-  result?: { explanation: string; chosen: { service: { name: string; price: number; uptime: number } } };
+  result?: ChainResult & { explanation: string };
   escalation?: { explanation: string };
   error?: string;
 }
@@ -36,6 +92,47 @@ function loadApiBase(): string {
 function formatTimestamp(ts: string): string {
   const d = new Date(ts);
   return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+}
+
+// T4.1e: a chain result as a graph (columns by dependency depth) and a step table.
+function ChainPanel({ result }: { result: ChainResult }) {
+  const view = chainView(result);
+  if (!view) return null;
+  return (
+    <div className="chain">
+      <div className="chain-graph" aria-label="Service chain graph">
+        {view.columns.map((col, c) => (
+          <div className="chain-column-wrap" key={c}>
+            {c > 0 && <span className="chain-arrow" aria-hidden="true">&rarr;</span>}
+            <div className="chain-column">
+              {col.map((s) => (
+                <div className="chain-node" key={s.step}>
+                  <span className="chain-step">Step {s.step}</span>
+                  <strong>{s.name}</strong>
+                  <span className="chain-cap">{s.capability}</span>
+                  {s.uses.length > 0 && <span className="chain-cap">uses step {s.uses.join(", ")}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <table className="chain-table">
+        <thead>
+          <tr><th>Step</th><th>Service</th><th>Price / month</th><th>Uptime</th><th>Latency</th><th>Volume</th></tr>
+        </thead>
+        <tbody>
+          {view.steps.map((s) => (
+            <tr key={s.step}>
+              <td>{s.step}</td><td>{s.name}</td><td>{s.price}</td><td>{s.uptime}</td>
+              <td>{s.latency ?? "-"}</td><td>{s.note ?? "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="chain-totals">Chain total: {view.totals}</p>
+    </div>
+  );
 }
 
 function JsonBlock({ label, value }: { label: string; value: unknown }) {
@@ -118,6 +215,13 @@ function StatusBanner({ status, recheck }: { status: BackendStatus; recheck: () 
 export function App() {
   const [apiBase, setApiBase] = useState(loadApiBase);
   const { status: backendStatus, recheck } = useBackendStatus(apiBase);
+  // A review link from an alert email opens the human review page above the dashboard.
+  const [reviewLink] = useState(() => parseReviewHash(window.location.hash));
+  const [session, setSessionState] = useState<Session | null>(loadSession);
+  const setSession = (s: Session | null) => {
+    saveSession(s);
+    setSessionState(s);
+  };
   const [requestText, setRequestText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [pipelineResult, setPipelineResult] = useState<PipelineResponse | null>(null);
@@ -161,11 +265,16 @@ export function App() {
     setSubmitError(null);
     setPipelineResult(null);
     try {
-      const res = await fetch(`${apiBase.replace(/\/$/, "")}/request`, {
+      const res = await fetch(requestUrl(apiBase, session), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: requestHeaders(session),
         body: JSON.stringify({ text: requestText }),
       });
+      if (res.status === 429) throw new Error("Too many requests right now; wait a few seconds and try again.");
+      if (res.status === 401) {
+        setSession(null);
+        throw new Error("Your pilot sign-in has expired; sign in again.");
+      }
       const data: PipelineResponse = await res.json();
       setPipelineResult(data);
       await loadTrace(data.requestId);
@@ -196,7 +305,9 @@ export function App() {
           <input value={apiBase} onChange={(e) => persistApiBase(e.target.value)} />
         </label>
         <StatusBanner status={backendStatus} recheck={recheck} />
+        <PilotSignIn session={session} onChange={setSession} />
       </header>
+      {reviewLink && <ReviewPage apiBase={apiBase} link={reviewLink} />}
 
       <section className="panel">
         <h2>Submit a request</h2>
@@ -218,7 +329,9 @@ export function App() {
               <strong>Request ID:</strong> {pipelineResult.requestId} &nbsp;
               <strong>Status:</strong> {pipelineResult.status}
             </p>
-            {pipelineResult.result && (
+            {pipelineResult.result?.chain && <ChainPanel result={pipelineResult.result} />}
+            {pipelineResult.result?.chain && <p>{pipelineResult.result.explanation}</p>}
+            {pipelineResult.result && !pipelineResult.result.chain && (
               <p>
                 Chosen: <strong>{pipelineResult.result.chosen.service.name}</strong> (
                 {pipelineResult.result.chosen.service.price}, {pipelineResult.result.chosen.service.uptime}% uptime)

@@ -9,7 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![AWS](https://img.shields.io/badge/AWS-Lambda%20%C2%B7%20EC2%20%C2%B7%20DynamoDB%20%C2%B7%20CDK-ff9900)
 
-[Live dashboard](https://hikunokyojin.github.io/SAGE_Cloud_Project_2026/) · [Architecture](docs/ARCHITECTURE.md) · [Evaluation](docs/EVALUATION.md) · [Security](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md)
+[Live dashboard](https://hikunokyojin.github.io/SAGE_Cloud_Project_2026/) · [Architecture](docs/ARCHITECTURE.md) · [Evaluation](docs/EVALUATION.md) · [Security](docs/SECURITY.md) · [Operations](docs/OPERATIONS.md) · [Runbook](docs/RUNBOOK.md) · [Design decisions](docs/adr/README.md)
 
 </div>
 

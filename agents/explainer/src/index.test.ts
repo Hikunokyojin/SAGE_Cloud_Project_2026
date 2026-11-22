@@ -9,9 +9,14 @@ import type {
 
 const resolveSecretMock = vi.fn();
 const fetchMock = vi.fn();
+const recordDecisionMock = vi.fn();
 
 vi.mock("@sage/secrets", () => ({
   resolveSecret: resolveSecretMock,
+}));
+
+vi.mock("@sage/audit", () => ({
+  recordDecision: recordDecisionMock,
 }));
 
 vi.stubGlobal("fetch", fetchMock);
@@ -19,7 +24,10 @@ vi.stubGlobal("fetch", fetchMock);
 function groqResponse(content: string) {
   return {
     ok: true,
-    json: async () => ({ choices: [{ message: { content } }] }),
+    json: async () => ({
+      choices: [{ message: { content } }],
+      usage: { prompt_tokens: 300, completion_tokens: 90, total_tokens: 390 },
+    }),
   };
 }
 
@@ -66,6 +74,53 @@ function composition(): Composition {
     },
   };
 }
+
+describe("monthly price wording (WP3.5 L9)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("states an estimated monthly price in plain words with cents", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, price: 7.5, priceBasis: "estimated USD/month on its flat monthly plan" };
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1", composition: c });
+    expect(result.explanation).toContain("about $7.50 a month, on its flat monthly plan");
+    expect(result.explanation).not.toContain("USD/month");
+  });
+});
+
+describe("internal scores stay out of the client's explanation", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    recordDecisionMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("does not show the out-of-1 scores to the client, but records them in the audit trail", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const result = await handler({ requestId: "req-1", composition: composition() });
+    expect(result.explanation).not.toMatch(/out of 1|0\.870|0\.600/);
+    expect(result.explanation).toContain("ahead of SlowResize");
+    const reasoning: string = recordDecisionMock.mock.calls[0][0].reasoning;
+    expect(reasoning).toContain("Scores (out of 1): FastResize 0.870; SlowResize 0.600.");
+  });
+
+  it("does not pass the scores to the model, so it cannot repeat them", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen ahead of SlowResize."));
+    const { handler } = await import("./index");
+    await handler({ requestId: "req-1", composition: composition() });
+    const userMessage: string = JSON.parse(fetchMock.mock.calls[0][1].body).messages[1].content;
+    expect(userMessage).not.toMatch(/out of 1|0\.870/);
+  });
+});
 
 describe("Explainer Agent handler", () => {
   beforeEach(() => {
@@ -132,7 +187,8 @@ describe("Explainer Agent handler", () => {
     const requestBody = JSON.parse(options.body);
     const userMessage: string = requestBody.messages[1].content;
 
-    expect(userMessage).toContain("Alternatives considered: none");
+    expect(userMessage).toContain("FastResize was selected");
+    expect(userMessage).not.toContain("ahead of");
   });
 
   it("mentions a prior rejected attempt when negotiationHistory has more than one entry", async () => {
@@ -186,14 +242,17 @@ describe("Explainer Agent handler", () => {
     const userMessage: string = requestBody.messages[1].content;
 
     expect(userMessage).toContain("BudgetResize");
-    expect(userMessage).toContain("Prior rejected attempts");
+    expect(userMessage).toContain("BudgetResize was rejected on attempt 1");
+    expect(userMessage).toContain("uptime was 97.5, required 99");
   });
 
-  it("throws when Groq's API returns a non-OK response", async () => {
+  it("uses the deterministic fact sheet when no language model answers (T2.7), instead of failing", async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 500, text: async () => "server error" });
 
     const { handler } = await import("./index");
-    await expect(handler({ requestId: "req-1", composition: composition() })).rejects.toThrow(/Groq API error/);
+    const out = await handler({ requestId: "req-1", composition: composition() });
+    expect(out.explanationSource).toBe("facts");
+    expect(out.explanation.length).toBeGreaterThan(0);
   });
 });
 
@@ -318,6 +377,46 @@ describe("Explainer Agent explainEscalation", () => {
     expect(result.attemptedOptions.map((o) => o.serviceId)).toEqual(["svc-1", "svc-2"]);
   });
 
+  function priceAttempt(): NegotiationAttempt {
+    return attempt({
+      iteration: 1,
+      serviceId: "svc-1",
+      name: "FastResize",
+      price: 0.08,
+      uptime: 99.9,
+      violations: [
+        { constraint: "price", actualValue: 0.08, requiredValue: 0.05, severity: "hard", affectedCandidate: "svc-1", correctiveAction: "raise the budget" },
+      ],
+    });
+  }
+
+  it("L25: keeps the model's reviewer message when every number and service checks out", async () => {
+    const text = "FastResize costs $0.08, above your budget of $0.05. Raising the budget to $0.08 would allow it.";
+    fetchMock.mockResolvedValue(groqResponse(text));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanation).toBe(text);
+    expect(out.explanationSource).toBe("model");
+  });
+
+  it("L25: falls back to plain facts when the reviewer message invents a number", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize costs $0.12; raise the budget to $0.15."));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanationSource).toBe("facts");
+    expect(out.explanation).toContain("FastResize");
+    expect(out.explanation).toContain("0.08");
+    expect(out.explanation).toContain("0.05");
+    expect(out.explanation).not.toContain("0.12");
+  });
+
+  it("L25: falls back to plain facts when an attempted service is not named", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Nothing fit your budget of $0.05."));
+    const { explainEscalation } = await import("./index");
+    const out = await explainEscalation({ requestId: "r", constraints: CONSTRAINTS, attempts: [priceAttempt()] });
+    expect(out.explanationSource).toBe("facts");
+  });
+
   it("tells Groq exactly which constraint each attempted option violated", async () => {
     fetchMock.mockResolvedValue(groqResponse("Explanation."));
 
@@ -355,5 +454,229 @@ describe("Explainer Agent explainEscalation", () => {
     expect(userMessage).toContain("FastResize");
     expect(userMessage).toContain("price");
     expect(userMessage).toContain("0.08");
+  });
+
+  it("records the token usage Groq reports and how long the step took", async () => {
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen."));
+    const { handler } = await import("./index");
+
+    await handler({ requestId: "req-1", composition: composition() } as ExplainerAgentInput);
+
+    const recorded = recordDecisionMock.mock.calls[0][0];
+    expect(recorded.usage).toEqual({ promptTokens: 300, completionTokens: 90, totalTokens: 390 });
+    expect(recorded.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("faithful explanations", () => {
+  function compositionWithRejections(): Composition {
+    return {
+      ...composition(),
+      alternatives: [],
+      rejected: [
+        { serviceId: "svc-budget", name: "BudgetResize", reason: "uptime 97.5% is not at least 99.5%" },
+        { serviceId: "svc-slow", name: "SlowResize", reason: "latency 180 ms is not below 100 ms" },
+      ],
+      scoreBreakdown: { ...composition().scoreBreakdown, soleSurvivor: true },
+    };
+  }
+
+  beforeEach(() => {
+    recordDecisionMock.mockReset();
+    recordDecisionMock.mockResolvedValue(undefined);
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("uses the model's wording when it keeps every fact", async () => {
+    const faithful =
+      "FastResize was picked: it costs $0.02 with 99.9% uptime, and it was the only option meeting every requirement. " +
+      "BudgetResize was ruled out because its uptime of 97.5% is below 99.5%, and SlowResize because 180 ms is above 100 ms.";
+    fetchMock.mockResolvedValue(groqResponse(faithful));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(out.explanation).toBe(faithful);
+  });
+
+  it("falls back to the plain facts when the model invents a number", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize costs only $0.01 and has 99.99% uptime. BudgetResize and SlowResize failed."));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(out.explanation).toContain("BudgetResize (uptime 97.5% is not at least 99.5%)");
+    expect(out.explanation).toContain("SlowResize (latency 180 ms is not below 100 ms)");
+    expect(out.explanation).not.toContain("0.01");
+  });
+
+  it("falls back when the model leaves out a rejected candidate or claims there were no alternatives", async () => {
+    fetchMock.mockResolvedValue(groqResponse("FastResize was chosen because there were no other alternatives."));
+    const { handler } = await import("./index");
+
+    const out = await handler({ requestId: "req-1", composition: compositionWithRejections() } as ExplainerAgentInput);
+
+    expect(out.explanation).toContain("Not chosen:");
+    expect(out.explanation).not.toContain("no other alternatives");
+  });
+});
+
+describe("checkClaims", () => {
+  it("accepts text whose numbers and names all come from the facts", async () => {
+    const { checkClaims } = await import("./claimCheck");
+    const facts = { text: "A costs $0.02 with 99.9% uptime. Not chosen: B (uptime 97.5% is not at least 99.5%).", chosenName: "A", rejectedNames: ["B"] };
+    expect(checkClaims("A ($0.02, 99.9% uptime) beat B, whose 97.5% uptime missed the 99.5% minimum.", facts)).toEqual([]);
+  });
+
+  it("reports invented numbers, missing names and a false no-alternatives claim", async () => {
+    const { checkClaims } = await import("./claimCheck");
+    const facts = { text: "A costs $0.02. Not chosen: B (uptime 97.5% is not at least 99.5%).", chosenName: "A", rejectedNames: ["B"] };
+    const problems = checkClaims("A costs $0.03 and there were no other alternatives.", facts);
+    expect(problems).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("0.03"),
+        expect.stringContaining("B"),
+        expect.stringContaining("alternatives"),
+      ])
+    );
+  });
+});
+
+describe("cheaper-plan wording (T4.1, L1)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("says what the plan includes and that it is the cheaper of the provider's plans", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = {
+      ...c.chosen.service,
+      name: "SendGrid Email API",
+      price: 19.95,
+      priceBasis: "estimated USD/month on its flat monthly plan",
+      volumeBasis: "quota",
+      includedUnits: { amount: 50000, unit: "emails" },
+      otherPlans: true,
+    };
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: c });
+    expect(explanation).toContain("The plan includes 50,000 emails a month.");
+    expect(explanation).toContain("This is the cheaper plan; SendGrid Email API also offers other plans for other usage levels.");
+  });
+
+  it("adds the cheaper-plan sentence back when the model's wording leaves it out (T4.1b)", async () => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, otherPlans: true };
+    const name = c.chosen.service.name;
+    const alts = c.alternatives.map((a) => a.service.name).join(" and ");
+    fetchMock.mockResolvedValue(groqResponse(`We picked ${name}. ${alts} were also considered.`));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: c });
+    expect(out.explanationSource).toBe("model");
+    expect(out.explanation).toBe(`We picked ${name}. ${alts} were also considered. This is the cheaper plan; ${name} also offers other plans for other usage levels.`);
+  });
+
+  it("says nothing extra for a service without plan details", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: composition() });
+    expect(explanation).not.toContain("cheaper plan");
+  });
+});
+
+describe("chain explanations and volume notes (T4.1e)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  const svc = (serviceId: string, name: string, price: number, uptime: number, latencyMs: number, extra: object = {}) => ({
+    serviceId, name, description: "", endpoint: "https://x", evidence: [], price, uptime, latencyMs,
+    priceBasis: "estimated USD/month at 5,000 pages/month", ...extra,
+  });
+  function chainComposition(): Composition {
+    const c = composition();
+    const ocr = { service: svc("svc-vision", "Vision OCR", 7.5, 99.9, 900, { volumeNote: "5,000 pages counted as 5,000 images" }), score: 0.8, reason: "" };
+    const tr = { service: svc("svc-translate", "Translate", 150, 99.95, 648, {
+      volumeNote: "5,000 pages counted as 10,000,000 characters, at about 2,000 characters a page", otherPlans: true }), score: 0.7, reason: "" };
+    c.chosen = ocr;
+    c.alternatives = [];
+    c.rejected = [{ serviceId: "svc-veryfi", name: "Veryfi", reason: "step 1: over the budget" }];
+    c.chain = {
+      steps: [
+        { capability: "extract text from scanned invoices", chosen: ocr, dependsOn: [] },
+        { capability: "translate the text into Spanish", chosen: tr, dependsOn: [0] },
+      ],
+      totals: { price: 157.5, uptime: 99.85, latencyMs: 1548 },
+      score: 0.75,
+      combinationsCompared: 5,
+      combinationsValid: 3,
+      edges: [{ from: "svc-vision", to: "svc-translate" }],
+    };
+    return c;
+  }
+
+  it("states a single service's volume note (L13, L15, L16)", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, volumeNote: "plan quota is in requests, so 5,000 emails could not be checked" };
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: c });
+    expect(explanation).toContain("Volume: plan quota is in requests, so 5,000 emails could not be checked.");
+  });
+
+  it("describes every step, its volume note, the totals and the comparison", async () => {
+    fetchMock.mockRejectedValue(new Error("down"));
+    const { handler } = await import("./index");
+    const { explanation } = await handler({ requestId: "req-1", composition: chainComposition() });
+    expect(explanation).toContain("This request is a chain of 2 steps.");
+    expect(explanation).toContain("Step 1 (extract text from scanned invoices): Vision OCR, about $7.50 a month at 5,000 pages/month, uptime 99.9%, latency 900 ms; 5,000 pages counted as 5,000 images.");
+    expect(explanation).toContain("Step 2 (translate the text into Spanish, using the output of step 1): Translate, about $150.00 a month");
+    expect(explanation).toContain("at about 2,000 characters a page.");
+    expect(explanation).toContain("Together: about $157.50 a month, combined uptime 99.85%, total latency 1548 ms.");
+    expect(explanation).toContain("5 combinations of services were compared and 3 met every limit.");
+    expect(explanation).toContain("Not chosen: Veryfi (step 1: over the budget).");
+    expect(explanation).toContain("This is the cheaper plan; Translate also offers other plans for other usage levels.");
+  });
+
+  it("rejects model wording that leaves out a step's service", async () => {
+    fetchMock.mockResolvedValue(groqResponse("Vision OCR was chosen, and Veryfi was not."));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: chainComposition() });
+    expect(out.explanationSource).toBe("facts");
+  });
+});
+
+describe("volume notes survive the model's wording (L17)", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    resolveSecretMock.mockReset();
+    fetchMock.mockReset();
+    resolveSecretMock.mockResolvedValue("test-groq-key");
+  });
+
+  it("adds back a volume note the wording left out, and keeps one it included", async () => {
+    const c = composition();
+    c.chosen.service = { ...c.chosen.service, volumeNote: "5,000 pages counted as 5,000 images" };
+    fetchMock.mockResolvedValue(groqResponse("We picked FastResize over SlowResize."));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "req-1", composition: c });
+    expect(out.explanationSource).toBe("model");
+    expect(out.explanation).toBe("We picked FastResize over SlowResize. Volume: 5,000 pages counted as 5,000 images.");
+
+    vi.resetModules();
+    fetchMock.mockResolvedValue(groqResponse("We picked FastResize over SlowResize; 5,000 pages counted as 5,000 images."));
+    const again = await (await import("./index")).handler({ requestId: "req-1", composition: c });
+    expect(again.explanation).toBe("We picked FastResize over SlowResize; 5,000 pages counted as 5,000 images.");
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as cdk from "aws-cdk-lib";
 import { Template, Match } from "aws-cdk-lib/assertions";
@@ -23,14 +24,22 @@ beforeAll(() => {
   }
 });
 
+// Every synth writes a cloud assembly with a copy of each Lambda bundle (~200 MB with the
+// Broker's model). Without an outdir CDK puts it in a new %TEMP%/cdk.out* folder that is
+// never removed; 566 of them filled the disk (WP3.5). All runs now share one folder that is
+// deleted afterwards.
+const synthRoot = fs.mkdtempSync(path.join(os.tmpdir(), "sage-cdk-test-"));
+let synthCount = 0;
+
 afterAll(() => {
   for (const dir of createdPlaceholders) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+  fs.rmSync(synthRoot, { recursive: true, force: true });
 });
 
 function synth(): Template {
-  const app = new cdk.App();
+  const app = new cdk.App({ outdir: path.join(synthRoot, String(synthCount++)) });
   const stack = new SageStack(app, "TestStack", { env: { region: "ap-south-1", account: "123456789012" } });
   return Template.fromStack(stack);
 }
@@ -71,7 +80,7 @@ describe("SageStack", () => {
           Statement: Match.arrayWith([
             Match.objectLike({
               Action: "ssm:GetParameter",
-              Resource: Match.stringLikeRegexp(".*GROQ_API_KEY.*"),
+              Resource: Match.arrayWith([Match.stringLikeRegexp(".*GROQ_API_KEY.*"), Match.stringLikeRegexp(".*OPENROUTER_API_KEY.*")]),
             }),
           ]),
         },
@@ -156,5 +165,201 @@ describe("SageStack", () => {
       (s: any) => s.Action === "lambda:InvokeFunction"
     );
     expect(statement.Resource).not.toBe("*");
+  });
+
+  it("gives Intent a shared cache table with TTL", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      TableName: "intent_cache",
+      TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+      BillingMode: "PAY_PER_REQUEST",
+    });
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      FunctionName: "sage-intent",
+      Environment: { Variables: Match.objectLike({ INTENT_CACHE_TABLE_NAME: Match.anyValue() }) },
+    });
+  });
+
+  it("throttles the whole API stage so bursts get HTTP 429 instead of exhausting the Groq quota", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::ApiGateway::Stage", {
+      StageName: "prod",
+      MethodSettings: Match.arrayWith([
+        Match.objectLike({ HttpMethod: "*", ResourcePath: "/*", ThrottlingRateLimit: 5, ThrottlingBurstLimit: 10 }),
+      ]),
+    });
+  });
+
+  it("creates a Cognito user pool for pilot users with self sign-up disabled", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::Cognito::UserPool", {
+      AdminCreateUserConfig: { AllowAdminCreateUserOnly: true },
+    });
+    template.hasResourceProperties("AWS::Cognito::UserPoolClient", {
+      GenerateSecret: false,
+      ExplicitAuthFlows: Match.arrayWith(["ALLOW_USER_PASSWORD_AUTH"]),
+    });
+  });
+
+  it("protects /pilot/* with the Cognito authorizer and leaves the public demo routes open", () => {
+    const template = synth();
+    template.resourceCountIs("AWS::ApiGateway::Authorizer", 1);
+    template.hasResourceProperties("AWS::ApiGateway::Authorizer", { Type: "COGNITO_USER_POOLS" });
+    const methods = template.findResources("AWS::ApiGateway::Method");
+    const auth = Object.values(methods).map((m: any) => m.Properties.AuthorizationType ?? "NONE");
+    expect(auth.filter((a) => a === "COGNITO_USER_POOLS")).toHaveLength(1);
+    expect(auth.filter((a) => a === "NONE").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("lets browser CORS preflights (OPTIONS) through /pilot/* without a token", () => {
+    const template = synth();
+    const methods = Object.values(template.findResources("AWS::ApiGateway::Method")) as any[];
+    const options = methods.filter((m) => m.Properties.HttpMethod === "OPTIONS");
+    expect(options).toHaveLength(1);
+    expect(options[0].Properties.AuthorizationType ?? "NONE").toBe("NONE");
+  });
+
+  it("recovers the Conductor instance automatically on a host failure and reboots it on an OS failure", () => {
+    const template = synth();
+    const alarms = Object.values(template.findResources("AWS::CloudWatch::Alarm")) as any[];
+    const byMetric = (name: string) => alarms.find((a) => a.Properties.MetricName === name)?.Properties;
+
+    const system = byMetric("StatusCheckFailed_System");
+    expect(system).toBeDefined();
+    expect(JSON.stringify(system.AlarmActions)).toContain("ec2:recover");
+    expect(system.TreatMissingData).toBe("notBreaching");
+
+    const instance = byMetric("StatusCheckFailed_Instance");
+    expect(instance).toBeDefined();
+    expect(JSON.stringify(instance.AlarmActions)).toContain("ec2:reboot");
+    expect(instance.TreatMissingData).toBe("notBreaching");
+
+    // both also notify the operator through the existing alert topic
+    for (const a of [system, instance]) {
+      expect(JSON.stringify(a.AlarmActions)).toContain("EscalationTopic");
+    }
+  });
+
+  it("stores paused requests in their own table and lets only the Conductor use it and the review key", () => {
+    const template = synth();
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      TableName: "paused_requests",
+      KeySchema: [{ AttributeName: "requestId", KeyType: "HASH" }],
+      TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+    });
+    const policies = JSON.stringify(template.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("parameter/sage/conductor/HITL_SIGNING_KEY");
+    const conductorPolicy = Object.entries(template.findResources("AWS::IAM::Policy")).find(([id]) => id.includes("ConductorInstanceRole"));
+    const text = JSON.stringify(conductorPolicy);
+    expect(text).toContain("dynamodb:UpdateItem");
+    expect(text).toContain("dynamodb:PutItem");
+    const allows = (conductorPolicy![1] as any).Properties.PolicyDocument.Statement.filter((st: any) => st.Effect === "Allow");
+    expect(JSON.stringify(allows)).not.toContain("dynamodb:DeleteItem");
+  });
+
+  it("explicitly denies update and delete on the audit table to every role that can write it", () => {
+    const template = synth();
+    const policies = Object.entries(template.findResources("AWS::IAM::Policy")) as [string, any][];
+    const writers = policies.filter(([, p]) =>
+      JSON.stringify(p.Properties.PolicyDocument.Statement).includes("dynamodb:PutItem") &&
+      JSON.stringify(p.Properties.PolicyDocument.Statement).includes("AgentDecisionsTable")
+    );
+    expect(writers.length).toBeGreaterThanOrEqual(9); // 8 agent Lambdas + the Conductor
+    for (const [id, p] of writers) {
+      const deny = p.Properties.PolicyDocument.Statement.find((st: any) => st.Effect === "Deny");
+      expect(deny, id).toBeDefined();
+      for (const action of ["dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem"]) {
+        expect(deny.Action, id).toContain(action);
+      }
+      // writers read the latest record to link the chain
+      expect(JSON.stringify(p.Properties.PolicyDocument.Statement), id).toContain("dynamodb:Query");
+    }
+  });
+
+  describe("observability (T2.5)", () => {
+    it("alarms on agent errors, API 5XX, slow responses, escalation rate and Groq 429s, all to the alert topic", () => {
+      const template = synth();
+      const alarms = Object.values(template.findResources("AWS::CloudWatch::Alarm")) as any[];
+      const names = alarms.map((a) => a.Properties.AlarmName);
+      for (const n of [
+        "sage-agent-errors",
+        "sage-api-5xx",
+        "sage-api-latency-p95",
+        "sage-escalation-rate",
+        "sage-groq-rate-limited",
+      ]) {
+        const alarm = alarms.find((a) => a.Properties.AlarmName === n);
+        expect(alarm, n).toBeDefined();
+        expect(JSON.stringify(alarm.Properties.AlarmActions), n).toContain("EscalationTopic");
+        expect(alarm.Properties.TreatMissingData, n).toBe("notBreaching");
+      }
+      // stays inside the 10 free CloudWatch alarms
+      expect(names.length).toBeLessThanOrEqual(10);
+    });
+
+    it("counts Groq 429s from the Intent and Explainer logs", () => {
+      const template = synth();
+      const filters = Object.values(template.findResources("AWS::Logs::MetricFilter")) as any[];
+      expect(filters.length).toBeGreaterThanOrEqual(2);
+      for (const f of filters) expect(f.Properties.FilterPattern).toContain("Groq API error (429)");
+    });
+
+    it("traces every agent with X-Ray and the API stage too", () => {
+      const template = synth();
+      const fns = Object.values(template.findResources("AWS::Lambda::Function")) as any[];
+      const agents = fns.filter((f) => String(f.Properties.FunctionName ?? "").startsWith("sage-"));
+      expect(agents).toHaveLength(8);
+      for (const f of agents) expect(f.Properties.TracingConfig, f.Properties.FunctionName).toEqual({ Mode: "Active" });
+      template.hasResourceProperties("AWS::ApiGateway::Stage", { TracingEnabled: true });
+    });
+
+    it("keeps agent logs for 30 days instead of forever", () => {
+      const template = synth();
+      const retention = Object.values(template.findResources("Custom::LogRetention")) as any[];
+      expect(retention.length).toBe(8);
+      for (const r of retention) expect(r.Properties.RetentionInDays).toBe(30);
+    });
+
+    it("has one CloudWatch dashboard", () => {
+      synth().resourceCountIs("AWS::CloudWatch::Dashboard", 1);
+    });
+  });
+
+  describe("cold start (T2.6)", () => {
+    it("pings every agent every 5 minutes with a warm-up event", () => {
+      const template = synth();
+      const rules = Object.values(template.findResources("AWS::Events::Rule")) as any[];
+      const warm = rules.filter((r) => r.Properties.ScheduleExpression === "rate(5 minutes)");
+      const targets = warm.flatMap((r) => r.Properties.Targets);
+      expect(targets).toHaveLength(8);
+      for (const t of targets) expect(JSON.parse(t.Input)).toEqual({ warmup: true });
+    });
+
+    it("gives every agent at least 512 MB (Lambda CPU scales with memory) and the Broker a full vCPU", () => {
+      const template = synth();
+      const fns = (Object.values(template.findResources("AWS::Lambda::Function")) as any[]).filter((f) =>
+        String(f.Properties.FunctionName ?? "").startsWith("sage-")
+      );
+      for (const f of fns) expect(f.Properties.MemorySize, f.Properties.FunctionName).toBeGreaterThanOrEqual(512);
+      expect(fns.find((f) => f.Properties.FunctionName === "sage-broker").Properties.MemorySize).toBeGreaterThanOrEqual(1769);
+    });
+  });
+
+  it("has API Gateway add the origin secret header to every Conductor call, resolved from SSM at deploy time", () => {
+    const template = synth();
+    const methods = Object.values(template.findResources("AWS::ApiGateway::Method")) as any[];
+    const proxied = methods.filter((m) => m.Properties.Integration?.Type === "HTTP_PROXY");
+    expect(proxied.length).toBeGreaterThanOrEqual(3);
+    // The value comes from an SSM-typed template parameter resolved at deploy time, so the
+    // secret itself never appears in the template or in git.
+    const params = (template.toJSON().Parameters ?? {}) as Record<string, any>;
+    for (const m of proxied) {
+      const header = m.Properties.Integration.RequestParameters?.["integration.request.header.X-Sage-Origin"];
+      const ref = JSON.stringify(header).match(/"Ref":"([^"]+)"/)?.[1];
+      expect(ref, "header must reference a parameter").toBeDefined();
+      expect(params[ref!]).toMatchObject({ Type: "AWS::SSM::Parameter::Value<String>", Default: "/sage/conductor/ORIGIN_SECRET" });
+    }
+    const policies = JSON.stringify(template.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("parameter/sage/conductor/ORIGIN_SECRET");
   });
 });

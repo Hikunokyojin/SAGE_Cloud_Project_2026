@@ -1,0 +1,128 @@
+{
+  "generatedAt": "2026-11-19T08:12:52.488Z",
+  "records": 145,
+  "groups": {
+    "before T1.4": {
+      "n": 43,
+      "faithful": 23,
+      "scoreLeaks": 20,
+      "examples": [
+        {
+          "requestId": "a580e614-7cf1-4a13-840c-e6f32228e1c3",
+          "request": "[filtered] and [filtered]. I need a cheap email delivery service",
+          "problems": [
+            "internal score 0.952 shown to the client",
+            "internal score 0.048 shown to the client"
+          ],
+          "explanation": "QueueRunner was chosen because it offers a very low price of $0.0007 while still guaranteeing a high uptime of 99.9% and a top score of 0.952. The alternative, MailRelay, was more expensive at $0.001, had a slightly lower uptime of 99.7%, and a much lower score of 0.048. Since there were no prior rejected attempts, the decision was made immediately based on these clear metrics."
+        },
+        {
+          "requestId": "dda632fa-3cb8-42a6-b4a6-85445ea81ada",
+          "request": "I need the fastest possible image resizing service, budget is a low priority",
+          "problems": [
+            "internal score 0.686 shown to the client"
+          ],
+          "explanation": "FastResize was chosen because it offers the best balance of cost and reliability for the requested workload. Its price of 0.02 is lower than TurboResize’s 0.045, and its uptime of 99.9% is higher than BudgetResize’s 97.5%. The overall score of 0.686 is also the highest among the alternatives, making it the most suitable option for the customer’s needs."
+        },
+        {
+          "requestId": "c7808233-7b5d-4b26-bf69-df2bc11ccda8",
+          "request": "give me the best image resized service ",
+          "problems": [
+            "internal score 0.705 shown to the client"
+          ],
+          "explanation": "FastResize was chosen because it offers a good balance of low cost, high uptime, and the best overall score among the options. It costs only $0.02 per use, guarantees 99.9% uptime, and scores 0.705, outperforming TurboResize’s higher price and lower score, as well as BudgetResize’s much lower uptime and score. Since there were no prior attempts, the selection was approved immediately."
+        },
+        {
+          "requestId": "d3f07771-5547-48b8-81bf-669e7b80a1bb",
+          "request": "I need an image resizing service under 0.05 dollars per request with at least 99 percent uptime",
+          "problems": [
+            "internal score 0.714 shown to the client"
+          ],
+          "explanation": "FastResize was chosen because it offers a much lower price of $0.02 while still providing a high uptime of 99.9% and a solid service quality score of 0.714. The alternative, TurboResize, was more expensive at $0.045, had slightly lower uptime, and a much lower score, so FastResize is the more cost‑effective and reliable option."
+        },
+        {
+          "requestId": "0c0684bb-6688-425d-81a9-e17bfe78d91c",
+          "request": "I need an image resizing service that costs at most 0.05 dollars per request, mandatory",
+          "problems": [
+            "internal score 0.686 shown to the client",
+            "internal score 0.429 shown to the client"
+          ],
+          "explanation": "FastResize was selected because it provides the best balance of cost, reliability, and performance: it costs only $0.02, offers 99.9 % uptime, and has the highest service score of 0.686.  The next best option, TurboResize, was more expensive ($0.045) and had slightly lower uptime and score.  BudgetResize, while the cheapest, offered a much lower uptime of 97.5 % and a low score of 0.429, making it unsuitable."
+        }
+      ]
+    },
+    "after T1.4 (model wording)": {
+      "n": 68,
+      "faithful": 48,
+      "scoreLeaks": 20,
+      "examples": [
+        {
+          "requestId": "a4b0744e-a9f9-460e-ab2d-2708d5634156",
+          "request": "Run our containers on a compute service pulled from a container registry. Total under $300 a month.",
+          "problems": [
+            "internal score 0.633 shown to the client",
+            "internal score 0.625 shown to the client"
+          ],
+          "explanation": "Google Cloud Run was selected, costing about $0.04 per month for 100,000 requests and providing 99.954% uptime with a latency of 239 ms. It scored 0.633 out of 1, beating Azure Container Apps, which scored 0.625."
+        },
+        {
+          "requestId": "f247e66e-bf9a-4d3c-95da-fd3eb588852e",
+          "request": "fast image resizing",
+          "problems": [
+            "internal score 0.772 shown to the client",
+            "internal score 0.717 shown to the client",
+            "internal score 0.291 shown to the client"
+          ],
+          "explanation": "FastResize was chosen with a price of $0.02, uptime of 99.9%, and latency of 180 ms. It scored 0.772 out of 1, beating TurboResize at 0.717 and BudgetResize at 0.291. The higher score means FastResize performed best among the options."
+        },
+        {
+          "requestId": "rt6-22667b84",
+          "request": "I need a transactional email API for about 100k emails a month, under $50 a month, with at least 99.9% uptime",
+          "problems": [
+            "internal score 0.62 shown to the client",
+            "internal score 0.573 shown to the client"
+          ],
+          "explanation": "Amazon SES was chosen because it costs about $10.00 a month for 100,000 emails, has an uptime of 99.908%, and a latency of 772 ms, giving it a score of 0.620 out of 1 – higher than Brevo Transactional Email’s 0.573. The other options were rejected: SendGrid Email API has only 95% uptime, which is below the required 99.9%; Mailgun costs $180, not under $50; and Postmark also costs $180, not under $50."
+        },
+        {
+          "requestId": "rt-plan-8e78c5a6",
+          "request": "I need a transactional email API for about 100k emails a month, under $50 a month, with at least 99.9% uptime",
+          "problems": [
+            "internal score 0.729 shown to the client",
+            "internal score 0.62 shown to the client",
+            "internal score 0.573 shown to the client"
+          ],
+          "explanation": "We chose the SendGrid Email API, which costs about $19.95 a month on its flat monthly plan. The plan lets you send up to 50,000 emails per month and offers 99.954% uptime with a latency of 564 ms. It scored 0.729 out of 1, beating Amazon SES (0.620) and Brevo Transactional Email (0.573). Mailgun ($180) and Postmark ($180) were not selected because their prices are above $50."
+        },
+        {
+          "requestId": "9b2ecef5-a1fe-4ac2-a10d-bf0fdaf68e46",
+          "request": "I need the fastest image resizing service",
+          "problems": [
+            "internal score 0.779 shown to the client",
+            "internal score 0.779 shown to the client",
+            "internal score 0.251 shown to the client"
+          ],
+          "explanation": "FastResize was chosen for the service, costing $0.02, with an uptime of 99.9% and latency of 180 ms. It scored 0.779 out of 1, tying with TurboResize (0.779) and beating BudgetResize (0.251)."
+        }
+      ]
+    },
+    "current (model wording)": {
+      "n": 24,
+      "faithful": 24,
+      "scoreLeaks": 0,
+      "examples": []
+    },
+    "after T1.4 (plain facts)": {
+      "n": 5,
+      "faithful": 5,
+      "scoreLeaks": 0,
+      "examples": []
+    },
+    "current (plain facts)": {
+      "n": 5,
+      "faithful": 5,
+      "scoreLeaks": 0,
+      "examples": []
+    }
+  }
+}

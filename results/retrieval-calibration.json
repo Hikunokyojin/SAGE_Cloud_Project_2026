@@ -1,0 +1,756 @@
+{
+  "generatedAt": "2026-11-04T20:31:55.064Z",
+  "model": "Xenova/all-MiniLM-L6-v2",
+  "inCatalogueQueries": 51,
+  "outOfCatalogueQueries": 15,
+  "current": {
+    "threshold": 0.35,
+    "recallAt5": 0.9803921568627451,
+    "outOfCatalogueRefused": 0.9333333333333333
+  },
+  "chosen": {
+    "threshold": 0.38,
+    "recallAt5": 0.9607843137254902,
+    "outOfCatalogueRefused": 1
+  },
+  "scores": [
+    {
+      "kind": "in",
+      "best": 0.667,
+      "query": "image resizing service",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.512,
+      "query": "resize and convert images",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.381,
+      "query": "thumbnail generation for photos",
+      "category": "image-resizing"
+    },
+    {
+      "kind": "in",
+      "best": 0.642,
+      "query": "video transcoding",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.72,
+      "query": "convert videos to H.265",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.581,
+      "query": "encode video files",
+      "category": "video-transcoding"
+    },
+    {
+      "kind": "in",
+      "best": 0.738,
+      "query": "speech to text transcription",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.495,
+      "query": "transcribe audio recordings",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.811,
+      "query": "voice transcription API",
+      "category": "speech-transcription"
+    },
+    {
+      "kind": "in",
+      "best": 0.575,
+      "query": "object storage",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.564,
+      "query": "store files durably",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.622,
+      "query": "archive storage for backups",
+      "category": "object-storage"
+    },
+    {
+      "kind": "in",
+      "best": 0.677,
+      "query": "content delivery network",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.563,
+      "query": "CDN with edge caching",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.228,
+      "query": "serve static assets globally",
+      "category": "content-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.52,
+      "query": "email delivery service",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.531,
+      "query": "send transactional emails",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.775,
+      "query": "email API with bounce tracking",
+      "category": "email-delivery"
+    },
+    {
+      "kind": "in",
+      "best": 0.59,
+      "query": "SMS messaging",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.598,
+      "query": "send WhatsApp messages",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.528,
+      "query": "text message API",
+      "category": "messaging"
+    },
+    {
+      "kind": "in",
+      "best": 0.456,
+      "query": "user authentication",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.612,
+      "query": "single sign-on and OAuth",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.57,
+      "query": "identity and login service",
+      "category": "authentication"
+    },
+    {
+      "kind": "in",
+      "best": 0.674,
+      "query": "payment processing",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.635,
+      "query": "accept card payments",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.705,
+      "query": "payment gateway",
+      "category": "payment-processing"
+    },
+    {
+      "kind": "in",
+      "best": 0.561,
+      "query": "machine learning model inference",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.48,
+      "query": "host ML models for predictions",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.581,
+      "query": "model serving with autoscaling",
+      "category": "ml-inference"
+    },
+    {
+      "kind": "in",
+      "best": 0.573,
+      "query": "text embedding generation",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.699,
+      "query": "vector embeddings for semantic search",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.581,
+      "query": "generate image embeddings",
+      "category": "embedding-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.667,
+      "query": "product analytics",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.614,
+      "query": "event analytics dashboard",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.527,
+      "query": "track user events",
+      "category": "product-analytics"
+    },
+    {
+      "kind": "in",
+      "best": 0.728,
+      "query": "message queue",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.832,
+      "query": "queue with dead-letter handling",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.471,
+      "query": "asynchronous job queue",
+      "category": "message-queue"
+    },
+    {
+      "kind": "in",
+      "best": 0.68,
+      "query": "full-text search",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.782,
+      "query": "search index with typo tolerance",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.631,
+      "query": "text search engine",
+      "category": "full-text-search"
+    },
+    {
+      "kind": "in",
+      "best": 0.562,
+      "query": "PDF generation",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.656,
+      "query": "generate documents from HTML templates",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.482,
+      "query": "create invoices as PDF",
+      "category": "document-generation"
+    },
+    {
+      "kind": "in",
+      "best": 0.444,
+      "query": "compute instances",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.533,
+      "query": "virtual machines for batch jobs",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.365,
+      "query": "cloud servers",
+      "category": "compute"
+    },
+    {
+      "kind": "in",
+      "best": 0.713,
+      "query": "IP geolocation",
+      "category": "geolocation"
+    },
+    {
+      "kind": "in",
+      "best": 0.794,
+      "query": "reverse geocoding addresses",
+      "category": "geolocation"
+    },
+    {
+      "kind": "in",
+      "best": 0.66,
+      "query": "location lookup API",
+      "category": "geolocation"
+    },
+    {
+      "kind": "out",
+      "best": 0.22,
+      "query": "relational database"
+    },
+    {
+      "kind": "out",
+      "best": 0.223,
+      "query": "managed PostgreSQL"
+    },
+    {
+      "kind": "out",
+      "best": 0.31,
+      "query": "DNS hosting"
+    },
+    {
+      "kind": "out",
+      "best": 0.156,
+      "query": "domain registration"
+    },
+    {
+      "kind": "out",
+      "best": 0.24,
+      "query": "container orchestration"
+    },
+    {
+      "kind": "out",
+      "best": 0.319,
+      "query": "secrets management"
+    },
+    {
+      "kind": "out",
+      "best": 0.333,
+      "query": "translation between languages"
+    },
+    {
+      "kind": "out",
+      "best": 0.219,
+      "query": "weather forecast data"
+    },
+    {
+      "kind": "out",
+      "best": 0.244,
+      "query": "code repository hosting"
+    },
+    {
+      "kind": "out",
+      "best": 0.267,
+      "query": "load balancer"
+    },
+    {
+      "kind": "out",
+      "best": 0.275,
+      "query": "web application firewall"
+    },
+    {
+      "kind": "out",
+      "best": 0.269,
+      "query": "calendar scheduling"
+    },
+    {
+      "kind": "out",
+      "best": 0.277,
+      "query": "chat bot builder"
+    },
+    {
+      "kind": "out",
+      "best": 0.308,
+      "query": "time series database"
+    },
+    {
+      "kind": "out",
+      "best": 0.371,
+      "query": "logging and log search"
+    }
+  ],
+  "curve": [
+    {
+      "threshold": 0.1,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.11,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.12,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.13,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.14,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.15,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0
+    },
+    {
+      "threshold": 0.16,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.17,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.18,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.19,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.2,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.21,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.06666666666666667
+    },
+    {
+      "threshold": 0.22,
+      "recallAt5": 1,
+      "outOfCatalogueRefused": 0.13333333333333333
+    },
+    {
+      "threshold": 0.23,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.24,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.26666666666666666
+    },
+    {
+      "threshold": 0.25,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.4
+    },
+    {
+      "threshold": 0.26,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.4
+    },
+    {
+      "threshold": 0.27,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.5333333333333333
+    },
+    {
+      "threshold": 0.28,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.6666666666666666
+    },
+    {
+      "threshold": 0.29,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.6666666666666666
+    },
+    {
+      "threshold": 0.3,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.6666666666666666
+    },
+    {
+      "threshold": 0.31,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.7333333333333333
+    },
+    {
+      "threshold": 0.32,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.33,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.8666666666666667
+    },
+    {
+      "threshold": 0.34,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.35,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.36,
+      "recallAt5": 0.9803921568627451,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.37,
+      "recallAt5": 0.9607843137254902,
+      "outOfCatalogueRefused": 0.9333333333333333
+    },
+    {
+      "threshold": 0.38,
+      "recallAt5": 0.9607843137254902,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.39,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.4,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.41,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.42,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.43,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.44,
+      "recallAt5": 0.9411764705882353,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.45,
+      "recallAt5": 0.9215686274509803,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.46,
+      "recallAt5": 0.9019607843137255,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.47,
+      "recallAt5": 0.9019607843137255,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.48,
+      "recallAt5": 0.8627450980392157,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.49,
+      "recallAt5": 0.8431372549019608,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.5,
+      "recallAt5": 0.8235294117647058,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.51,
+      "recallAt5": 0.8235294117647058,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.52,
+      "recallAt5": 0.803921568627451,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.53,
+      "recallAt5": 0.7450980392156863,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.54,
+      "recallAt5": 0.7058823529411765,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.55,
+      "recallAt5": 0.7058823529411765,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.56,
+      "recallAt5": 0.7058823529411765,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.57,
+      "recallAt5": 0.6078431372549019,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.58,
+      "recallAt5": 0.5686274509803921,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.59,
+      "recallAt5": 0.5098039215686274,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.6,
+      "recallAt5": 0.47058823529411764,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.61,
+      "recallAt5": 0.47058823529411764,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.62,
+      "recallAt5": 0.43137254901960786,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.63,
+      "recallAt5": 0.4117647058823529,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.64,
+      "recallAt5": 0.37254901960784315,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.65,
+      "recallAt5": 0.35294117647058826,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.66,
+      "recallAt5": 0.3333333333333333,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.67,
+      "recallAt5": 0.27450980392156865,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.68,
+      "recallAt5": 0.21568627450980393,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.69,
+      "recallAt5": 0.21568627450980393,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.7,
+      "recallAt5": 0.19607843137254902,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.71,
+      "recallAt5": 0.17647058823529413,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.72,
+      "recallAt5": 0.1568627450980392,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.73,
+      "recallAt5": 0.11764705882352941,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.74,
+      "recallAt5": 0.09803921568627451,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.75,
+      "recallAt5": 0.09803921568627451,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.76,
+      "recallAt5": 0.09803921568627451,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.77,
+      "recallAt5": 0.09803921568627451,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.78,
+      "recallAt5": 0.0784313725490196,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.79,
+      "recallAt5": 0.058823529411764705,
+      "outOfCatalogueRefused": 1
+    },
+    {
+      "threshold": 0.8,
+      "recallAt5": 0.0392156862745098,
+      "outOfCatalogueRefused": 1
+    }
+  ]
+}

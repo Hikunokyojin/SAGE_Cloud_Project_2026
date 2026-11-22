@@ -118,6 +118,29 @@ describe("Broker Agent handler", () => {
     ]);
   });
 
+  it("carries a flat plan's coverage through to the candidate (T4.1, L1)", async () => {
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
+    mongoFindToArrayMock.mockResolvedValue([
+      MONGO_DOC({ volumeBasis: "quota", includedUnits: { amount: 50000, unit: "emails" }, otherPlans: true }),
+    ]);
+    const { handler } = await import("./index");
+    const [c] = await handler({ requestId: "req-plan", capability: "email", constraints: [] });
+    expect(c).toMatchObject({ volumeBasis: "quota", includedUnits: { amount: 50000, unit: "emails" }, otherPlans: true });
+
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
+    const [plain] = await handler({ requestId: "req-plain", capability: "email", constraints: [] });
+    expect(plain).not.toHaveProperty("volumeBasis");
+    expect(plain).not.toHaveProperty("otherPlans");
+  });
+
+  it("carries the provider's list price, unit and currency for re-pricing (T4.1b)", async () => {
+    qdrantSearchMock.mockResolvedValue([qdrantHit("11111111-1111-1111-1111-111111111111", "svc-1", 0.92)]);
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC({ listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD" })]);
+    const { handler } = await import("./index");
+    const [c] = await handler({ requestId: "req-list", capability: "email", constraints: [] });
+    expect(c).toMatchObject({ listPrice: 0.1, priceUnit: "per 1,000 emails", currency: "USD" });
+  });
+
   it("requests payloads from Qdrant, since serviceId lives there, not in the point ID", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);
@@ -218,6 +241,20 @@ describe("Broker Agent handler", () => {
     expect(result).toHaveLength(5);
   });
 
+  it("returns every match in a known category, not just the top 5 (L23)", async () => {
+    const hits = Array.from({ length: 8 }, (_, i) =>
+      qdrantHit(`00000000-0000-0000-0000-00000000000${i}`, `svc-${i}`, 0.9 - i * 0.01)
+    );
+    qdrantSearchMock.mockResolvedValue(hits);
+    mongoFindToArrayMock.mockResolvedValue(hits.map((h) => MONGO_DOC({ serviceId: h.payload.serviceId })));
+
+    const { handler, CATEGORY_LIMIT } = await import("./index");
+    const result = await handler({ requestId: "req-l23", capability: "anything", category: "email", constraints: [] } as BrokerAgentInput);
+
+    expect(result).toHaveLength(8);
+    expect(qdrantSearchMock.mock.calls[0][1].limit).toBe(CATEGORY_LIMIT);
+  });
+
   it("resolves Mongo/Qdrant secrets via @sage/secrets (env locally, SSM once deployed)", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     mongoFindToArrayMock.mockResolvedValue([]);
@@ -228,5 +265,52 @@ describe("Broker Agent handler", () => {
     expect(resolveSecretMock).toHaveBeenCalledWith("MONGO_URI", "/sage/broker/MONGO_URI");
     expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_URL", "/sage/broker/QDRANT_URL");
     expect(resolveSecretMock).toHaveBeenCalledWith("QDRANT_API_KEY", "/sage/broker/QDRANT_API_KEY");
+  });
+});
+
+describe("Broker category filter", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    qdrantSearchMock.mockReset();
+    mongoConnectMock.mockReset();
+    mongoFindToArrayMock.mockReset();
+    resolveSecretMock.mockResolvedValue("x");
+    embedderMock.mockResolvedValue(embeddingOutput([0.1, 0.2]));
+    pipelineFactoryMock.mockResolvedValue(embedderMock);
+    qdrantSearchMock.mockResolvedValue([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.8)]);
+    mongoFindToArrayMock.mockResolvedValue([MONGO_DOC()]);
+  });
+
+  it("filters the vector search to Intent's category", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r", capability: "resize images", constraints: [], category: "image-resizing" } as BrokerAgentInput);
+    expect(qdrantSearchMock.mock.calls[0][1].filter).toEqual({
+      must: [{ key: "capability", match: { value: "image-resizing" } }],
+    });
+  });
+
+  it("L19: when nothing in the known category clears the threshold, keeps that category's closest services", async () => {
+    qdrantSearchMock.mockResolvedValueOnce([]).mockResolvedValueOnce([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.31)]);
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r", capability: "Query events with SQL", constraints: [], category: "image-resizing" } as BrokerAgentInput);
+    expect(qdrantSearchMock).toHaveBeenCalledTimes(2);
+    const retry = qdrantSearchMock.mock.calls[1][1];
+    expect(retry.score_threshold).toBeUndefined();
+    expect(retry.filter).toEqual({ must: [{ key: "capability", match: { value: "image-resizing" } }] });
+    expect(out.map((c) => c.serviceId)).toEqual(["svc-1"]);
+  });
+
+  it("L19: without a category, an empty search stays empty (out-of-catalogue requests are still refused)", async () => {
+    qdrantSearchMock.mockResolvedValue([]);
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r", capability: "e-signatures", constraints: [] } as BrokerAgentInput);
+    expect(qdrantSearchMock).toHaveBeenCalledTimes(1);
+    expect(out).toEqual([]);
+  });
+
+  it("searches without a filter when there is no category", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r", capability: "resize images", constraints: [] } as BrokerAgentInput);
+    expect(qdrantSearchMock.mock.calls[0][1].filter).toBeUndefined();
   });
 });

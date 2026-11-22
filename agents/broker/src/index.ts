@@ -4,7 +4,8 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 import { pipeline, env, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { resolveSecret } from "@sage/secrets";
 import type { BrokerAgentInput, ServiceCandidateWithEvidence } from "@sage/shared-types";
-import { recordDecision } from "@sage/audit";
+import { recordDecision, warmUp } from "@sage/audit";
+import { isWarmup, WARMED } from "@sage/shared-types";
 
 // Deployed Lambda ships the model weights inside node_modules/@huggingface/transformers/.cache
 // (pre-downloaded at build time -- see scripts/download-model.js) and must never attempt a
@@ -86,15 +87,40 @@ async function embedText(text: string): Promise<number[]> {
   return Array.from(output.data as Float32Array);
 }
 
+// Keep-warm (T2.6): the slow parts of a cold Broker are loading the embedding model and
+// opening Qdrant and MongoDB, so a warm-up ping does exactly those (one tiny embedding runs
+// the model once) and nothing else.
+async function warm() {
+  await Promise.all([
+    embedText("warm up"),
+    getQdrantClient(),
+    getMongoClient().then((m) => m.connect()),
+    warmUp(),
+  ]);
+  return WARMED;
+}
+
 const TOP_N = 5;
-// 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
+// L23: with a known category the Negotiator, not text closeness, picks the best value, so
+// return every match in the category up to this cap (keeps the state payload well under
+// Step Functions' 256 KB; the largest live category has 14 services).
+export const CATEGORY_LIMIT = 100;
+// The cut-off is chosen from labelled data, not by hand: see
+// evaluation/src/retrieval/calibrate.ts and results/retrieval-calibration.json.
+// History: 0.6 was tuned for Bedrock Titan Embed v2's score distribution and silently filtered
 // out genuinely relevant results once Broker switched to all-MiniLM-L6-v2 (confirmed via
 // a real deployed-Lambda test returning [] for an obviously matching query, then measured
 // directly: relevant service/query pairs score 0.53-0.67 with this model, irrelevant
 // pairs score 0.04-0.23 -- a wide, clean gap). 0.35 sits well inside that gap.
-const MIN_SIMILARITY = 0.35;
+// Calibrated 2026-11-05 on 51 in-catalogue + 15 out-of-catalogue labelled queries:
+// recall@5 0.96 and 100% out-of-catalogue refused (0.35 let 1 of 15 through).
+// Re-checked 2026-11-12 on the 213 real services (results/retrieval-calibration-v2.json):
+// recall@5 0.952, but only 60% out-of-catalogue refused (docs/LOOPHOLES.md L4).
+const MIN_SIMILARITY = 0.38;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
+  if (isWarmup(input)) return (await warm()) as never;
+  const startedAt = Date.now();
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();
   await mongo.connect();
@@ -106,12 +132,26 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   // ID" when a human-readable serviceId was used directly as the point ID). The point ID
   // is therefore an opaque UUID (see scripts/reembed-services.ts); serviceId travels in
   // the payload instead, so with_payload must be requested.
-  const searchResult = await qdrant.search("services", {
+  // With a category, only that category's services are searched (payload filter on the
+  // "capability" field written by scripts/reembed-services.ts). Anything below the
+  // calibrated cut-off is dropped; an empty result escalates to a human downstream.
+  const categoryFilter = input.category ? { filter: { must: [{ key: "capability", match: { value: input.category } }] } } : {};
+  let searchResult = await qdrant.search("services", {
     vector: queryVector,
-    limit: TOP_N * 3,
+    limit: input.category ? CATEGORY_LIMIT : TOP_N * 3,
     score_threshold: MIN_SIMILARITY,
     with_payload: true,
+    ...categoryFilter,
   });
+  // L19: a short chain step ("Query events with SQL") can score under the cut-off against
+  // every service in its own, already-identified category. The category already confines the
+  // search to the right services, so keep its closest ones. Without a category the cut-off
+  // stands, so out-of-catalogue requests are still refused.
+  let categoryFallback = false;
+  if (searchResult.length === 0 && input.category) {
+    searchResult = await qdrant.search("services", { vector: queryVector, limit: CATEGORY_LIMIT, with_payload: true, ...categoryFilter });
+    categoryFallback = searchResult.length > 0;
+  }
 
   const serviceIds = searchResult.map((r) => String((r.payload as { serviceId?: string } | null)?.serviceId));
 
@@ -141,6 +181,15 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
         uptime: meta.uptime,
         latencyMs: typeof meta.latencyMs === "number" ? meta.latencyMs : undefined,
         capability: typeof meta.capability === "string" ? meta.capability : undefined,
+        ...(typeof meta.priceBasis === "string" ? { priceBasis: meta.priceBasis } : {}),
+        // T4.1 (L1): what a flat plan covers, for the Negotiator and the Explainer.
+        ...(["quota", "unmetered", "unknown"].includes(meta.volumeBasis) ? { volumeBasis: meta.volumeBasis } : {}),
+        ...(meta.includedUnits && typeof meta.includedUnits.amount === "number" ? { includedUnits: meta.includedUnits } : {}),
+        ...(meta.otherPlans === true ? { otherPlans: true } : {}),
+        // T4.1b: the provider's own price, so the Negotiator can re-price at the stated volume.
+        ...(typeof meta.listPrice === "number" && typeof meta.priceUnit === "string" && typeof meta.currency === "string"
+          ? { listPrice: meta.listPrice, priceUnit: meta.priceUnit, currency: meta.currency }
+          : {}),
         endpoint: meta.endpoint,
         similarityScore: r.score,
         evidence: [
@@ -164,16 +213,19 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
     // the architecture spec's division of labor -- never Broker.
     .filter((c): c is ServiceCandidateWithEvidence => c !== null);
 
-  const output = candidates.slice(0, TOP_N);
+  const output = input.category ? candidates : candidates.slice(0, TOP_N);
 
   try {
     await recordDecision({
+      durationMs: Date.now() - startedAt,
       requestId: input.requestId,
       agent: "BrokerAgent",
       timestamp: new Date().toISOString(),
       input,
       output,
-      reasoning: `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}.`,
+      reasoning: categoryFallback
+        ? `No candidate in category ${input.category} cleared similarity threshold ${MIN_SIMILARITY}; kept the category's ${output.length} closest service(s) (L19).`
+        : `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}${input.category ? ` in category ${input.category}` : " (no category filter)"}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,

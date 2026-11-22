@@ -15,5 +15,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+        env:
+          # onnxruntime-node otherwise downloads an optional GPU (CUDA) build from GitHub on
+          # install; SAGE runs on CPU only, and that download failing (504) broke CI once.
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
       - run: npm run typecheck
       - run: npm test
