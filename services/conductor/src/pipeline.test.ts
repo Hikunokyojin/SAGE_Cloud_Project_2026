@@ -105,6 +105,16 @@ function makeInvoker(overrides: Partial<AgentInvoker> = {}): AgentInvoker {
 }
 
 describe("runPipeline", () => {
+  it("sends a self-contradictory request to review before any search (L30)", async () => {
+    const invoker = makeInvoker();
+    const result = await runPipeline("req-l30", "image resizing that is both the most expensive and the cheapest option", invoker);
+    expect(result.status).toBe("paused_for_review");
+    if (result.status !== "paused_for_review") return;
+    expect(result.review?.reason).toMatch(/^contradictory_request/);
+    expect(invoker.broker).not.toHaveBeenCalled();
+    expect(invoker.escalateUnsatisfiable).toHaveBeenCalledWith(expect.objectContaining({ kind: "contradictory_request" }));
+  });
+
   it("refuses a misuse request at the Input Guard without calling any later agent (L29)", async () => {
     const invoker = makeInvoker({
       inputGuard: vi.fn(async (input) => ({

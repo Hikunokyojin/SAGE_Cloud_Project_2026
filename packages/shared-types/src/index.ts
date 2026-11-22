@@ -236,7 +236,8 @@ export interface EscalationExplainerInput {
 //  - no_valid_candidate: retrieval or the mandatory constraints left nothing to choose.
 //  - capability_not_in_catalogue: the request fits no catalogue category at all, so the
 //    marketplace does not offer this kind of service.
-export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue";
+//  - contradictory_request (L30): the request asks for opposite things at once.
+export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue" | "contradictory_request";
 
 export interface UnsatisfiableEscalationInput {
   requestId: string;
