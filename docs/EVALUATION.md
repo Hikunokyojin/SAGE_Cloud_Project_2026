@@ -242,7 +242,7 @@ How do accuracy and token use change as the catalogue grows from 21 to 100, 500 
 
 Every failure since T1.4 was an internal 0-to-1 ranking score passed on to the client, which the 2026-11-13 change removed. No current explanation contains an invented number or leaves out a chosen or rejected service. RT14 asks for 200 live requests; 29 exist since the fix, so the target is not yet met in volume (another 171 live requests is about 236k tokens, over one day of Groq's free tier).
 
-**Human rating.** A rating page (https://claude.ai/artifact/FnQLwYtBdFDhmX793K271X, share as Contributor) shows the 20 most recent current explanations next to their requests (`results/t46-rating-sample.json`), rated 1 to 5 for clarity and correctness. Raters see only their own answers. Summarise with `tsx explain/ratings.ts <folder>`. Results: pending raters.
+**Human rating.** A rating page (https://claude.ai/artifact/FnQLwYtBdFDhmX793K271X, share as Contributor) shows the 20 most recent current explanations next to their requests (`results/t46-rating-sample.json`), rated 1 to 5 for clarity and correctness. Raters see only their own answers. Summarise with `tsx explain/ratings.ts <folder>`. Results (2026-11-22, `results/t46-ratings.json`): 1 rater, 20 of 20 explanations rated; clarity mean 5.0 and correctness mean 5.0 (every rating 5). With one rater and no spread, this shows no explanation was judged unclear or wrong, but it cannot measure agreement between raters or separate good explanations from excellent ones.
 
 ## Limitations
 
