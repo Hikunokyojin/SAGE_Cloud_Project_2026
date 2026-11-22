@@ -13,6 +13,7 @@ import { savePaused, getPaused, markResolved } from "./hitl/store";
 import type { AgentInvoker } from "./pipeline";
 import { createRateLimiter } from "./rateLimit";
 import { createOriginGuard } from "./originGuard";
+import { modelBusy } from "./modelBusy";
 
 const app = express();
 // Behind API Gateway the visitor address arrives in X-Forwarded-For. Trust exactly one
@@ -145,6 +146,18 @@ app.post("/request", requestLimiter, async (req, res) => {
       res.status(422).json(result);
     }
   } catch (err) {
+    const busy = modelBusy(err);
+    if (busy) {
+      console.warn("request deferred: every language model is rate-limited", requestId);
+      res.set("Retry-After", String(busy.retryAfterSec));
+      res.status(503).json({
+        requestId,
+        status: "busy",
+        retryAfterSec: busy.retryAfterSec,
+        error: `The language model is busy. Please try again in ${busy.retryAfterSec} seconds.`,
+      });
+      return;
+    }
     res.status(500).json({
       requestId,
       status: "failed",
