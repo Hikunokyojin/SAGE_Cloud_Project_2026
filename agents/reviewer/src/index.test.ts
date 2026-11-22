@@ -331,4 +331,22 @@ describe("Reviewer catalogue re-read (L22)", () => {
       _setCatalogueLookup(null);
     }
   });
+
+  it("retries a failed catalogue read once before rejecting (L27)", async () => {
+    const { handler, _setCatalogueLookup } = await import("./index");
+    let calls = 0;
+    const ok = catalogue({ "svc-1": { price: 0.02, uptime: 99.9 } });
+    _setCatalogueLookup(async (ids) => {
+      calls += 1;
+      if (calls === 1) throw new Error("blip");
+      return ok(ids);
+    });
+    try {
+      const result = await handler({ requestId: "req-l27", composition: composition(), constraints: CONSTRAINTS });
+      expect(result.approved).toBe(true);
+      expect(calls).toBe(2);
+    } finally {
+      _setCatalogueLookup(null);
+    }
+  });
 });
