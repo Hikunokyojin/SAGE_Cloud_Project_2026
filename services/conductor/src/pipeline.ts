@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { contradiction } from "./contradiction";
 import type {
   Intent,
   Constraint,
@@ -254,6 +255,23 @@ async function fromIntent(
         requestId,
         constraints: intent.constraints,
         kind: "capability_not_in_catalogue",
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: intentDecisionId,
+      })
+    );
+  }
+
+  // L30: a self-contradictory request goes to a human before any search.
+  const conflict = contradiction(intent);
+  if (conflict) {
+    const reason = `contradictory_request: ${conflict}`;
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        kind: "contradictory_request",
         reason,
         reviewUrl,
         decisionId,

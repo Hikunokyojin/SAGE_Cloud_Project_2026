@@ -504,7 +504,9 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
     new PublishCommand({
       TopicArn: topicArn,
       Subject: snsSubject(
-        input.kind === "capability_not_in_catalogue"
+        input.kind === "contradictory_request"
+          ? `SAGE review: ${input.requestId} (contradictory request)`
+          : input.kind === "capability_not_in_catalogue"
           ? `SAGE review: ${input.requestId} (not in the catalogue)`
           : `SAGE review: ${input.requestId} (no valid candidate)`
       ),
@@ -514,7 +516,11 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
 
   // User-facing text: input.reason carries internal error plumbing (e.g. the
   // lambdaInvoker prefix), so it goes only to the SNS message and audit record.
-  const explanation = input.kind === "capability_not_in_catalogue"
+  const explanation = input.kind === "contradictory_request"
+    ? `This request asks for opposite things at once (for example the cheapest and the most expensive option), ` +
+      `so no service could satisfy it as written. It has been passed to a human reviewer. ` +
+      `Please say which of the two you want and resubmit the request.`
+    : input.kind === "capability_not_in_catalogue"
     ? `The marketplace does not offer this kind of service yet, so the request has been passed to a human reviewer ` +
       `instead of being matched to an unrelated service. Try describing what you need in other words, ` +
       `or ask the marketplace to add this type of service.`
