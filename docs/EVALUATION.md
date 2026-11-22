@@ -244,6 +244,25 @@ Every failure since T1.4 was an internal 0-to-1 ranking score passed on to the c
 
 **Human rating.** A rating page (https://claude.ai/artifact/FnQLwYtBdFDhmX793K271X, share as Contributor) shows the 20 most recent current explanations next to their requests (`results/t46-rating-sample.json`), rated 1 to 5 for clarity and correctness. Raters see only their own answers. Summarise with `tsx explain/ratings.ts <folder>`. Results (2026-11-22, `results/t46-ratings.json`): 1 rater, 20 of 20 explanations rated; clarity mean 5.0 and correctness mean 5.0 (every rating 5). With one rater and no spread, this shows no explanation was judged unclear or wrong, but it cannot measure agreement between raters or separate good explanations from excellent ones.
 
+## Selection stability and cost per 1,000 requests (RT7, RT10, 2026-11-22)
+
+**Method.** `scripts/live-trial.mjs` sent 10 requests (7 single-service, 3 with limits or chains) 5 times each to the deployed API, one call every 3 s (`results/rt7-raw.json`). Cost inputs were read back from the same run: billed Lambda duration from CloudWatch, audit-record sizes and model token use from `agent_decisions`; prices are ap-south-1 list prices from the AWS Price List API (`evaluation/cost/rt10_cost.py`, `results/rt10-cost.json`).
+
+**RT7 stability: met.** 49 of 50 calls completed, and every completed repeat chose the same services as the other repeats of its request: **49 of 49 (100%)** identical selections, or 98% counting the failed call as unstable (target at least 98%). Repeats after the first hit the Intent cache (40 of 49), so they show the deployed system's behaviour, in which the parse is cached and everything after it is deterministic, rather than the model parsing the same text consistently on its own. The one failure is logged as L28. Latency of completed calls: p50 986 ms, p95 2,411 ms.
+
+**RT10 cost per 1,000 requests: measured.**
+
+| Item | USD per 1,000 requests |
+|---|---|
+| Lambda (all agents) | 0.019 |
+| API Gateway | 0.0035 |
+| DynamoDB audit writes (about 53 write units a request) | 0.038 |
+| Language model, this trial (82% Intent cache hits) | 0.093 |
+| Language model, no cache hits | 0.210 |
+| **Variable total** | **0.15 (cached) to 0.27 (uncached)** |
+
+Fixed costs: the t3.micro Conductor is $8.18 a month at list price (about $0.82 per 1,000 at 10,000 requests a month); Qdrant and MongoDB run on free clusters. The amount actually billed today is $0: AWS, Groq, Qdrant and MongoDB are all on free tiers. The model price is Groq's published on-demand rate for openai/gpt-oss-20b and is an assumption. Audit writes are the largest AWS item, because every record carries the full input and output of its step.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
