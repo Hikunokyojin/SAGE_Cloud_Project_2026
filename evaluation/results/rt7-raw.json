@@ -1,0 +1,576 @@
+{
+ "base": "https://hiz4sheyl5.execute-api.ap-south-1.amazonaws.com/prod",
+ "repeats": 5,
+ "requests": [
+  "I need a reliable email delivery service",
+  "cheap object storage",
+  "user authentication with SSO",
+  "geolocation lookup by IP",
+  "compute instances with 99.9% uptime",
+  "full-text search with typo tolerance",
+  "PDF generation from HTML",
+  "Translate around 2 million characters of support tickets into English each month, budget $100.",
+  "Take card payments for our shop and send an email receipt after each payment. Combined uptime of at least 99.5%.",
+  "Store user-uploaded photos in object storage and resize each one into thumbnails. Keep the total under $100 a month."
+ ],
+ "at": "2026-11-22T10:32:34.732Z",
+ "runs": [
+  {
+   "case": 0,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "2ceb967d-ee2a-4610-8119-a51b6986496c",
+   "outcome": "completed",
+   "chosen": [
+    "svc-sendgrid"
+   ],
+   "ms": 1981
+  },
+  {
+   "case": 1,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "e14af094-fae7-4843-b4c6-ec13715c925d",
+   "outcome": "completed",
+   "chosen": [
+    "svc-aws-glacier"
+   ],
+   "ms": 1645
+  },
+  {
+   "case": 2,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "c87e5388-f52c-4459-b82c-cc6d54029360",
+   "outcome": "completed",
+   "chosen": [
+    "svc-workos"
+   ],
+   "ms": 1372
+  },
+  {
+   "case": 3,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "ec9d440a-c4b4-4280-904d-91850aff6f55",
+   "outcome": "completed",
+   "chosen": [
+    "svc-maxmind-geoip"
+   ],
+   "ms": 1406
+  },
+  {
+   "case": 4,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "8d2ba426-3bb7-497a-80e6-81db1aa55630",
+   "outcome": "completed",
+   "chosen": [
+    "svc-cloudflare-workers"
+   ],
+   "ms": 1530
+  },
+  {
+   "case": 5,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "56da6f8b-82c9-4ad0-b765-a63d50dee109",
+   "outcome": "completed",
+   "chosen": [
+    "svc-algolia"
+   ],
+   "ms": 1293
+  },
+  {
+   "case": 6,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "53429914-581d-4aa4-9d8a-4b30d29aa610",
+   "outcome": "completed",
+   "chosen": [
+    "svc-pdfshift"
+   ],
+   "ms": 1266
+  },
+  {
+   "case": 7,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "e777fdb8-1f4b-43fa-ad5f-1e740450b5fc",
+   "outcome": "completed",
+   "chosen": [
+    "svc-azure-translator"
+   ],
+   "ms": 5398
+  },
+  {
+   "case": 8,
+   "repeat": 0,
+   "httpStatus": 500,
+   "requestId": "cd0b34d9-36ae-445d-b56d-dc6ee36154f4",
+   "outcome": "failed",
+   "chosen": [],
+   "ms": 8248
+  },
+  {
+   "case": 9,
+   "repeat": 0,
+   "httpStatus": 200,
+   "requestId": "2ee004a1-f381-41e2-8527-04693c05be98",
+   "outcome": "completed",
+   "chosen": [
+    "svc-gcp-storage",
+    "svc-imagekit"
+   ],
+   "ms": 5613
+  },
+  {
+   "case": 0,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "4838c6a7-054d-4b72-977e-1a68a39e3c08",
+   "outcome": "completed",
+   "chosen": [
+    "svc-sendgrid"
+   ],
+   "ms": 1438
+  },
+  {
+   "case": 1,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "9e3f55ac-3186-43fa-9cfa-b4c6b2472898",
+   "outcome": "completed",
+   "chosen": [
+    "svc-aws-glacier"
+   ],
+   "ms": 954
+  },
+  {
+   "case": 2,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "c10fd988-67a2-4870-93a5-3db120da3e8a",
+   "outcome": "completed",
+   "chosen": [
+    "svc-workos"
+   ],
+   "ms": 979
+  },
+  {
+   "case": 3,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "0167d915-2d1d-45fa-9a59-2a812adab29a",
+   "outcome": "completed",
+   "chosen": [
+    "svc-maxmind-geoip"
+   ],
+   "ms": 860
+  },
+  {
+   "case": 4,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "686bafce-d5cd-4be6-9c27-09ee6a68e148",
+   "outcome": "completed",
+   "chosen": [
+    "svc-cloudflare-workers"
+   ],
+   "ms": 943
+  },
+  {
+   "case": 5,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "31074e28-9b1a-43aa-965a-fff9ab53469c",
+   "outcome": "completed",
+   "chosen": [
+    "svc-algolia"
+   ],
+   "ms": 688
+  },
+  {
+   "case": 6,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "131b3bd3-9be0-40c1-a2a6-5ca8371528a8",
+   "outcome": "completed",
+   "chosen": [
+    "svc-pdfshift"
+   ],
+   "ms": 898
+  },
+  {
+   "case": 7,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "26c2d746-c580-4df6-bcd9-c8427391bdd0",
+   "outcome": "completed",
+   "chosen": [
+    "svc-azure-translator"
+   ],
+   "ms": 1445
+  },
+  {
+   "case": 8,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "94239ae5-d9b5-407b-95e7-4cb0e21f4791",
+   "outcome": "completed",
+   "chosen": [
+    "svc-stripe",
+    "svc-sendgrid"
+   ],
+   "ms": 2411
+  },
+  {
+   "case": 9,
+   "repeat": 1,
+   "httpStatus": 200,
+   "requestId": "2b040c71-e45a-41d8-add0-7a2e98a70c0a",
+   "outcome": "completed",
+   "chosen": [
+    "svc-gcp-storage",
+    "svc-imagekit"
+   ],
+   "ms": 998
+  },
+  {
+   "case": 0,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "77e2efff-a2d5-4e08-9fd5-3eb6e9625e35",
+   "outcome": "completed",
+   "chosen": [
+    "svc-sendgrid"
+   ],
+   "ms": 1334
+  },
+  {
+   "case": 1,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "4f625f98-0fa0-4f08-8b3a-a74e27f7da6a",
+   "outcome": "completed",
+   "chosen": [
+    "svc-aws-glacier"
+   ],
+   "ms": 1051
+  },
+  {
+   "case": 2,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "54fae420-ad44-4219-aea5-28bf2782c4c9",
+   "outcome": "completed",
+   "chosen": [
+    "svc-workos"
+   ],
+   "ms": 840
+  },
+  {
+   "case": 3,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "7a7d7342-d11e-4d41-832e-ce8422ef164e",
+   "outcome": "completed",
+   "chosen": [
+    "svc-maxmind-geoip"
+   ],
+   "ms": 877
+  },
+  {
+   "case": 4,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "e873120c-ff32-448d-90d2-e3db20d00e2f",
+   "outcome": "completed",
+   "chosen": [
+    "svc-cloudflare-workers"
+   ],
+   "ms": 1002
+  },
+  {
+   "case": 5,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "9bc84438-4276-4d61-9c6f-5c28c142a7d6",
+   "outcome": "completed",
+   "chosen": [
+    "svc-algolia"
+   ],
+   "ms": 882
+  },
+  {
+   "case": 6,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "bf1c1d97-4458-4ded-a2d0-3efc48dad7f7",
+   "outcome": "completed",
+   "chosen": [
+    "svc-pdfshift"
+   ],
+   "ms": 775
+  },
+  {
+   "case": 7,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "2ff111ca-aba6-4f66-ad8f-598b8645f0f1",
+   "outcome": "completed",
+   "chosen": [
+    "svc-azure-translator"
+   ],
+   "ms": 952
+  },
+  {
+   "case": 8,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "6845b747-d1e1-4117-be68-355a1a31b99b",
+   "outcome": "completed",
+   "chosen": [
+    "svc-stripe",
+    "svc-sendgrid"
+   ],
+   "ms": 1202
+  },
+  {
+   "case": 9,
+   "repeat": 2,
+   "httpStatus": 200,
+   "requestId": "d63167b4-a0a2-4bdd-8b48-cbb43b7eedae",
+   "outcome": "completed",
+   "chosen": [
+    "svc-gcp-storage",
+    "svc-imagekit"
+   ],
+   "ms": 1265
+  },
+  {
+   "case": 0,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "9f103274-132f-408a-a712-dc598ac23f24",
+   "outcome": "completed",
+   "chosen": [
+    "svc-sendgrid"
+   ],
+   "ms": 1097
+  },
+  {
+   "case": 1,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "cc3dd6e2-189f-471b-8182-b5ec832a652f",
+   "outcome": "completed",
+   "chosen": [
+    "svc-aws-glacier"
+   ],
+   "ms": 776
+  },
+  {
+   "case": 2,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "69950efb-9b1f-4901-be36-8f84189814bd",
+   "outcome": "completed",
+   "chosen": [
+    "svc-workos"
+   ],
+   "ms": 767
+  },
+  {
+   "case": 3,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "bfd426c2-1ede-4324-a71f-b72b7b414642",
+   "outcome": "completed",
+   "chosen": [
+    "svc-maxmind-geoip"
+   ],
+   "ms": 849
+  },
+  {
+   "case": 4,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "a6d89982-9c54-4666-93ec-de583052b9a0",
+   "outcome": "completed",
+   "chosen": [
+    "svc-cloudflare-workers"
+   ],
+   "ms": 926
+  },
+  {
+   "case": 5,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "22f34bb3-6860-41b9-b098-ab2882e5fd41",
+   "outcome": "completed",
+   "chosen": [
+    "svc-algolia"
+   ],
+   "ms": 655
+  },
+  {
+   "case": 6,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "e76a3508-65c9-442d-83d1-8d4b6d369519",
+   "outcome": "completed",
+   "chosen": [
+    "svc-pdfshift"
+   ],
+   "ms": 1524
+  },
+  {
+   "case": 7,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "f0a6b872-1ef9-48a4-a165-876be9b85139",
+   "outcome": "completed",
+   "chosen": [
+    "svc-azure-translator"
+   ],
+   "ms": 771
+  },
+  {
+   "case": 8,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "95ae282a-d9c8-4183-8563-24fc30b80041",
+   "outcome": "completed",
+   "chosen": [
+    "svc-stripe",
+    "svc-sendgrid"
+   ],
+   "ms": 1598
+  },
+  {
+   "case": 9,
+   "repeat": 3,
+   "httpStatus": 200,
+   "requestId": "edd981db-b499-4904-91a0-fed4a5fd9a63",
+   "outcome": "completed",
+   "chosen": [
+    "svc-gcp-storage",
+    "svc-imagekit"
+   ],
+   "ms": 972
+  },
+  {
+   "case": 0,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "45f85cc4-e6dc-4272-a6f8-8f25d57a28d5",
+   "outcome": "completed",
+   "chosen": [
+    "svc-sendgrid"
+   ],
+   "ms": 710
+  },
+  {
+   "case": 1,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "2b3e8453-c312-47a8-85f6-1e696159bdd3",
+   "outcome": "completed",
+   "chosen": [
+    "svc-aws-glacier"
+   ],
+   "ms": 703
+  },
+  {
+   "case": 2,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "6e5048d5-c411-42a9-a6d7-8e8dcfc7bbb0",
+   "outcome": "completed",
+   "chosen": [
+    "svc-workos"
+   ],
+   "ms": 1140
+  },
+  {
+   "case": 3,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "1ee29dbe-b75d-4cb5-a044-2218c8111c0b",
+   "outcome": "completed",
+   "chosen": [
+    "svc-maxmind-geoip"
+   ],
+   "ms": 802
+  },
+  {
+   "case": 4,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "623723b0-dd40-4289-a025-4c7da156498b",
+   "outcome": "completed",
+   "chosen": [
+    "svc-cloudflare-workers"
+   ],
+   "ms": 955
+  },
+  {
+   "case": 5,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "1d8d04b5-7e21-4a32-8605-c40712a9be37",
+   "outcome": "completed",
+   "chosen": [
+    "svc-algolia"
+   ],
+   "ms": 684
+  },
+  {
+   "case": 6,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "048c7bd7-fde6-4d19-a644-1388d3cefd60",
+   "outcome": "completed",
+   "chosen": [
+    "svc-pdfshift"
+   ],
+   "ms": 780
+  },
+  {
+   "case": 7,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "fd616634-1b6f-4acf-9571-46ea100d458b",
+   "outcome": "completed",
+   "chosen": [
+    "svc-azure-translator"
+   ],
+   "ms": 986
+  },
+  {
+   "case": 8,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "a90fbb05-1f61-4733-989d-146ea2605b9e",
+   "outcome": "completed",
+   "chosen": [
+    "svc-stripe",
+    "svc-sendgrid"
+   ],
+   "ms": 1859
+  },
+  {
+   "case": 9,
+   "repeat": 4,
+   "httpStatus": 200,
+   "requestId": "9e9a7840-f860-4d8a-bb11-a42370785e93",
+   "outcome": "completed",
+   "chosen": [
+    "svc-gcp-storage",
+    "svc-imagekit"
+   ],
+   "ms": 1294
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "requests_measured": 51,
+ "per_1000_requests_usd": {
+  "lambda": 0.019,
+  "api_gateway": 0.0035,
+  "dynamodb_audit_writes": 0.0378,
+  "language_model_this_trial": 0.0927,
+  "language_model_no_intent_cache": 0.2103,
+  "variable_total_this_trial": 0.153,
+  "variable_total_no_intent_cache": 0.2705
+ },
+ "fixed_per_month_usd": {
+  "ec2_t3_micro_conductor": 8.18,
+  "qdrant_mongodb": 0.0
+ },
+ "intent_cache_hit_rate_this_trial": 0.82,
+ "billed_today_usd": "0 (AWS free tier, Groq free tier, Qdrant and MongoDB free clusters)",
+ "notes": [
+  "Lambda billed duration includes a few keep-warm pings in the window.",
+  "The Groq price is a list-price assumption; the deployment is billed nothing on the free tier.",
+  "The EC2 Conductor is a fixed cost: at 10,000 requests a month it adds about $0.82 per 1,000."
+ ],
+ "prices": {
+  "lambda_gb_s": 1.66667e-05,
+  "lambda_request": 2e-07,
+  "apigw_rest_request": 3.5e-06,
+  "ddb_write_unit": 7.1e-07,
+  "ec2_t3_micro_hour": 0.0112,
+  "groq_input_token": 7.5e-08,
+  "groq_output_token": 3e-07
+ }
+}
