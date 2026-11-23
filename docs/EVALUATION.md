@@ -278,6 +278,20 @@ Fixed costs: the t3.micro Conductor is $8.18 a month at list price (about $0.82 
 
 No response contained a key, an account id, a connection string or system-prompt text. The first attempt at this run (the same day) found two harmful requests served; that was fixed as L29 before this run. One model-busy response during the run came back as HTTP 503 with a Retry-After of 10 s and passed on retry (L28 working live). The one failure, "image resizing that is both the most expensive and the cheapest option", was parsed as a two-step chain of the same capability with no limits and served; it is logged as L30.
 
+## Load and soak (RT2, RT3, 2026-11-24)
+
+Run with `scripts/load-test.mjs` against the Conductor on a developer machine with `LLM_MODE=stub` and `AGENT_INVOKE_MODE=local`: no language-model quota is used, but every request still searches the real Qdrant and MongoDB catalogue and writes the real audit table. All agents run inside one Node process here, so this measures the pipeline's code and data stores, not EC2, API Gateway or Lambda scaling. Results: `evaluation/results/rt2-load-*.json`, `rt3-soak.json`.
+
+| Test | Sent | Completed per second | p50 / p95 | Errors | Latency steady? | Result |
+|---|---|---|---|---|---|---|
+| RT2, 10 req/s for 40 s | 400 | 9.9 | 695 / 1,197 ms | 0 | yes | pass |
+| RT2, 15 req/s for 40 s | 600 | 14.7 | 748 / 915 ms | 0 | yes | pass |
+| RT2, 25 req/s for 60 s | 1,500 | 19.8 | 11,957 / 18,871 ms | 0 | no, queue grew (p95 drift 2.84) | fail |
+| RT3, 2 req/s for 30 min | 3,600 | 2.0 | 660 / 832 ms | 0 | yes (p95 834 ms first five minutes, 838 ms last) | pass |
+
+- **Ceiling about 20 requests a second in one process.** Nothing failed at 25 req/s, but requests queued: the single process completes about 20 a second. The largest stage is the Broker (about 270 ms, embedding plus vector search); the stub stages take 60 to 90 ms each, mostly the audit write. In production each agent is a separate Lambda and scales out, but the API stage is throttled to 5 req/s (T2.1), so the deployed ceiling is set by that throttle; a staging stack would be needed to measure Lambda scaling directly (L31).
+- **No drift over 30 minutes.** Latency stayed flat across all six five-minute windows and no request failed, so there is no sign of a memory leak or growing queue at steady load.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
