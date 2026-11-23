@@ -19,6 +19,8 @@ const base = (args.url || "http://localhost:3001").replace(/\/$/, "");
 const rps = Number(args.rps || 25);
 const seconds = Number(args.seconds || 20);
 const total = Math.round(rps * seconds);
+const windowSec = Number(args.window || 0); // soak (RT3): report each window and check drift
+const outFile = args.out; // optional JSON result file
 
 const PHRASES = [
   "I need a reliable email delivery service",
@@ -47,9 +49,9 @@ async function one(i) {
     } catch {
       // non-JSON body (for example a gateway error page)
     }
-    results.push({ ms: performance.now() - started, http: res.status, status });
+    results.push({ at: (started - t0) / 1000, ms: performance.now() - started, http: res.status, status });
   } catch (err) {
-    results.push({ ms: performance.now() - started, http: 0, status: `network: ${err.message}` });
+    results.push({ at: (started - t0) / 1000, ms: performance.now() - started, http: 0, status: `network: ${err.message}` });
   }
 }
 
@@ -72,4 +74,35 @@ const mix = results.reduce((m, r) => ((m[r.status] = (m[r.status] || 0) + 1), m)
 console.log(`Finished in ${elapsed.toFixed(1)}s: ${(results.length / elapsed).toFixed(1)} req/s completed`);
 console.log(`Latency ms: p50 ${pct(ms, 50).toFixed(0)}, p95 ${pct(ms, 95).toFixed(0)}, p99 ${pct(ms, 99).toFixed(0)}, max ${ms[ms.length - 1].toFixed(0)}`);
 console.log("Outcomes:", mix);
-process.exit(results.every((r) => r.http && r.http < 500) ? 0 : 1);
+
+const ok = (r) => r.http && r.http < 500;
+const summary = {
+  url: base, rps, seconds, requests: results.length, elapsedSec: +elapsed.toFixed(1),
+  completedRps: +(results.length / elapsed).toFixed(1),
+  p50: Math.round(pct(ms, 50)), p95: Math.round(pct(ms, 95)), p99: Math.round(pct(ms, 99)), max: Math.round(ms[ms.length - 1]),
+  errorRate: +(results.filter((r) => !ok(r)).length / results.length).toFixed(4), outcomes: mix,
+};
+let pass = summary.errorRate === 0;
+if (windowSec > 0) {
+  const windows = [];
+  for (let w = 0; w * windowSec < seconds; w++) {
+    const inW = results.filter((r) => r.at >= w * windowSec && r.at < (w + 1) * windowSec);
+    if (!inW.length) continue;
+    const wm = inW.map((r) => r.ms).sort((a, b) => a - b);
+    windows.push({ fromSec: w * windowSec, n: inW.length, p50: Math.round(pct(wm, 50)), p95: Math.round(pct(wm, 95)), errors: inW.filter((r) => !ok(r)).length });
+  }
+  windows.forEach((w) => console.log(`  t+${w.fromSec}s: n ${w.n}, p50 ${w.p50}, p95 ${w.p95}, errors ${w.errors}`));
+  // Drift: the last window's p95 may not exceed 1.5x the first's (a leak or queue build-up shows here).
+  const drift = windows.length > 1 ? +(windows[windows.length - 1].p95 / Math.max(1, windows[0].p95)).toFixed(2) : 1;
+  console.log(`p95 drift (last / first window): ${drift}`);
+  Object.assign(summary, { windowSec, windows, p95Drift: drift });
+  pass = pass && drift <= 1.5;
+}
+summary.pass = pass;
+if (outFile) {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(outFile, JSON.stringify({ date: new Date().toISOString(), ...summary }, null, 2));
+  console.log(`Wrote ${outFile}`);
+}
+console.log(pass ? "PASS" : "FAIL");
+process.exit(pass ? 0 : 1);
