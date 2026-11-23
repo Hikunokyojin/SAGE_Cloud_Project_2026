@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-23T22:05:36.667Z",
+  "url": "http://localhost:3001",
+  "rps": 10,
+  "seconds": 40,
+  "requests": 400,
+  "elapsedSec": 40.6,
+  "completedRps": 9.9,
+  "p50": 695,
+  "p95": 1197,
+  "p99": 1577,
+  "max": 1770,
+  "errorRate": 0,
+  "outcomes": {
+    "completed": 400
+  },
+  "windowSec": 10,
+  "windows": [
+    {
+      "fromSec": 0,
+      "n": 100,
+      "p50": 695,
+      "p95": 963,
+      "errors": 0
+    },
+    {
+      "fromSec": 10,
+      "n": 100,
+      "p50": 827,
+      "p95": 1566,
+      "errors": 0
+    },
+    {
+      "fromSec": 20,
+      "n": 100,
+      "p50": 694,
+      "p95": 894,
+      "errors": 0
+    },
+    {
+      "fromSec": 30,
+      "n": 100,
+      "p50": 678,
+      "p95": 847,
+      "errors": 0
+    }
+  ],
+  "p95Drift": 0.88,
+  "pass": true
+}
