@@ -18,7 +18,17 @@ const args = Object.fromEntries(
 const base = (args.url || "http://localhost:3001").replace(/\/$/, "");
 const rps = Number(args.rps || 25);
 const seconds = Number(args.seconds || 20);
-const total = Math.round(rps * seconds);
+// Spike (RT4): --spike-rps N --spike-at S --spike-for D raises the rate to N between S and S+D.
+const spikeRps = Number(args["spike-rps"] || 0);
+const spikeAt = Number(args["spike-at"] || 0);
+const spikeFor = Number(args["spike-for"] || 0);
+const dueTimes = [];
+for (let t = 0; t < seconds; ) {
+  dueTimes.push(t);
+  const inSpike = spikeRps > 0 && t >= spikeAt && t < spikeAt + spikeFor;
+  t += 1 / (inSpike ? spikeRps : rps);
+}
+const total = dueTimes.length;
 const windowSec = Number(args.window || 0); // soak (RT3): report each window and check drift
 const outFile = args.out; // optional JSON result file
 
@@ -61,7 +71,7 @@ console.log(`Load test: ${total} requests at ${rps}/s for ${seconds}s against ${
 const t0 = performance.now();
 const inflight = [];
 for (let i = 0; i < total; i++) {
-  const due = t0 + (i * 1000) / rps;
+  const due = t0 + dueTimes[i] * 1000;
   const wait = due - performance.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   inflight.push(one(i));
