@@ -117,6 +117,7 @@ export const CATEGORY_LIMIT = 100;
 // Re-checked 2026-11-12 on the 213 real services (results/retrieval-calibration-v2.json):
 // recall@5 0.952, but only 60% out-of-catalogue refused (docs/LOOPHOLES.md L4).
 const MIN_SIMILARITY = 0.38;
+const MIN_CATEGORY_CANDIDATES = 3;
 
 export async function handler(input: BrokerAgentInput): Promise<ServiceCandidateWithEvidence[]> {
   if (isWarmup(input)) return (await warm()) as never;
@@ -155,8 +156,11 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   // every service in its own, already-identified category. The category already confines the
   // search to the right services, so keep its closest ones. Without a category the cut-off
   // stands, so out-of-catalogue requests are still refused.
+  // L34: the same holds when only one or two services clear it ("password-reset emails" found
+  // Brevo alone, whose plan was too small, while SES and SendGrid sat just under the cut-off):
+  // too few to choose from, so widen to the category's closest services.
   let categoryFallback = false;
-  if (searchResult.length === 0 && input.category) {
+  if (searchResult.length < MIN_CATEGORY_CANDIDATES && input.category) {
     searchResult = await qdrant.search("services", { vector: queryVector, limit: CATEGORY_LIMIT, with_payload: true, ...categoryFilter });
     categoryFallback = searchResult.length > 0;
   }
@@ -232,7 +236,7 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
       input,
       output,
       reasoning: categoryFallback
-        ? `No candidate in category ${input.category} cleared similarity threshold ${MIN_SIMILARITY}; kept the category's ${output.length} closest service(s) (L19).`
+        ? `Fewer than ${MIN_CATEGORY_CANDIDATES} candidates in category ${input.category} cleared similarity threshold ${MIN_SIMILARITY}; kept the category's ${output.length} closest service(s) (L19, L34).`
         : `Found ${output.length} candidate(s) above similarity threshold ${MIN_SIMILARITY}${input.category ? ` in category ${input.category}` : " (no category filter)"}.`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,

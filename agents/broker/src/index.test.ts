@@ -300,6 +300,16 @@ describe("Broker category filter", () => {
     expect(out.map((c) => c.serviceId)).toEqual(["svc-1"]);
   });
 
+  it("L34: when fewer than 3 services in the known category clear the threshold, widens to the category's closest", async () => {
+    qdrantSearchMock
+      .mockResolvedValueOnce([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.41)])
+      .mockResolvedValueOnce([qdrantHit("00000000-0000-0000-0000-000000000001", "svc-1", 0.41), qdrantHit("00000000-0000-0000-0000-000000000002", "svc-2", 0.33)]);
+    const { handler } = await import("./index");
+    await handler({ requestId: "r", capability: "send password-reset emails", constraints: [], category: "email-delivery" } as BrokerAgentInput);
+    expect(qdrantSearchMock).toHaveBeenCalledTimes(2);
+    expect(qdrantSearchMock.mock.calls[1][1].score_threshold).toBeUndefined();
+  });
+
   it("L19: without a category, an empty search stays empty (out-of-catalogue requests are still refused)", async () => {
     qdrantSearchMock.mockResolvedValue([]);
     const { handler } = await import("./index");
