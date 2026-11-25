@@ -14,6 +14,7 @@ import type { AgentInvoker } from "./pipeline";
 import { createRateLimiter } from "./rateLimit";
 import { createOriginGuard } from "./originGuard";
 import { modelBusy } from "./modelBusy";
+import { dependencyDown } from "./dependencyDown";
 
 const app = express();
 // Behind API Gateway the visitor address arrives in X-Forwarded-For. Trust exactly one
@@ -155,6 +156,18 @@ app.post("/request", requestLimiter, async (req, res) => {
         status: "busy",
         retryAfterSec: busy.retryAfterSec,
         error: `The language model is busy. Please try again in ${busy.retryAfterSec} seconds.`,
+      });
+      return;
+    }
+    const down = dependencyDown(err);
+    if (down) {
+      console.error("request failed: a database is unreachable", requestId, err);
+      res.set("Retry-After", String(down.retryAfterSec));
+      res.status(503).json({
+        requestId,
+        status: "unavailable",
+        retryAfterSec: down.retryAfterSec,
+        error: `The service catalogue is temporarily unreachable. Please try again in ${down.retryAfterSec} seconds.`,
       });
       return;
     }

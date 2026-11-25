@@ -123,7 +123,15 @@ export async function handler(input: BrokerAgentInput): Promise<ServiceCandidate
   const startedAt = Date.now();
   const qdrant = await getQdrantClient();
   const mongo = await getMongoClient();
-  await mongo.connect();
+  try {
+    await mongo.connect();
+  } catch (err) {
+    // L32: drop the failed client so the next request opens a fresh connection once the
+    // database is back, instead of needing a restart.
+    mongoClient = null;
+    await mongo.close().catch(() => undefined);
+    throw err;
+  }
 
   const queryVector = await embedText(input.capability);
 
