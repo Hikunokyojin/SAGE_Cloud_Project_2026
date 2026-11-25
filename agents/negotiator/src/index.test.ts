@@ -269,6 +269,27 @@ describe("soft preferences", () => {
     expect(wantsFast.chosen.service.serviceId).toBe("pricey-fast");
     expect(wantsFast.scoreBreakdown.weights.latency).toBe(3);
   });
+
+  // L33 (RT13): with one stated wish, the best service on that wish wins, even when another
+  // service is much better on the dimensions the request did not mention.
+  it("ranks by the only stated preference first", async () => {
+    const candidates = [
+      candidate({ serviceId: "cheapest", price: 5.4, uptime: 99.5, latencyMs: 900 }),
+      candidate({ serviceId: "balanced", price: 9, uptime: 99.99, latencyMs: 120 }),
+    ];
+    expect((await handler(baseInput({ candidates, preferences: { price: 3 } }))).chosen.service.serviceId).toBe("cheapest");
+    expect((await handler(baseInput({ candidates, preferences: { price: 2 } }))).chosen.service.serviceId).toBe("cheapest");
+    expect((await handler(baseInput({ candidates, preferences: { latencyMs: 2 } }))).chosen.service.serviceId).toBe("balanced");
+  });
+
+  it("keeps the weighted balance when the request states two wishes", async () => {
+    const candidates = [
+      candidate({ serviceId: "cheapest-slow", price: 5, uptime: 99.5, latencyMs: 900 }),
+      candidate({ serviceId: "cheap-fast", price: 5.5, uptime: 99.5, latencyMs: 100 }),
+    ];
+    const r = await handler(baseInput({ candidates, preferences: { price: 2, latencyMs: 2 } }));
+    expect(r.chosen.service.serviceId).toBe("cheap-fast");
+  });
 });
 
 describe("Negotiator volume pricing and plan quotas (T4.1b)", () => {

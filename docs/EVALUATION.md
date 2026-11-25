@@ -307,6 +307,17 @@ Run with `scripts/load-test.mjs` against the Conductor on a developer machine wi
 
 Stopping the instance on purpose does not recover by design (a deliberate pause sends no metrics and must not restart), so the plan's "stop the instance" wording was replaced by the process and reboot drills above.
 
+## Soft words (RT13, 2026-11-26)
+
+`evaluation/rt13/soft-words.mjs` sends 66 requests (11 capabilities x 6 wordings: "the cheapest", "a cheap", "the fastest", "a low-latency", "the most reliable", "a dependable") to a stub-model Conductor with the real catalogue. Soft words are read deterministically, so stub mode exercises the same path as live. The expert rule: among the valid services SAGE returned (chosen plus alternatives, re-priced at the stated volume), the best one on the named dimension; ties count. Results: `evaluation/results/rt13-soft-words.json`.
+
+| Run | Price | Latency | Uptime | Total | Result |
+|---|---|---|---|---|---|
+| Before L33 | 12 of 22 | 11 of 22 | 19 of 22 | 42 of 66 (63.6%) | fail |
+| After L33 | 22 of 22 | 22 of 22 | 22 of 22 | 66 of 66 (100%) | **pass** (target 85%) |
+
+The first run found L33: a single wish only raised one weight, so a service much better on the unmentioned dimensions could win. After the fix one stated wish decides first. The expert rule judges the choice among the services SAGE retrieved, so this test measures whether the wish is honoured, not retrieval; retrieval recall is reported separately (recall@5 0.952, RT15).
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.

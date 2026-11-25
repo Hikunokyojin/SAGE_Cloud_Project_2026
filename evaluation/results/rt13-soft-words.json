@@ -1,0 +1,677 @@
+{
+  "date": "2026-11-25T20:49:22.766Z",
+  "url": "http://localhost:3001",
+  "cases": 66,
+  "scored": 66,
+  "passed": 66,
+  "rate": 1,
+  "byField": {
+    "price": "22/22",
+    "latencyMs": "22/22",
+    "uptime": "22/22"
+  },
+  "target": 0.85,
+  "pass": true,
+  "rows": [
+    {
+      "text": "I need the cheapest email delivery service",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Brevo Transactional Email",
+      "chosenValue": 7.5,
+      "best": 7.5,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap email delivery service",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Brevo Transactional Email",
+      "chosenValue": 7.5,
+      "best": 7.5,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest email delivery service",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "SendGrid Email API",
+      "chosenValue": 388,
+      "best": 388,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency email delivery service",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "SendGrid Email API",
+      "chosenValue": 388,
+      "best": 388,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable email delivery service",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Postmark",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable email delivery service",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Postmark",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest object storage",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Amazon S3 Glacier",
+      "chosenValue": 0.36,
+      "best": 0.36,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap object storage",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Amazon S3 Glacier",
+      "chosenValue": 0.36,
+      "best": 0.36,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest object storage",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Storage Standard",
+      "chosenValue": 160,
+      "best": 160,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency object storage",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Storage Standard",
+      "chosenValue": 160,
+      "best": 160,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable object storage",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Google Cloud Storage Standard",
+      "chosenValue": 99.957,
+      "best": 99.957,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable object storage",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Google Cloud Storage Standard",
+      "chosenValue": 99.957,
+      "best": 99.957,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest image resizing API",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 5,
+      "best": 5,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap image resizing API",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 5,
+      "best": 5,
+      "candidates": 3,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest image resizing API",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 248,
+      "best": 248,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency image resizing API",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 248,
+      "best": 248,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable image resizing API",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 100,
+      "best": 100,
+      "candidates": 3,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable image resizing API",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Cloudflare Images",
+      "chosenValue": 100,
+      "best": 100,
+      "candidates": 3,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest user authentication with SSO",
+      "field": "price",
+      "status": "completed",
+      "chosen": "WorkOS AuthKit",
+      "chosenValue": 2.5,
+      "best": 2.5,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap user authentication with SSO",
+      "field": "price",
+      "status": "completed",
+      "chosen": "WorkOS AuthKit",
+      "chosenValue": 2.5,
+      "best": 2.5,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest user authentication with SSO",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "WorkOS AuthKit",
+      "chosenValue": 263,
+      "best": 263,
+      "candidates": 3,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency user authentication with SSO",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Supabase Auth",
+      "chosenValue": 252,
+      "best": 252,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable user authentication with SSO",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "WorkOS AuthKit",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable user authentication with SSO",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "WorkOS AuthKit",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest geolocation lookup by IP",
+      "field": "price",
+      "status": "completed",
+      "chosen": "MaxMind GeoIP2 Precision",
+      "chosenValue": 10,
+      "best": 10,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap geolocation lookup by IP",
+      "field": "price",
+      "status": "completed",
+      "chosen": "MaxMind GeoIP2 Precision",
+      "chosenValue": 10,
+      "best": 10,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest geolocation lookup by IP",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Mapbox Map Matching API",
+      "chosenValue": 134,
+      "best": 134,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency geolocation lookup by IP",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Mapbox Map Matching API",
+      "chosenValue": 134,
+      "best": 134,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable geolocation lookup by IP",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "MaxMind GeoIP2 Precision",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable geolocation lookup by IP",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "MaxMind GeoIP2 Precision",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest full-text search",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Meilisearch Cloud",
+      "chosenValue": 20,
+      "best": 20,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap full-text search",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Meilisearch Cloud",
+      "chosenValue": 20,
+      "best": 20,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest full-text search",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Azure AI Search (Basic)",
+      "chosenValue": 134,
+      "best": 134,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency full-text search",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Azure AI Search (Basic)",
+      "chosenValue": 134,
+      "best": 134,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable full-text search",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Algolia Search",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable full-text search",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Algolia Search",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest PDF document generation",
+      "field": "price",
+      "status": "completed",
+      "chosen": "PDFMonkey",
+      "chosenValue": 5.4,
+      "best": 5.4,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap PDF document generation",
+      "field": "price",
+      "status": "completed",
+      "chosen": "PDFMonkey",
+      "chosenValue": 5.4,
+      "best": 5.4,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest PDF document generation",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "DocSpring",
+      "chosenValue": 461,
+      "best": 461,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency PDF document generation",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "DocSpring",
+      "chosenValue": 461,
+      "best": 461,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable PDF document generation",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "DocRaptor",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable PDF document generation",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "DocRaptor",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest compute instances",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Google Cloud Run",
+      "chosenValue": 0.04,
+      "best": 0.04,
+      "candidates": 2,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap compute instances",
+      "field": "price",
+      "status": "completed",
+      "chosen": "AWS Lambda",
+      "chosenValue": 0.02,
+      "best": 0.02,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest compute instances",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Run",
+      "chosenValue": 164,
+      "best": 164,
+      "candidates": 2,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency compute instances",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Run",
+      "chosenValue": 164,
+      "best": 164,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable compute instances",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Google Cloud Run",
+      "chosenValue": 99.957,
+      "best": 99.957,
+      "candidates": 1,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable compute instances",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "AWS Lambda",
+      "chosenValue": 99.957,
+      "best": 99.957,
+      "candidates": 2,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest SMS messaging",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Ably Realtime",
+      "chosenValue": 29,
+      "best": 29,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap SMS messaging",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Ably Realtime",
+      "chosenValue": 29,
+      "best": 29,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest SMS messaging",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Twilio Programmable SMS",
+      "chosenValue": 327,
+      "best": 327,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency SMS messaging",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Azure SignalR Service",
+      "chosenValue": 178,
+      "best": 178,
+      "candidates": 9,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable SMS messaging",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Ably Realtime",
+      "chosenValue": 99.999,
+      "best": 99.999,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable SMS messaging",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Ably Realtime",
+      "chosenValue": 99.999,
+      "best": 99.999,
+      "candidates": 6,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest payment processing",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 40,
+      "best": 40,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap payment processing",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 40,
+      "best": 40,
+      "candidates": 5,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest payment processing",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 275,
+      "best": 275,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency payment processing",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 275,
+      "best": 275,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable payment processing",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable payment processing",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Stripe Payments",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 4,
+      "pass": true
+    },
+    {
+      "text": "I need the cheapest message queue",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Azure Service Bus (Basic)",
+      "chosenValue": 0.01,
+      "best": 0.01,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need a cheap message queue",
+      "field": "price",
+      "status": "completed",
+      "chosen": "Azure Service Bus (Basic)",
+      "chosenValue": 0.01,
+      "best": 0.01,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need the fastest message queue",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Pub/Sub",
+      "chosenValue": 111,
+      "best": 111,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need a low-latency message queue",
+      "field": "latencyMs",
+      "status": "completed",
+      "chosen": "Google Cloud Pub/Sub",
+      "chosenValue": 111,
+      "best": 111,
+      "candidates": 8,
+      "pass": true
+    },
+    {
+      "text": "I need the most reliable message queue",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Upstash QStash",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 7,
+      "pass": true
+    },
+    {
+      "text": "I need a dependable message queue",
+      "field": "uptime",
+      "status": "completed",
+      "chosen": "Upstash QStash",
+      "chosenValue": 99.991,
+      "best": 99.991,
+      "candidates": 8,
+      "pass": true
+    }
+  ]
+}

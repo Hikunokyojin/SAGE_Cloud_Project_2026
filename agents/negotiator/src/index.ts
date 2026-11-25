@@ -233,10 +233,21 @@ function negotiate(input: NegotiatorAgentInput): { output: Composition; scored: 
     normalizedDimension(c.price, priceValues, false) * priceWeight +
     normalizedDimension(c.uptime, uptimeValues, true) * uptimeWeight +
     (latencyDimensionPresent ? normalizedDimension(c.latencyMs as number, latencyValues, false) * latencyWeight : 0);
+  // L33 (RT13): when the request states exactly one wish ("the cheapest", "a fast", "reliable"),
+  // the best service on that wish wins; the weighted score only breaks ties. With two or more
+  // wishes, the weighted balance decides as before.
+  const stated = (["price", "uptime", "latencyMs"] as const).filter((f) => (input.preferences?.[f] ?? 0) > 1);
+  const primary = stated.length === 1 && (stated[0] !== "latencyMs" || latencyDimensionPresent) ? stated[0] : null;
+  const primaryOrder = (a: ServiceCandidateWithEvidence, b: ServiceCandidateWithEvidence): number => {
+    if (!primary) return 0;
+    const d = (a[primary] as number) - (b[primary] as number);
+    return primary === "uptime" ? -d : d;
+  };
   const scored = eligible
     .map((candidate) => ({ candidate, ...scoreOf(candidate), relative: relativeOf(candidate) }))
     .sort(
       (a, b) =>
+        primaryOrder(a.candidate, b.candidate) ||
         b.total - a.total ||
         b.relative - a.relative ||
         (b.candidate.similarityScore ?? 0) - (a.candidate.similarityScore ?? 0) ||
