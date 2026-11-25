@@ -1,4 +1,4 @@
-# T4.2 status: on hold, waiting on the second labeller
+# T4.2 status: second labeller skipped; scored run uses labeller A
 
 Done (PR #51):
 - `t42-cases.json`: 160 cases (50 single, 35 composition, 25 ambiguous, 25 out-of-catalogue, 25 adversarial).
@@ -11,3 +11,7 @@ To resume:
 2. Read the page's `labels` store into a folder and run `python -I evaluation/cases/agreement.py <folder>`.
 3. Resolve every disagreement in `resolved.json`; record kappa in the docs.
 4. Run SAGE on all 160 cases, score against `resolved.json`, and report L4 (out-of-catalogue refusal rate).
+
+## Scored run without the second labeller (2026-11-26)
+
+The second labeller was skipped, so there is no agreement figure. `score-160.mjs` sends all 160 cases to a Conductor running with the real models and scores each outcome against `labels-a.json`.
