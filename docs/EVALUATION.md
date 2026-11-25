@@ -292,6 +292,21 @@ Run with `scripts/load-test.mjs` against the Conductor on a developer machine wi
 - **Ceiling about 20 requests a second in one process.** Nothing failed at 25 req/s, but requests queued: the single process completes about 20 a second. The largest stage is the Broker (about 270 ms, embedding plus vector search); the stub stages take 60 to 90 ms each, mostly the audit write. In production each agent is a separate Lambda and scales out, but the API stage is throttled to 5 req/s (T2.1), so the deployed ceiling is set by that throttle; a staging stack would be needed to measure Lambda scaling directly (L31).
 - **No drift over 30 minutes.** Latency stayed flat across all six five-minute windows and no request failed, so there is no sign of a memory leak or growing queue at steady load.
 
+## Spike and chaos (RT4, RT5, 2026-11-25)
+
+**Spike (RT4).** Local stub Conductor as in RT2: 2 req/s for 120 s with a burst to 40 req/s from 30 s to 45 s (`evaluation/results/rt4-spike.json`). All 811 requests completed with no errors. During the burst p50 rose to 12.7 s as requests queued (the one-process ceiling, L31); in the next 30 s p95 was 1.9 s and in the last 30 s p50 778 ms and p95 975 ms, back to baseline. The first window's p95 (5.6 s) is the Broker loading its model after a start. **Pass:** no errors and recovery within 30 to 60 s of the burst ending.
+
+**Chaos (RT5).** Each recovery layer of T2.2 was exercised on the live Conductor, timed by polling `/health` every 5 s (`evaluation/results/rt5-chaos.json`).
+
+| Drill | Fault | Result |
+|---|---|---|
+| C1 | Conductor process killed with SIGKILL | systemd restarted it at once (state "activating" 1 s later); healthy afterwards with no manual step. **Pass**; the outage was not timed from outside |
+| C2 | Reboot alarm forced into ALARM, firing its real reboot action | Instance rebooted; `/health` failed for about 20 s and recovered with no manual step. **Pass** (target under 5 minutes) |
+| C3 | Vector database unreachable (local) | No crash; requests failed fast, but with a generic HTTP 500 "fetch failed" (L32). Worked again once the address was restored. **Partial** |
+| C4 | Hardware failure | Cannot be triggered on demand; the system-check recovery alarm exists. **Not tested** |
+
+Stopping the instance on purpose does not recover by design (a deliberate pause sends no metrics and must not restart), so the plan's "stop the instance" wording was replaced by the process and reboot drills above.
+
 ## Limitations
 
 1. **Small catalog (offline evaluation).** The live system now uses 213 real services (T3.4), but the comparison above ran on 21 services, which fit comfortably in one prompt, which favours the LLM-only baseline. The comparison would need a much larger catalog to test SAGE's retrieval-first design where it is meant to matter.
