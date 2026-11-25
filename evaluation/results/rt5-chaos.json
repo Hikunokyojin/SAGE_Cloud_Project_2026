@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-25",
+  "target": "live Conductor i-03071853de7fb5e77 (build 99047083131a) for C1/C2; local stub Conductor for C3",
+  "drills": [
+    {"id": "C1", "fault": "systemctl kill -s KILL conductor.service", "at": "2026-11-25T18:10:20Z", "observed": "systemd state 'activating' 1 s after the kill; /health 200 afterwards; no manual step", "outsideTiming": "not measured (health poll had ended)", "pass": true},
+    {"id": "C2", "fault": "set-alarm-state ALARM on sage-conductor-instance-check-reboot (fires the real reboot action)", "at": "2026-11-25T18:30:32Z", "observed": "reboot action executed; /health non-200 from 18:30:28 to 18:30:43 (3 of 187 polls), 200 from 18:30:48; alarm also emailed the operator topic", "outageSec": 20, "pass": true},
+    {"id": "C3", "fault": "QDRANT_URL pointed at 127.0.0.1:9 (vector database unreachable)", "observed": "process stayed up; requests failed fast (0.2 to 3.8 s) with HTTP 500 and error 'fetch failed'; after restoring the address and restarting, requests completed with HTTP 200", "pass": "partial: no crash, but the client gets a generic 500 (L32); recovery without a restart not tested"},
+    {"id": "C4", "fault": "hardware failure (system status check)", "observed": "cannot be triggered on demand; recovery alarm sage-conductor-system-check-recover exists by design", "pass": "not tested"}
+  ]
+}
