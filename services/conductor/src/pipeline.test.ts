@@ -303,6 +303,44 @@ describe("runPipeline", () => {
     expect(call.parentDecisionId).toBe(vi.mocked(invoker.intent).mock.calls[0][0].decisionId);
   });
 
+  it("L35: pauses a vague request with Intent's clarifying question, before any search", async () => {
+    const invoker = makeInvoker({
+      intent: vi.fn(async (input) => ({
+        requestId: input.requestId,
+        capability: "storage",
+        category: "object-storage",
+        clarify: "What do you want to store: files, objects such as images, or database records?",
+        constraints: [] as Constraint[],
+        rawInput: input.rawInput,
+      })),
+    });
+
+    const result = await runPipeline("req-vague", "I need storage.", invoker);
+
+    expect(result.status).toBe("paused_for_review");
+    expect(invoker.broker).not.toHaveBeenCalled();
+    const call = vi.mocked(invoker.escalateUnsatisfiable).mock.calls[0][0];
+    expect(call.kind).toBe("needs_clarification");
+    expect(call.question).toContain("What do you want to store");
+  });
+
+  it("L35: a human-resumed request is not paused again for the same question", async () => {
+    const invoker = makeInvoker();
+    const intent = {
+      requestId: "req-vague",
+      capability: "object storage for images",
+      category: "object-storage",
+      clarify: "What do you want to store?",
+      constraints: [] as Constraint[],
+      rawInput: "I need storage.",
+    };
+
+    const result = await resumePipeline("req-vague", intent, invoker, "human-decision");
+
+    expect(result.status).not.toBe("paused_for_review");
+    expect(invoker.broker).toHaveBeenCalled();
+  });
+
   it("escalates to a human without calling Negotiator when Broker finds no candidates", async () => {
     const invoker = makeInvoker({ broker: vi.fn(async () => []) });
 

@@ -44,6 +44,9 @@ export interface Intent {
   // T4.1a: present only for a chain of two to four capabilities. capability/category then
   // describe the first step, and constraints are limits on the whole chain.
   steps?: IntentStep[];
+  // L35: a one-line question for the client when the request is too vague to choose a kind
+  // of service ("I need storage"). The request is paused with it instead of being guessed.
+  clarify?: string;
   rawInput: string;
 }
 
@@ -237,13 +240,16 @@ export interface EscalationExplainerInput {
 //  - capability_not_in_catalogue: the request fits no catalogue category at all, so the
 //    marketplace does not offer this kind of service.
 //  - contradictory_request (L30): the request asks for opposite things at once.
-export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue" | "contradictory_request";
+//  - needs_clarification (L35): the request is too vague to pick a kind of service.
+export type UnsatisfiableEscalationKind = "no_valid_candidate" | "capability_not_in_catalogue" | "contradictory_request" | "needs_clarification";
 
 export interface UnsatisfiableEscalationInput {
   requestId: string;
   constraints: Constraint[];
   reason: string;
   kind?: UnsatisfiableEscalationKind;
+  // L35: the clarifying question shown to the client (needs_clarification only).
+  question?: string;
   // Signed link to the human review page; included in the escalation email (T2.3).
   reviewUrl?: string;
   decisionId?: string;

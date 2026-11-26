@@ -353,3 +353,18 @@ One run per case, full SAGE only; the 5-run repeats and the ablations were not r
 ## Summary
 
 With the LLM defect fixed, every condition is far more reliable, and the comparison reads differently from the first run. The evaluation exposed one concrete design gap, the missing category check. That gap has since been fixed and deployed, and full SAGE now never approves an invalid service, matching the best condition on constraint safety while also keeping a decision-provenance record, which no baseline does. A single LLM call over the whole small catalog still chooses the *best* option more often (100% against 88.9%). Two ablations carry clear evidence. The deterministic Negotiator makes better choices, handles impossible requests correctly, and is cheaper than an LLM-based one. Dropping scoped payloads removes provenance entirely, and that condition also approved an impossible request. A second, smaller gap found in the re-run (a request for which retrieval finds nothing failed instead of reaching a human) has also been fixed and deployed since.
+
+## L35 and L36: Intent check (2026-11-26)
+
+`evaluation/t42/intent-check.mts` runs the new Intent with the real model and predicts the route (asked, refused, served) for the 132 non-adversarial labelled cases and 29 new held-out phrasings (`evaluation/t42/heldout-intent.json`, labelled by the developer). Results: `evaluation/results/l35-l36-intent.json`.
+
+| Set | Before | After |
+|---|---|---|
+| Labelled, clear (serve) | 82 of 82 categories | 80 of 82 |
+| Labelled, ambiguous | 8 of 25 | 22 of 25 |
+| Labelled, out of catalogue | 17 of 25 | 22 of 25 |
+| Held-out, clear | not run | 10 of 10 |
+| Held-out, ambiguous | not run | 10 of 10 |
+| Held-out, out of catalogue | not run | 8 of 9 |
+
+The two clear-request regressions (store recommendations, an image-analysis chain) were fixed by narrowing the business-application rule and re-checked one by one; a second full run stopped when Groq's daily token limit (200,000) ran out. This is the Intent stage alone. The full 160-case run against the deployed system is still to do.
