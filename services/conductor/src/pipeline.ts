@@ -173,7 +173,9 @@ export async function resumePipeline(
   options: PipelineOptions = {}
 ): Promise<PipelineResult> {
   const timings: StageTiming[] = [];
-  const result = await fromIntent(requestId, intent, withTimings(invoker, timings), parentDecisionId, options);
+  // L35: the person has answered the clarifying question, so it is not asked again.
+  const { clarify: _answered, ...answered } = intent;
+  const result = await fromIntent(requestId, answered, withTimings(invoker, timings), parentDecisionId, options);
   return { ...result, timings };
 }
 
@@ -232,6 +234,24 @@ async function fromIntent(
   // (found live: a request for a database service was answered with a message queue), so
   // it goes straight to a human instead, before any search.
   const chainSteps = intent.steps && intent.steps.length >= 2 ? intent.steps : undefined;
+
+  // L35: a request too vague to choose a kind of service is asked about, not guessed.
+  if (!chainSteps && intent.clarify) {
+    const question = intent.clarify;
+    const reason = `needs_clarification: ${question}`;
+    return paused(reason, [], (decisionId) =>
+      invoker.escalateUnsatisfiable({
+        requestId,
+        constraints: intent.constraints,
+        kind: "needs_clarification",
+        question,
+        reason,
+        reviewUrl,
+        decisionId,
+        parentDecisionId: intentDecisionId,
+      })
+    );
+  }
   const missing = chainSteps?.findIndex((s) => !s.category) ?? -1;
   if (chainSteps && missing >= 0) {
     const reason = `capability_not_in_catalogue: step ${missing + 1} "${chainSteps[missing].capability}" does not match any service category in the catalogue`;

@@ -64,6 +64,20 @@ describe("Reviewer category check", () => {
     expect(sendMock.mock.calls[0][0].input.Subject).toContain("not in the catalogue");
   });
 
+  it("L35: shows the clarifying question for a needs_clarification escalation", async () => {
+    const { escalateUnsatisfiable } = await import("./index");
+    const out = await escalateUnsatisfiable({
+      requestId: "r",
+      constraints: [],
+      reason: "needs_clarification: What do you want to store?",
+      kind: "needs_clarification",
+      question: "What do you want to store?",
+    });
+    expect(out.explanation).toContain("What do you want to store?");
+    expect(out.explanation).not.toContain("needs_clarification");
+    expect(sendMock.mock.calls[0][0].input.Subject).toContain("needs clarification");
+  });
+
   it("keeps every SNS subject within SNS's 100-character limit for a real UUID request id", async () => {
     const { escalateUnsatisfiable } = await import("./index");
     const requestId = "2d3556f1-8f3a-49e4-b494-ab4360024daa";

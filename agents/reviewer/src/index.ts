@@ -504,7 +504,9 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
     new PublishCommand({
       TopicArn: topicArn,
       Subject: snsSubject(
-        input.kind === "contradictory_request"
+        input.kind === "needs_clarification"
+          ? `SAGE review: ${input.requestId} (needs clarification)`
+          : input.kind === "contradictory_request"
           ? `SAGE review: ${input.requestId} (contradictory request)`
           : input.kind === "capability_not_in_catalogue"
           ? `SAGE review: ${input.requestId} (not in the catalogue)`
@@ -516,7 +518,11 @@ export async function escalateUnsatisfiable(input: UnsatisfiableEscalationInput)
 
   // User-facing text: input.reason carries internal error plumbing (e.g. the
   // lambdaInvoker prefix), so it goes only to the SNS message and audit record.
-  const explanation = input.kind === "contradictory_request"
+  const explanation = input.kind === "needs_clarification"
+    ? `This request could fit more than one kind of service, so it has been passed to a human reviewer ` +
+      `instead of being guessed.${input.question ? ` To help us choose: ${input.question}` : ""} ` +
+      `You can also resubmit the request with more detail.`
+    : input.kind === "contradictory_request"
     ? `This request asks for opposite things at once (for example the cheapest and the most expensive option), ` +
       `so no service could satisfy it as written. It has been passed to a human reviewer. ` +
       `Please say which of the two you want and resubmit the request.`

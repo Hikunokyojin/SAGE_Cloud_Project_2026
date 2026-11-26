@@ -229,6 +229,30 @@ describe("Intent reproducibility", () => {
     expect(system).toContain("container-registry");
   });
 
+  it("L35: passes the model's clarifying question through for a vague single request", async () => {
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "storage", category: "object-storage", constraints: [], clarify: "  What do you want to store?  " })));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r1", rawInput: "I need storage." } as IntentAgentInput);
+    expect(out.clarify).toBe("What do you want to store?");
+  });
+
+  it("L35: drops an empty clarifying question", async () => {
+    fetchMock.mockResolvedValue(groqResponse(JSON.stringify({ capability: "email delivery", category: "email-delivery", constraints: [], clarify: " " })));
+    const { handler } = await import("./index");
+    const out = await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    expect(out.clarify).toBeUndefined();
+  });
+
+  it("L35/L36: tells the model when to ask and when a near category is not a match", async () => {
+    const { handler } = await import("./index");
+    await handler({ requestId: "r1", rawInput: "send emails" } as IntentAgentInput);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const system: string = body.messages[0].content;
+    expect(system).toMatch(/"clarify"/);
+    expect(system).toMatch(/do this exact job/);
+    expect(body.response_format.json_schema.schema.properties.clarify.type).toBe("string");
+  });
+
   it("reuses the parse for the same request, ignoring case and spacing", async () => {
     const { handler } = await import("./index");
     const a = await handler({ requestId: "r1", rawInput: "Send  emails" } as IntentAgentInput);

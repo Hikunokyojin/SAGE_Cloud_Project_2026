@@ -42,11 +42,18 @@ Convert the user's request into a JSON object with exactly these fields:
     { "field": "price" | "uptime" | "latencyMs", "operator": "lt" | "lte" | "gt" | "gte" | "eq", "value": <number>, "mandatory": true | false, "priority": <1-10, only when mandatory is false>, "per": "unit" (only for a price stated per item, e.g. "$0.05 per image") }
   ],
   "volume": { "amount": <number>, "unit": "<one of: ${USAGE_UNITS.join(", ")}>" } (only when the user states how much they need per month),
-  "steps": [ ... ] (only when the user needs TWO OR MORE different services working together; otherwise [])
+  "steps": [ ... ] (only when the user needs TWO OR MORE different services working together; otherwise []),
+  "clarify": "<one short question to the user>" (only when the request is too vague to choose a service, see below)
 }
 Each entry of "steps" is { "capability", "category", "constraints", "volume", "dependsOn": [<indexes of earlier steps whose output it uses>] } with the same meaning as above, in the order the services are used.
 When there are steps: the top-level "capability" and "category" repeat the first step, and the top-level "constraints" are limits on the WHOLE chain (total monthly price, overall uptime, total latency); limits on one service go in that step's "constraints".
 A second catalogue service named in passing is still its own step when the user needs it as a service, for example as the source the first one is fed from or the place its output goes. "Run our containers on a compute service pulled from a container registry" is two steps: container-registry, then compute (dependsOn [0]). Do not add a step for something that is only a feature of the one service.
+Rules for "category":
+- Pick the category whose services do this exact job. A category that is only related, or that the requested product merely runs on, is not a match: the request is "unknown". For example a helpdesk ticketing system is not messaging, an e-signature tool is not document-generation, and a payroll service is not payment-processing.
+- A packaged business application (sales, HR, accounting, logistics, office tools) or a specialised data feed (markets, weather, maps and routes) is "unknown" unless a category names that exact service.
+Rules for "clarify":
+- Add "clarify" when the request names only a broad area and no concrete task, so more than one category could fit or the kind of service cannot be told (for example "I need storage" could be object-storage, file-storage or database), or when the user says they are unsure which of two services they need.
+- Do not add it when a concrete task is stated, even briefly ("resize product photos", "send password-reset emails", "transcribe call recordings"). Still fill in your best "capability" and "category".
 Rules for "constraints":
 - Use "mandatory": true for a hard requirement explicitly stated (e.g. "must be under $0.05", "at least 99% uptime", "under 100ms").
 - Use "mandatory": false with a "priority" from 1-10 (higher = more important) for a softer preference (e.g. "prefer cheap", "ideally fast", "reliability matters most").
@@ -91,7 +98,7 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
 
 const GROQ_SEED = 42;
 // Bump when the prompt or schema changes so the shared cache stops serving old parses.
-const CACHE_VERSION = `${GROQ_MODEL}|intent-v3`;
+const CACHE_VERSION = `${GROQ_MODEL}|intent-v4`;
 
 const CONSTRAINTS_SCHEMA = {
   type: "array",
@@ -126,6 +133,7 @@ const INTENT_JSON_SCHEMA = {
       category: CATEGORY_SCHEMA,
       constraints: CONSTRAINTS_SCHEMA,
       volume: VOLUME_SCHEMA,
+      clarify: { type: "string" },
       steps: {
         type: "array",
         items: {
@@ -147,7 +155,7 @@ const INTENT_JSON_SCHEMA = {
   },
 };
 
-type ModelParse = { capability: string; category?: unknown; constraints: unknown; volume?: unknown; steps?: unknown };
+type ModelParse = { capability: string; category?: unknown; constraints: unknown; volume?: unknown; steps?: unknown; clarify?: unknown };
 
 // Same request (ignoring case and spacing) gives the same parse for as long as this
 // process (a warm Lambda) lives. Bounded so memory stays flat.
@@ -232,6 +240,8 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
   };
   if (volume) output.volume = volume;
   if (steps) output.steps = steps;
+  const clarify = typeof parsed.clarify === "string" ? parsed.clarify.trim() : "";
+  if (clarify && !steps) output.clarify = clarify;
   const preferences = extractPreferences(input.rawInput);
   if (Object.keys(preferences).length > 0) output.preferences = preferences;
 
@@ -244,7 +254,7 @@ export async function handler(input: IntentAgentInput): Promise<Intent> {
       input,
       output,
       usage,
-      reasoning: `${cacheSource ? `Reused the cached parse of an identical request (${cacheSource} cache). ` : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.${output.volume ? ` Volume: ${output.volume.amount} ${output.volume.unit}/month.` : ""}${output.steps ? ` Chain of ${output.steps.length} steps: ${output.steps.map((s) => s.category ?? s.capability).join(" -> ")}.` : ""}`,
+      reasoning: `${cacheSource ? `Reused the cached parse of an identical request (${cacheSource} cache). ` : ""}Parsed capability "${output.capability}" (category: ${output.category ?? "none"}) with ${output.constraints.length} constraint(s): ${JSON.stringify(output.constraints)}.${output.volume ? ` Volume: ${output.volume.amount} ${output.volume.unit}/month.` : ""}${output.steps ? ` Chain of ${output.steps.length} steps: ${output.steps.map((s) => s.category ?? s.capability).join(" -> ")}.` : ""}${output.clarify ? ` Too vague to choose a service; asks: "${output.clarify}"` : ""}`,
       decisionId: input.decisionId ?? randomUUID(),
       parentDecisionId: input.parentDecisionId,
       iteration: 0,
