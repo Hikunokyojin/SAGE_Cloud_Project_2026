@@ -1,0 +1,1503 @@
+{
+  "date": "2026-11-26T10:18:16.538Z",
+  "note": "Intent stage only, real model; not-served counts asked (clarify) or refused (no category) as correct.",
+  "summary": {
+    "t42/serve": "80/82",
+    "t42/ambiguous": "22/25",
+    "t42/out_of_catalogue": "22/25",
+    "heldout/serve": "10/10",
+    "heldout/ambiguous": "10/10",
+    "heldout/out_of_catalogue": "8/9"
+  },
+  "rows": [
+    {
+      "set": "t42",
+      "id": "t42-001",
+      "text": "I need the cheapest available email delivery service, reliability is not a concern.",
+      "want": "serve",
+      "wantCat": "email-delivery",
+      "got": "serve",
+      "category": "email-delivery",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-002",
+      "text": "I need a managed authentication service with OAuth2 support.",
+      "want": "serve",
+      "wantCat": "authentication",
+      "got": "serve",
+      "category": "authentication",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-003",
+      "text": "I need an IP geolocation lookup API.",
+      "want": "serve",
+      "wantCat": "geolocation",
+      "got": "serve",
+      "category": "geolocation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-004",
+      "text": "I need the cheapest possible image resizing service; performance and uptime are a low priority.",
+      "want": "serve",
+      "wantCat": "image-resizing",
+      "got": "serve",
+      "category": "image-resizing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-005",
+      "text": "I need the cheapest object storage service available, I don't care how slow it is.",
+      "want": "serve",
+      "wantCat": "object-storage",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-006",
+      "text": "I need the cheapest compute instances, uptime doesn't matter for this batch job.",
+      "want": "serve",
+      "wantCat": "compute",
+      "got": "serve",
+      "category": "compute",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-007",
+      "text": "I need the fastest possible image resizing service; budget is a low priority.",
+      "want": "serve",
+      "wantCat": "image-resizing",
+      "got": "serve",
+      "category": "image-resizing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-008",
+      "text": "I need the lowest-latency object storage service, cost is not a factor.",
+      "want": "serve",
+      "wantCat": "object-storage",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-009",
+      "text": "I need a compute service with guaranteed uptime, at least 99.9%.",
+      "want": "serve",
+      "wantCat": "compute",
+      "got": "serve",
+      "category": "compute",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-010",
+      "text": "I need an object storage service with at least 99.5% uptime guaranteed.",
+      "want": "serve",
+      "wantCat": "object-storage",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-011",
+      "text": "I need the cheapest full-text search indexing service.",
+      "want": "serve",
+      "wantCat": "full-text-search",
+      "got": "serve",
+      "category": "full-text-search",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-012",
+      "text": "I need the lowest-latency message queue service.",
+      "want": "serve",
+      "wantCat": "message-queue",
+      "got": "serve",
+      "category": "message-queue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-013",
+      "text": "We send about 20,000 password-reset emails a month. Keep it under $50 a month.",
+      "want": "serve",
+      "wantCat": "email-delivery",
+      "got": "serve",
+      "category": "email-delivery",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-014",
+      "text": "Translate around 2 million characters of support tickets into English each month, budget $100.",
+      "want": "serve",
+      "wantCat": "translation",
+      "got": "serve",
+      "category": "translation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-015",
+      "text": "Transcribe 500 hours of meeting recordings a month.",
+      "want": "serve",
+      "wantCat": "speech-transcription",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-016",
+      "text": "We need to take card payments in our online shop with at least 99.9% uptime.",
+      "want": "serve",
+      "wantCat": "payment-processing",
+      "got": "serve",
+      "category": "payment-processing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-017",
+      "text": "Pick a managed PostgreSQL-style database for a small app, under $30 a month.",
+      "want": "serve",
+      "wantCat": "database",
+      "got": "serve",
+      "category": "database",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-018",
+      "text": "Need DNS hosting for three domains.",
+      "want": "serve",
+      "wantCat": "dns",
+      "got": "serve",
+      "category": "dns",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-019",
+      "text": "Store and rotate our API keys and database passwords somewhere safe.",
+      "want": "serve",
+      "wantCat": "secrets-management",
+      "got": "serve",
+      "category": "secrets-management",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-020",
+      "text": "Host a static marketing website with a custom domain.",
+      "want": "serve",
+      "wantCat": "web-hosting",
+      "got": "serve",
+      "category": "web-hosting",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-021",
+      "text": "Monitor our servers and alert us when CPU is high.",
+      "want": "serve",
+      "wantCat": "monitoring",
+      "got": "serve",
+      "category": "monitoring",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-022",
+      "text": "Send SMS one-time passcodes to users in India, about 10,000 a month.",
+      "want": "serve",
+      "wantCat": "messaging",
+      "got": "serve",
+      "category": "messaging",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-023",
+      "text": "Turn our blog posts into natural-sounding audio.",
+      "want": "serve",
+      "wantCat": "text-to-speech",
+      "got": "serve",
+      "category": "text-to-speech",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-024",
+      "text": "Pull the text out of scanned PDF receipts.",
+      "want": "serve",
+      "wantCat": "document-ocr",
+      "got": "serve",
+      "category": "document-ocr",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-025",
+      "text": "Detect objects and labels in product photos.",
+      "want": "serve",
+      "wantCat": "image-analysis",
+      "got": "serve",
+      "category": "image-analysis",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-026",
+      "text": "Run sentiment analysis on customer reviews.",
+      "want": "serve",
+      "wantCat": "text-analysis",
+      "got": "serve",
+      "category": "text-analysis",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-027",
+      "text": "Flag likely fraudulent card transactions before we accept them.",
+      "want": "serve",
+      "wantCat": "fraud-detection",
+      "got": "serve",
+      "category": "fraud-detection",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-028",
+      "text": "Show 'customers also bought' product recommendations on our store.",
+      "want": "serve",
+      "wantCat": "recommendations",
+      "got": "out_of_catalogue",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-029",
+      "text": "Serve our images and JavaScript through a CDN with low latency worldwide.",
+      "want": "serve",
+      "wantCat": "content-delivery",
+      "got": "serve",
+      "category": "content-delivery",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-030",
+      "text": "Transcode uploaded videos to HLS for streaming.",
+      "want": "serve",
+      "wantCat": "video-transcoding",
+      "got": "serve",
+      "category": "video-transcoding",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-031",
+      "text": "Generate vector embeddings for 100,000 documents.",
+      "want": "serve",
+      "wantCat": "embedding-generation",
+      "got": "serve",
+      "category": "embedding-generation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-032",
+      "text": "Host a trained ML model and get predictions over an API.",
+      "want": "serve",
+      "wantCat": "ml-inference",
+      "got": "serve",
+      "category": "ml-inference",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-033",
+      "text": "Put an API gateway in front of our backend with rate limiting.",
+      "want": "serve",
+      "wantCat": "api-gateway",
+      "got": "serve",
+      "category": "api-gateway",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-034",
+      "text": "A private container registry for our Docker images.",
+      "want": "serve",
+      "wantCat": "container-registry",
+      "got": "serve",
+      "category": "container-registry",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-035",
+      "text": "Run ad-hoc SQL queries over log files sitting in object storage.",
+      "want": "serve",
+      "wantCat": "data-query",
+      "got": "serve",
+      "category": "data-query",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-036",
+      "text": "Ingest a real-time stream of IoT sensor events.",
+      "want": "serve",
+      "wantCat": "data-streaming",
+      "got": "serve",
+      "category": "data-streaming",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-037",
+      "text": "Orchestrate a multi-step order-fulfilment workflow with retries.",
+      "want": "serve",
+      "wantCat": "workflow-orchestration",
+      "got": "serve",
+      "category": "workflow-orchestration",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-038",
+      "text": "Track user sign-ups and funnels in product analytics.",
+      "want": "serve",
+      "wantCat": "product-analytics",
+      "got": "serve",
+      "category": "product-analytics",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-039",
+      "text": "A shared network file system that several servers can mount.",
+      "want": "serve",
+      "wantCat": "file-storage",
+      "got": "serve",
+      "category": "file-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-040",
+      "text": "Generate PDF invoices from HTML templates.",
+      "want": "serve",
+      "wantCat": "document-generation",
+      "got": "serve",
+      "category": "document-generation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-041",
+      "text": "Resize user avatars to 128x128, with at least 99.5% uptime.",
+      "want": "serve",
+      "wantCat": "image-resizing",
+      "got": "serve",
+      "category": "image-resizing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-042",
+      "text": "A message queue between our web tier and background workers, under $20 a month.",
+      "want": "serve",
+      "wantCat": "message-queue",
+      "got": "serve",
+      "category": "message-queue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-043",
+      "text": "Search-as-you-type over our product catalogue of 50,000 items.",
+      "want": "serve",
+      "wantCat": "full-text-search",
+      "got": "serve",
+      "category": "full-text-search",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-044",
+      "text": "Look up the country of each visitor from their IP address, 1 million lookups a month.",
+      "want": "serve",
+      "wantCat": "geolocation",
+      "got": "serve",
+      "category": "geolocation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-045",
+      "text": "Let users sign in with Google and email magic links.",
+      "want": "serve",
+      "wantCat": "authentication",
+      "got": "serve",
+      "category": "authentication",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-046",
+      "text": "Back up 2 TB of files to cheap object storage.",
+      "want": "serve",
+      "wantCat": "object-storage",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-047",
+      "text": "Virtual machines for a nightly batch job, cheapest option.",
+      "want": "serve",
+      "wantCat": "compute",
+      "got": "serve",
+      "category": "compute",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-048",
+      "text": "Speech-to-text for short voice notes in Hindi and English.",
+      "want": "serve",
+      "wantCat": "speech-transcription",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-049",
+      "text": "We need push notifications to our mobile app users.",
+      "want": "serve",
+      "wantCat": "messaging",
+      "got": "serve",
+      "category": "messaging",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-050",
+      "text": "Analyse 10,000 support emails a month to pull out key entities and topics.",
+      "want": "serve",
+      "wantCat": "text-analysis",
+      "got": "serve",
+      "category": "text-analysis",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-051",
+      "text": "Extract text from about 5,000 scanned invoice pages a month, then translate that text into Spanish. Keep the whole thing under $200 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "document-ocr",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-052",
+      "text": "Transcribe our support call recordings, then run sentiment analysis on the transcripts. Total budget $300 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-053",
+      "text": "Store user-uploaded photos in object storage and resize each one into thumbnails. Keep the total under $100 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-054",
+      "text": "Take card payments for our shop and send an email receipt after each payment. Combined uptime of at least 99.5%.",
+      "want": "serve",
+      "got": "serve",
+      "category": "payment-processing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-055",
+      "text": "Sign users in with a managed authentication service, then send them a welcome SMS. Total under $150 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "authentication",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-056",
+      "text": "Translate product descriptions into French and then convert them to speech audio. Keep the total under $250 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "translation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-057",
+      "text": "Screen each card payment for fraud first, then process the payment. The two together must have at least 99% uptime.",
+      "want": "serve",
+      "got": "serve",
+      "category": "fraud-detection",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-058",
+      "text": "Put incoming orders on a message queue, then send an email confirmation for each order. Total budget $80 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "message-queue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-059",
+      "text": "Analyse uploaded images to detect objects, then store the results in a managed database. Total under $200 a month.",
+      "want": "serve",
+      "got": "out_of_catalogue",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-060",
+      "text": "Generate PDF invoices from HTML and email them to customers. Keep the total under $120 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "document-generation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-061",
+      "text": "Transcode uploaded videos for streaming and serve them through a content delivery network. Total under $500 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "video-transcoding",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-062",
+      "text": "Generate text embeddings for our help articles, then index them in a full-text search service. Total under $150 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "embedding-generation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-063",
+      "text": "Look up each visitor's location from their IP address, then record it in product analytics. Total budget $100 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "geolocation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-064",
+      "text": "Stream clickstream events through a data streaming service and query them with an SQL query service. Total under $300 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "data-streaming",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-065",
+      "text": "Run ML model inference on each request, then send the prediction as a push or SMS message. Total under $250 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "ml-inference",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-066",
+      "text": "Extract text from scanned contracts with OCR, then run text analysis to pull out key entities. Total under $250 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "document-ocr",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-067",
+      "text": "Transcribe podcast audio, translate the transcript into German, then turn it into speech. Total under $400 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-068",
+      "text": "Authenticate users, store their files in object storage, and email them when an upload finishes. Total under $200 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "authentication",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-069",
+      "text": "Check each payment for fraud, process it, then email a receipt. All three together need at least 99% combined uptime.",
+      "want": "serve",
+      "got": "serve",
+      "category": "fraud-detection",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-070",
+      "text": "Store product images in object storage, resize them, and serve them through a CDN. Total budget $150 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-071",
+      "text": "Queue incoming jobs in a message queue, then orchestrate them with a workflow orchestration service. Total under $100 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "message-queue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-072",
+      "text": "Keep API keys in a secrets manager and expose our backend through an API gateway. Total under $60 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "secrets-management",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-073",
+      "text": "Host our web app on a web hosting service and monitor it with a monitoring service. Total under $100 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "web-hosting",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-074",
+      "text": "Run our containers on a compute service pulled from a container registry. Total under $300 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "container-registry",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-075",
+      "text": "Generate product recommendations for each user, then email them a weekly digest. Total under $300 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "recommendations",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-076",
+      "text": "Transcribe customer voicemails and then send each transcript to the team by email. Total under $100 a month.",
+      "want": "serve",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-077",
+      "text": "Resize uploaded images and then analyse them to detect unsafe content. Keep combined uptime at least 99%.",
+      "want": "serve",
+      "got": "serve",
+      "category": "image-resizing",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-081",
+      "text": "Extract text from scanned forms, analyse it for key fields, then store the results in a database.",
+      "want": "serve",
+      "got": "serve",
+      "category": "document-ocr",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-082",
+      "text": "Detect fraud on each payment, take the payment, then text the customer a confirmation.",
+      "want": "serve",
+      "got": "serve",
+      "category": "fraud-detection",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-083",
+      "text": "Generate embeddings for our documents and then serve semantic predictions through a hosted model.",
+      "want": "serve",
+      "got": "serve",
+      "category": "embedding-generation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-084",
+      "text": "Stream app events in real time and then show them in product analytics.",
+      "want": "serve",
+      "got": "serve",
+      "category": "data-streaming",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-085",
+      "text": "Translate our FAQ into Japanese and publish it on a hosted website.",
+      "want": "serve",
+      "got": "serve",
+      "category": "translation",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-086",
+      "text": "I need storage.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need object storage, file storage, or a database?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-087",
+      "text": "Something to send messages to users.",
+      "want": "ambiguous",
+      "got": "serve",
+      "category": "messaging",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-088",
+      "text": "We need a database or maybe a search service for our product data, not sure which.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need a relational database, a NoSQL database, or a full-text search engine for your product catalog?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-089",
+      "text": "Make our app faster.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Which part of the app would you like to speed up—frontend rendering, API response times, database queries, or something else?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-090",
+      "text": "I need a service for our images.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific image-related task do you need, such as resizing, storage, or analysis?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-091",
+      "text": "Handle our users.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific user management tasks do you need, such as authentication, user data storage, or user communication?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-092",
+      "text": "We want analytics.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of analytics are you looking for (e.g., user behavior, sales, performance metrics)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-093",
+      "text": "I need something cheap and reliable.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific service or task do you need, such as storage, email delivery, or image resizing?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-094",
+      "text": "Process our documents.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific processing do you need for your documents (e.g., OCR, text extraction, translation, summarization, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-095",
+      "text": "We need AI for our support team.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific AI functionality do you need for your support team (e.g., chat assistance, ticket routing, sentiment analysis, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-096",
+      "text": "Something to notify the team when things break.",
+      "want": "ambiguous",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-097",
+      "text": "Help us deal with our videos.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific video tasks do you need—transcoding, resizing, or something else?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-098",
+      "text": "We need to send things to customers every week.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of content are you sending to customers each week (e.g., emails, SMS, push notifications)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-099",
+      "text": "Set up our backend.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific backend services or tasks do you need to set up (e.g., database, API, authentication, storage)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-100",
+      "text": "We need a service for audio.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific audio task do you need—transcription, translation, text‑to‑speech, or something else?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-101",
+      "text": "Keep our data safe.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of data protection are you looking for (e.g., encryption, backup, access control, compliance)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-102",
+      "text": "I need hosting.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of hosting do you need—web hosting, container hosting, or something else?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-103",
+      "text": "Connect our services together.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Which specific services or tasks do you want to connect together?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-104",
+      "text": "Something for payments, maybe subscriptions or maybe invoices.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need recurring subscription billing, one‑time invoice payments, or both?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-105",
+      "text": "Make our search better.",
+      "want": "ambiguous",
+      "got": "serve",
+      "category": "full-text-search",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-106",
+      "text": "We need queues or streams, whichever is better.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need a message queue for asynchronous processing or a data stream for real‑time event ingestion?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-107",
+      "text": "Store logs and let us look at them.",
+      "want": "ambiguous",
+      "got": "serve",
+      "category": "database",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-108",
+      "text": "Help our app understand text.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific text processing tasks do you need, such as sentiment analysis, entity extraction, or language detection?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-109",
+      "text": "I want the best service.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Could you specify what you need the service to do (e.g., store files, transcribe audio, send emails, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-110",
+      "text": "We need an API.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific functionality or type of API do you need?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-111",
+      "text": "I need a managed Kubernetes cluster.",
+      "want": "out_of_catalogue",
+      "got": "serve",
+      "category": "compute",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-112",
+      "text": "An e-signature service so customers can sign contracts online.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-113",
+      "text": "A VPN service for our remote staff.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "What specific features or performance requirements do you need for the VPN service?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-114",
+      "text": "Book flights and hotels for our employees.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a travel booking service or just a place to store travel itineraries?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-115",
+      "text": "A payroll service for 40 employees.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a full payroll processing solution or just a database to store payroll data?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-116",
+      "text": "Accounting and bookkeeping software for a small business.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a full-featured accounting platform or just specific services like invoicing, expense tracking, or tax filing?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-117",
+      "text": "A video conferencing service for team meetings.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-118",
+      "text": "A CRM to track our sales leads.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a full CRM system or just a database to store leads?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-119",
+      "text": "Domain name registration for a new brand.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-120",
+      "text": "A blockchain node we can send transactions to.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-121",
+      "text": "A quantum computing service to run circuits.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-122",
+      "text": "Weather forecast data for 500 cities.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-123",
+      "text": "A stock market price feed.",
+      "want": "out_of_catalogue",
+      "got": "serve",
+      "category": "data-streaming",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-124",
+      "text": "Shipping label printing and parcel tracking.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a service to generate and print shipping labels, and another to track parcels in real time?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-125",
+      "text": "A helpdesk ticketing system.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "What specific functionality do you need from the ticketing system (e.g., email integration, SLA tracking, knowledge base)?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-126",
+      "text": "A web scraping service.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need the scraped data to be stored, processed, or delivered to another service?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-127",
+      "text": "Background checks on job applicants.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-128",
+      "text": "Map tiles and turn-by-turn routing.",
+      "want": "out_of_catalogue",
+      "got": "serve",
+      "category": "geolocation",
+      "pass": false
+    },
+    {
+      "set": "t42",
+      "id": "t42-129",
+      "text": "A customer survey and form builder.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need a hosted survey platform, or just a form-building API?",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-130",
+      "text": "Code hosting with pull requests and CI.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-131",
+      "text": "A password manager for our team.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-132",
+      "text": "Physical server racks in a colocation data centre.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-133",
+      "text": "Satellite imagery of farmland every week.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-134",
+      "text": "An HR leave-management tool.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "t42",
+      "id": "t42-135",
+      "text": "A tax calculation API for sales tax in the US.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-01",
+      "text": "We need somewhere to put our stuff.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of data do you need to store (e.g., files, objects, structured data) and what access patterns do you expect?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-02",
+      "text": "Sort out communication with our customers.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need email delivery, messaging, or another type of customer communication service?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-03",
+      "text": "I want machine learning in our product.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What type of machine learning functionality are you looking to add (e.g., inference, training, recommendation, image analysis, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-04",
+      "text": "Help with our media files.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific media tasks do you need help with (e.g., resizing images, transcoding videos, transcribing audio)?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-05",
+      "text": "Something for security.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific security functionality are you looking for (e.g., authentication, secrets management, monitoring, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-06",
+      "text": "We need to track things.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific items or metrics do you need to track?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-07",
+      "text": "Run our code somewhere, either serverless or containers, not sure.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need a serverless function, a containerized deployment, or both?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-08",
+      "text": "We need data tools.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific data tasks do you need help with (e.g., storage, analytics, processing, etc.)?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-09",
+      "text": "Handle our files and documents.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "Do you need storage, processing, or something else for your files and documents?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-10",
+      "text": "Make our website better.",
+      "want": "ambiguous",
+      "got": "ambiguous",
+      "clarify": "What specific improvements are you looking for—speed, design, SEO, or user experience?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-11",
+      "text": "An applicant tracking system for hiring.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "What specific features do you need in the applicant tracking system?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-12",
+      "text": "Flight status data for airports worldwide.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-13",
+      "text": "A project management board for our engineers.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-14",
+      "text": "Currency exchange rates updated every minute.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-15",
+      "text": "A managed Hadoop cluster.",
+      "want": "out_of_catalogue",
+      "got": "out_of_catalogue",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-16",
+      "text": "An inventory management system for our warehouse.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "What specific features do you need for the inventory system (e.g., tracking stock levels, barcode scanning, reporting, integration with other services)?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-17",
+      "text": "Print-on-demand t-shirt fulfilment.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "What specific print-on-demand task do you need help with?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-18",
+      "text": "A legal contract review service run by lawyers.",
+      "want": "out_of_catalogue",
+      "got": "ambiguous",
+      "clarify": "Do you need the contracts to be stored, or just reviewed?",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-20",
+      "text": "A team chat app like an office messenger for 200 staff.",
+      "want": "out_of_catalogue",
+      "got": "serve",
+      "category": "messaging",
+      "pass": false
+    },
+    {
+      "set": "heldout",
+      "id": "h-21",
+      "text": "Shrink user profile pictures to 200 pixels.",
+      "want": "serve",
+      "wantCat": "image-resizing",
+      "got": "serve",
+      "category": "image-resizing",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-22",
+      "text": "Send order-confirmation emails, about 5,000 a month.",
+      "want": "serve",
+      "wantCat": "email-delivery",
+      "got": "serve",
+      "category": "email-delivery",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-23",
+      "text": "Turn our podcast recordings into text.",
+      "want": "serve",
+      "wantCat": "speech-transcription",
+      "got": "serve",
+      "category": "speech-transcription",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-24",
+      "text": "Store product photos and serve them to the app.",
+      "want": "serve",
+      "wantCat": "object-storage",
+      "got": "serve",
+      "category": "object-storage",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-25",
+      "text": "Let users log in with Google.",
+      "want": "serve",
+      "wantCat": "authentication",
+      "got": "serve",
+      "category": "authentication",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-26",
+      "text": "Take card payments on our checkout page.",
+      "want": "serve",
+      "wantCat": "payment-processing",
+      "got": "serve",
+      "category": "payment-processing",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-27",
+      "text": "A Postgres database for our app.",
+      "want": "serve",
+      "wantCat": "database",
+      "got": "serve",
+      "category": "database",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-28",
+      "text": "Translate our help articles into Spanish.",
+      "want": "serve",
+      "wantCat": "translation",
+      "got": "serve",
+      "category": "translation",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-29",
+      "text": "Run a small virtual machine for a cron job.",
+      "want": "serve",
+      "wantCat": "compute",
+      "got": "serve",
+      "category": "compute",
+      "pass": true
+    },
+    {
+      "set": "heldout",
+      "id": "h-30",
+      "text": "Read the text out of scanned invoices.",
+      "want": "serve",
+      "wantCat": "document-ocr",
+      "got": "serve",
+      "category": "document-ocr",
+      "pass": true
+    }
+  ]
+}

@@ -50,7 +50,7 @@ When there are steps: the top-level "capability" and "category" repeat the first
 A second catalogue service named in passing is still its own step when the user needs it as a service, for example as the source the first one is fed from or the place its output goes. "Run our containers on a compute service pulled from a container registry" is two steps: container-registry, then compute (dependsOn [0]). Do not add a step for something that is only a feature of the one service.
 Rules for "category":
 - Pick the category whose services do this exact job. A category that is only related, or that the requested product merely runs on, is not a match: the request is "unknown". For example a helpdesk ticketing system is not messaging, an e-signature tool is not document-generation, and a payroll service is not payment-processing.
-- A packaged business application (sales, HR, accounting, logistics, office tools) or a specialised data feed (markets, weather, maps and routes) is "unknown" unless a category names that exact service.
+- A packaged business application (sales, HR, accounting, logistics, office tools) or a specialised data feed (markets, weather, maps and routes) is "unknown" unless a category names that exact service. A request for a category's own job is still a match when it serves a business (product recommendations for a shop are recommendations; detecting objects in photos is image-analysis).
 Rules for "clarify":
 - Add "clarify" when the request names only a broad area and no concrete task, so more than one category could fit or the kind of service cannot be told (for example "I need storage" could be object-storage, file-storage or database), or when the user says they are unsure which of two services they need.
 - Do not add it when a concrete task is stated, even briefly ("resize product photos", "send password-reset emails", "transcribe call recordings"). Still fill in your best "capability" and "category".
@@ -98,7 +98,7 @@ export function extractPreferences(text: string): NonNullable<Intent["preference
 
 const GROQ_SEED = 42;
 // Bump when the prompt or schema changes so the shared cache stops serving old parses.
-const CACHE_VERSION = `${GROQ_MODEL}|intent-v4`;
+const CACHE_VERSION = `${GROQ_MODEL}|intent-v5`;
 
 const CONSTRAINTS_SCHEMA = {
   type: "array",
